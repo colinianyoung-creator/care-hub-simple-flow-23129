@@ -1,0 +1,69 @@
+import { Heart, Shield, Users, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+
+interface HeroBannerProps {
+  title: string;
+  subtitle?: string;
+  children?: React.ReactNode;
+  careRecipientName?: string;
+  profilePictureUrl?: string;
+  onProfileClick?: () => void;
+}
+
+export const HeroBanner = ({ title, subtitle, children, careRecipientName, profilePictureUrl, onProfileClick }: HeroBannerProps) => {
+  return (
+    <div className="relative overflow-hidden bg-gradient-to-br from-care-primary via-care-primary/90 to-care-accent rounded-2xl p-6 md:p-8 text-white shadow-elevated">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-4 right-4">
+          <Heart className="w-16 h-16 animate-gentle-pulse" />
+        </div>
+        <div className="absolute bottom-4 left-4">
+          <Shield className="w-12 h-12 animate-gentle-bounce" />
+        </div>
+        <div className="absolute top-1/2 right-1/3 transform -translate-y-1/2">
+          <Users className="w-8 h-8 opacity-50" />
+        </div>
+      </div>
+
+      {/* Profile Picture (Top Right) */}
+      {onProfileClick && (
+        <div className="absolute top-4 right-4 z-20">
+          <Button
+            onClick={onProfileClick}
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-14 w-14 md:h-20 md:w-20 p-0 hover:bg-white/20 transition-all hover:scale-105"
+          >
+            <Avatar className="h-12 w-12 md:h-18 md:w-18 border-2 border-white/30">
+              <AvatarImage src={profilePictureUrl} alt="Profile" />
+              <AvatarFallback className="bg-white/20">
+                <User className="h-8 w-8 md:h-10 md:w-10 text-white" />
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </div>
+      )}
+      
+      {/* Content */}
+      <div className="relative z-10 space-y-4 pr-20 md:pr-0">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-bold leading-tight break-words">{title}</h1>
+          {careRecipientName && (
+            <p className="text-base md:text-xl text-white/90 mt-2 font-medium">Caring for {careRecipientName}</p>
+          )}
+          {subtitle && !careRecipientName && (
+            <p className="text-base md:text-xl text-white/90 mt-2 font-medium">{subtitle}</p>
+          )}
+        </div>
+        
+        {children && (
+          <div className="pt-4">
+            {children}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
