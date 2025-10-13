@@ -295,10 +295,14 @@ const Dashboard = () => {
       onProfileUpdate={(newRole) => {
         if (newRole) {
           setUserRole(newRole);
-        }
-        if (user) {
-          // Reload data for the SAME family context
-          loadUserData(user.id);
+          // Update families array to reflect the new role for consistency
+          setFamilies(prevFamilies => 
+            prevFamilies.map(family => 
+              family.family_id === currentFamilyId 
+                ? { ...family, role: newRole }
+                : family
+            )
+          );
         }
       }}
     />
