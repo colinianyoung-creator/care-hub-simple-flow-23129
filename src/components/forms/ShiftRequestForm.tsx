@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,6 +38,8 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
   const isEditingLeaveRequest = editShiftData?.id && ['annual_leave', 'sickness', 'public_holiday'].includes(editShiftData.request_type);
   const [carers, setCarers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteOption, setDeleteOption] = useState<'single' | 'series'>('single');
   const { toast } = useToast();
 
   const requestTypes = isAdminEdit ? [
@@ -230,6 +234,58 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
     }
   };
 
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      if (isEditingLeaveRequest) {
+        // Delete leave request
+        const { error } = await supabase
+          .from('leave_requests')
+          .delete()
+          .eq('id', editShiftData.id);
+        
+        if (error) throw error;
+      } else if (editShiftData?.shift_assignment_id) {
+        // Delete shift - check if it's part of a series
+        if (deleteOption === 'series') {
+          // Delete all future instances with same shift_assignment_id
+          const { error } = await supabase
+            .from('time_entries')
+            .delete()
+            .eq('shift_assignment_id', editShiftData.shift_assignment_id)
+            .gte('start_time', new Date().toISOString());
+          
+          if (error) throw error;
+        } else {
+          // Delete only this instance
+          const { error } = await supabase
+            .from('time_entries')
+            .delete()
+            .eq('id', editShiftData.id);
+          
+          if (error) throw error;
+        }
+      }
+
+      toast({
+        title: "Deleted",
+        description: deleteOption === 'series' ? "Shift series deleted successfully" : "Shift deleted successfully",
+      });
+
+      setShowDeleteDialog(false);
+      onSuccess();
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-[425px]">
@@ -351,6 +407,16 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           </div>
 
           <div className="flex justify-end space-x-2">
+            {editShiftData && isAdminEdit && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={loading}
+              >
+                Delete
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
@@ -360,6 +426,36 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           </div>
         </form>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Shift</AlertDialogTitle>
+            <AlertDialogDescription>
+              This shift may be part of a recurring series. What would you like to delete?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <RadioGroup value={deleteOption} onValueChange={(value) => setDeleteOption(value as 'single' | 'series')}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="single" id="single" />
+              <Label htmlFor="single">Delete only this shift</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="series" id="series" />
+              <Label htmlFor="series">Delete this and all future shifts in the series</Label>
+            </div>
+          </RadioGroup>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={loading} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {loading ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

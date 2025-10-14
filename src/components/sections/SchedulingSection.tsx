@@ -150,6 +150,19 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       await loadSchedulingData();
     };
     loadData();
+
+    // Refresh data when window becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('🔄 Window became visible, refreshing data...');
+        loadData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [familyId]);
 
   const getCurrentUser = async () => {
@@ -158,7 +171,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     return user?.id || null;
   };
 
-  const loadSchedulingData = async () => {
+  const loadSchedulingData = async (retryCount = 0) => {
     try {
       setLoading(true);
       
@@ -284,11 +297,20 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       
       setRequests(allRequests);
       setInstances(instancesData || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading scheduling data:', error);
+      
+      // Retry logic with exponential backoff
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`⏳ Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return loadSchedulingData(retryCount + 1);
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to load scheduling data",
+        description: "Failed to load scheduling data. Please try refreshing the page.",
         variant: "destructive",
       });
     } finally {

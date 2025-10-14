@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +29,8 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
     editingAssignment?.carer_ids || editingAssignment?.carer_id ? [editingAssignment.carer_id] : []
   );
   const [isRecurring, setIsRecurring] = useState(editingAssignment?.is_recurring ?? true);
+  const [editRecurrenceOption, setEditRecurrenceOption] = useState<'single' | 'future' | 'all'>('future');
+  const [showEditRecurrenceDialog, setShowEditRecurrenceDialog] = useState(false);
   const [carers, setCarers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -121,6 +125,17 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // If editing a recurring assignment, show recurrence options dialog
+    if (editingAssignment && isRecurring) {
+      setShowEditRecurrenceDialog(true);
+      return;
+    }
+
+    await saveShiftAssignment();
+  };
+
+  const saveShiftAssignment = async () => {
+    
     if (selectedCarerIds.length === 0) {
       toast({
         title: "Error",
@@ -147,8 +162,8 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
 
       if (editingAssignment) {
         // For admin shifts, go directly to time_entries - no approval needed
-        // Update existing time entries for this assignment
-        const { error: updateError } = await supabase
+        // Update existing time entries for this assignment based on recurrence option
+        let updateQuery = supabase
           .from('time_entries')
           .update({
             start_time: `2024-01-01T${formData.start_time}:00`,
@@ -156,15 +171,31 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
             hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
             shift_category: 'basic',
             status: 'approved'
-          })
-          .eq('shift_assignment_id', editingAssignment.id);
+          });
+
+        if (editRecurrenceOption === 'single') {
+          // Update only this specific shift instance
+          updateQuery = updateQuery.eq('id', editingAssignment.id);
+        } else if (editRecurrenceOption === 'future') {
+          // Update this and all future shifts in the series
+          updateQuery = updateQuery
+            .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
+            .gte('start_time', new Date().toISOString());
+        } else {
+          // Update all shifts in the series (past and future)
+          updateQuery = updateQuery
+            .eq('shift_assignment_id', editingAssignment.shift_assignment_id);
+        }
+
+        const { error: updateError } = await updateQuery;
 
         if (updateError) throw updateError;
 
         toast({
           title: "Success",
-          description: "Shift updated successfully",
+          description: `Shift${editRecurrenceOption !== 'single' ? 's' : ''} updated successfully`,
         });
+        setShowEditRecurrenceDialog(false);
       } else {
         // Create direct time entries for each selected carer - Admin basic shifts
         for (const carerId of selectedCarerIds) {
@@ -363,6 +394,40 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           </div>
         </form>
       </DialogContent>
+
+      {/* Edit Recurrence Dialog */}
+      <AlertDialog open={showEditRecurrenceDialog} onOpenChange={setShowEditRecurrenceDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Recurring Shift</AlertDialogTitle>
+            <AlertDialogDescription>
+              This is a recurring shift. What would you like to update?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <RadioGroup value={editRecurrenceOption} onValueChange={(value) => setEditRecurrenceOption(value as 'single' | 'future' | 'all')}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="single" id="edit-single" />
+              <Label htmlFor="edit-single">Update only this shift</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="future" id="edit-future" />
+              <Label htmlFor="edit-future">Update this and all future shifts</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="all" id="edit-all" />
+              <Label htmlFor="edit-all">Update all shifts in the series</Label>
+            </div>
+          </RadioGroup>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowEditRecurrenceDialog(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={saveShiftAssignment} disabled={loading}>
+              {loading ? 'Updating...' : 'Update'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

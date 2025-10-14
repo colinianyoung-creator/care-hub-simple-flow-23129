@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,20 @@ export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: 
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Handle opening dialog from menu
+  useEffect(() => {
+    const handleOpenDialog = () => {
+      console.log('🔓 Opening join family dialog from menu');
+      setShowDialog(true);
+    };
+
+    const button = document.querySelector('[data-join-button]');
+    if (button) {
+      button.addEventListener('click', handleOpenDialog);
+      return () => button.removeEventListener('click', handleOpenDialog);
+    }
+  }, []);
 
   const handleJoinFamily = async () => {
     if (!inviteCode.trim()) {
@@ -71,7 +85,12 @@ export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: 
 
   return (
     <>
-      <Button variant={variant} className={className} onClick={() => setShowDialog(true)}>
+      <Button 
+        variant={variant} 
+        className={className} 
+        onClick={() => setShowDialog(true)}
+        data-join-button
+      >
         <UserPlus className="h-4 w-4 mr-2" />
         Join a Family
       </Button>

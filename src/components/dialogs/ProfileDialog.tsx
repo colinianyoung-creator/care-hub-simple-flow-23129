@@ -183,6 +183,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
         // Use currentFamilyId if provided, otherwise fall back to loaded familyId
         let targetFamilyId = currentFamilyId || familyId;
+        console.log('🎯 Target family ID for role update:', { targetFamilyId, currentFamilyId, familyId });
+        
         if (!targetFamilyId) {
           const familyName = `${profile.full_name || 'Personal'}'s Network`;
           const { data: newFamily, error: familyError } = await supabase
@@ -194,6 +196,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           if (familyError) throw familyError;
           targetFamilyId = newFamily.id;
           setFamilyId(newFamily.id);
+          console.log('✅ Created new family:', targetFamilyId);
           
           // Create membership
           const { error: membershipError } = await supabase
@@ -203,15 +206,23 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           if (membershipError) throw membershipError;
         } else {
           // Update existing membership
-          const { error } = await supabase
+          console.log('🔄 Updating membership:', { userId: user.user.id, familyId: targetFamilyId, role: requestedRole });
+          const { data: updatedData, error } = await supabase
             .from('user_memberships')
             .update({ role: requestedRole })
             .eq('user_id', user.user.id)
-            .eq('family_id', targetFamilyId);
+            .eq('family_id', targetFamilyId)
+            .select();
+
+          console.log('📊 Update result:', { updatedData, error });
 
           if (error) {
             console.error('❌ Supabase error:', error);
             throw error;
+          }
+          
+          if (!updatedData || updatedData.length === 0) {
+            console.error('⚠️ No rows were updated. This may indicate the membership does not exist.');
           }
         }
 
