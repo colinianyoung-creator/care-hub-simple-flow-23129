@@ -169,8 +169,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       currentRole: currentUserRole 
     });
 
-    // If no family membership OR sole member, allow free role selection
-    if ((!hasFamilyMembership || isSoleMember) && requestedRole) {
+    // If no family membership, user must create/join a family first
+    if (!hasFamilyMembership && requestedRole) {
       try {
         setSaving(true);
         const { data: user } = await supabase.auth.getUser();
@@ -179,73 +179,43 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           return;
         }
 
-        console.log('📝 Updating membership role:', requestedRole);
-
-        // Use currentFamilyId if provided, otherwise fall back to loaded familyId
-        let targetFamilyId = currentFamilyId || familyId;
-        console.log('🎯 Target family ID for role update:', { targetFamilyId, currentFamilyId, familyId });
+        // Create a new family for the user
+        const familyName = `${profile.full_name || 'Personal'}'s Network`;
+        const { data: newFamily, error: familyError } = await supabase
+          .from('families')
+          .insert({ name: familyName, created_by: user.user.id })
+          .select()
+          .single();
         
-        if (!targetFamilyId) {
-          const familyName = `${profile.full_name || 'Personal'}'s Network`;
-          const { data: newFamily, error: familyError } = await supabase
-            .from('families')
-            .insert({ name: familyName, created_by: user.user.id })
-            .select()
-            .single();
-          
-          if (familyError) throw familyError;
-          targetFamilyId = newFamily.id;
-          setFamilyId(newFamily.id);
-          console.log('✅ Created new family:', targetFamilyId);
-          
-          // Create membership
-          const { error: membershipError } = await supabase
-            .from('user_memberships')
-            .insert({ user_id: user.user.id, family_id: newFamily.id, role: requestedRole });
-          
-          if (membershipError) throw membershipError;
-        } else {
-          // Update existing membership
-          console.log('🔄 Updating membership:', { userId: user.user.id, familyId: targetFamilyId, role: requestedRole });
-          const { data: updatedData, error } = await supabase
-            .from('user_memberships')
-            .update({ role: requestedRole })
-            .eq('user_id', user.user.id)
-            .eq('family_id', targetFamilyId)
-            .select();
+        if (familyError) throw familyError;
+        const newFamilyId = newFamily.id;
+        setFamilyId(newFamilyId);
+        console.log('✅ Created new family:', newFamilyId);
+        
+        // Create membership with requested role
+        const { error: membershipError } = await supabase
+          .from('user_memberships')
+          .insert({ user_id: user.user.id, family_id: newFamilyId, role: requestedRole });
+        
+        if (membershipError) throw membershipError;
 
-          console.log('📊 Update result:', { updatedData, error });
-
-          if (error) {
-            console.error('❌ Supabase error:', error);
-            throw error;
-          }
-          
-          if (!updatedData || updatedData.length === 0) {
-            console.error('⚠️ No rows were updated. This may indicate the membership does not exist.');
-          }
-        }
-
-        console.log('✅ Role updated successfully');
-
-        // Update local state immediately
+        console.log('✅ Role set successfully for new family');
         setCurrentUserRole(requestedRole);
+        setHasFamilyMembership(true);
 
         toast({
-          title: "Role Updated",
-          description: `Your default role has been updated to ${requestedRole.replace(/_/g, ' ')}`,
+          title: "Family Created & Role Set",
+          description: `Your family network has been created with role: ${requestedRole.replace(/_/g, ' ')}`,
         });
 
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
-        
-        // Notify parent with the new role for immediate UI update
         onProfileUpdate?.(requestedRole);
       } catch (error: any) {
-        console.error('❌ Error updating role:', error);
+        console.error('❌ Error creating family and setting role:', error);
         toast({
           title: "Error",
-          description: error.message || "Failed to update role",
+          description: error.message || "Failed to create family and set role",
           variant: "destructive",
         });
       } finally {
@@ -254,36 +224,69 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       return;
     }
 
-    // If admin role in family (but not sole member, already handled above), change role directly
-    if (isAdminRole && !isSoleMember) {
+    // If sole member OR admin role, use RPC function for safe role update
+    if ((isSoleMember || isAdminRole) && requestedRole) {
       try {
         setSaving(true);
         const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
+        if (!user.user) {
+          console.error('❌ No user found');
+          return;
+        }
 
-        const { error } = await supabase
+        console.log('📝 Calling update_own_role_safe RPC with role:', requestedRole);
+
+        // Call the secure RPC function
+        const { data: rawResult, error: rpcError } = await supabase
+          .rpc('update_own_role_safe' as any, { _new_role: requestedRole });
+
+        // Cast the result to the expected type
+        const result = rawResult as { success: boolean; error?: string; new_role?: string; family_id?: string };
+        console.log('📊 RPC result:', result);
+
+        if (rpcError) {
+          console.error('❌ RPC error:', rpcError);
+          throw rpcError;
+        }
+
+        if (!result.success) {
+          console.error('❌ RPC returned failure:', result.error);
+          throw new Error(result.error || 'Failed to update role');
+        }
+
+        // Verify the update by querying the database
+        const { data: verifyData, error: verifyError } = await supabase
           .from('user_memberships')
-          .update({ role: requestedRole })
+          .select('role')
           .eq('user_id', user.user.id)
-          .eq('family_id', familyId);
+          .eq('family_id', result.family_id || familyId)
+          .single();
 
-        if (error) throw error;
+        if (verifyError) {
+          console.error('⚠️ Could not verify update:', verifyError);
+        } else {
+          console.log('✅ Verified role in database:', verifyData.role);
+          if (verifyData.role !== requestedRole) {
+            throw new Error('Role update verification failed - database does not reflect the change');
+          }
+        }
+
+        console.log('✅ Role updated successfully');
+        setCurrentUserRole(requestedRole);
 
         toast({
-          title: "Role Changed",
-          description: "Your role has been updated successfully",
+          title: "Role Updated",
+          description: `Your role has been updated to ${requestedRole.replace(/_/g, ' ')}`,
         });
 
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
-        setRequestedRole('carer');
-        
-        // Notify parent with the new role for immediate UI update
         onProfileUpdate?.(requestedRole);
       } catch (error: any) {
+        console.error('❌ Error updating role:', error);
         toast({
           title: "Error",
-          description: error.message,
+          description: error.message || "Failed to update role",
           variant: "destructive",
         });
       } finally {

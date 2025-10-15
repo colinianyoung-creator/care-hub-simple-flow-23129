@@ -31,6 +31,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
   const [isRecurring, setIsRecurring] = useState(editingAssignment?.is_recurring ?? true);
   const [editRecurrenceOption, setEditRecurrenceOption] = useState<'single' | 'future' | 'all'>('future');
   const [showEditRecurrenceDialog, setShowEditRecurrenceDialog] = useState(false);
+  const [isPartOfRecurringSeries, setIsPartOfRecurringSeries] = useState(false);
   const [carers, setCarers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -44,6 +45,45 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
     { value: 5, label: 'Friday' },
     { value: 6, label: 'Saturday' }
   ];
+
+  // Detect if editing assignment is part of a recurring series
+  useEffect(() => {
+    const detectRecurringSeries = async () => {
+      if (!editingAssignment?.shift_assignment_id) {
+        setIsPartOfRecurringSeries(false);
+        return;
+      }
+
+      try {
+        // Check if there are other time_entries with the same shift_assignment_id
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('id')
+          .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
+          .limit(2); // We only need to know if there's more than 1
+
+        if (error) {
+          console.error('Error checking for recurring series:', error);
+          setIsPartOfRecurringSeries(false);
+          return;
+        }
+
+        // If more than 1 entry exists with this shift_assignment_id, it's a recurring series
+        const isRecurringSeries = (data?.length || 0) > 1;
+        console.log('🔁 Recurring series detection:', { 
+          shift_assignment_id: editingAssignment.shift_assignment_id,
+          count: data?.length,
+          isRecurringSeries 
+        });
+        setIsPartOfRecurringSeries(isRecurringSeries);
+      } catch (error) {
+        console.error('Error in recurring series detection:', error);
+        setIsPartOfRecurringSeries(false);
+      }
+    };
+
+    detectRecurringSeries();
+  }, [editingAssignment]);
 
   // Load carers for this family
   useEffect(() => {
@@ -125,8 +165,9 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // If editing a recurring assignment, show recurrence options dialog
-    if (editingAssignment && isRecurring) {
+    // If editing a shift that's part of a recurring series, show recurrence options dialog
+    if (editingAssignment && isPartOfRecurringSeries) {
+      console.log('🔁 Showing recurrence dialog for series edit');
       setShowEditRecurrenceDialog(true);
       return;
     }
