@@ -47,15 +47,20 @@ export const ShiftAbsenceForm = ({ familyId, userRole, onSuccess, onCancel }: Sh
       const isAbsence = ['sickness', 'annual_leave', 'public_holiday'].includes(formData.type);
 
       if (isShift) {
-        // For shifts, create a shift request that admins can approve to create shift instances
+        // For shifts, create a time_entry directly for basic shifts
+        const startHour = 9; // Default start hour
+        const hours = parseFloat(formData.hours) || 8;
+        const endHour = startHour + hours;
+        const shiftDate = new Date(formData.date);
+        
         const { error } = await supabase
-          .from('shift_requests')
+          .from('time_entries')
           .insert({
             family_id: familyId,
-            requester_id: user.data.user.id,
-            request_type: 'shift_creation',
-            start_date: formData.date,
-            reason: `${formData.type === 'shift_basic' ? 'Basic' : 'Cover'} shift - ${formData.hours} hours${formData.notes ? ': ' + formData.notes : ''}`
+            user_id: user.data.user.id,
+            clock_in: `${formData.date}T${String(startHour).padStart(2, '0')}:00:00`,
+            clock_out: `${formData.date}T${String(endHour).padStart(2, '0')}:00:00`,
+            notes: `${formData.type === 'shift_basic' ? 'Basic' : 'Cover'} shift${formData.notes ? ': ' + formData.notes : ''}`
           });
 
         if (error) throw error;
@@ -71,13 +76,11 @@ export const ShiftAbsenceForm = ({ familyId, userRole, onSuccess, onCancel }: Sh
             .from('leave_requests')
             .insert({
               family_id: familyId,
-              carer_id: user.data.user.id,
-              date: formData.date,
-              hours: parseFloat(formData.hours),
-              type: formData.type,
-              notes: formData.notes || null,
-              status: 'approved',
-              created_by: user.data.user.id
+              user_id: user.data.user.id,
+              start_date: formData.date,
+              end_date: formData.date,
+              reason: `${formData.type} - ${formData.hours} hours${formData.notes ? ': ' + formData.notes : ''}`,
+              status: 'approved'
             });
 
           if (error) throw error;
@@ -92,13 +95,11 @@ export const ShiftAbsenceForm = ({ familyId, userRole, onSuccess, onCancel }: Sh
             .from('leave_requests')
             .insert({
               family_id: familyId,
-              carer_id: user.data.user.id,
-              date: formData.date,
-              hours: parseFloat(formData.hours),
-              type: formData.type,
-              notes: formData.notes || null,
-              status: 'pending',
-              created_by: user.data.user.id
+              user_id: user.data.user.id,
+              start_date: formData.date,
+              end_date: formData.date,
+              reason: `${formData.type} - ${formData.hours} hours${formData.notes ? ': ' + formData.notes : ''}`,
+              status: 'pending'
             });
 
           if (error) throw error;

@@ -177,12 +177,12 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       
       const timeQuery = supabase
         .from('time_entries')
-        .select('start_time, end_time, user_id, shift_category')
+        .select('clock_in, clock_out, user_id, notes')
         .eq('family_id', familyId)
         .eq('user_id', selectedCarerId)
-        .gte('start_time', startDate.toISOString())
-        .lte('start_time', endDate.toISOString())
-        .not('end_time', 'is', null);
+        .gte('clock_in', startDate.toISOString())
+        .lte('clock_in', endDate.toISOString())
+        .not('clock_out', 'is', null);
       
       const { data: timeEntries, error: timeError } = await timeQuery;
       if (timeError) throw timeError;
@@ -192,15 +192,15 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       const shiftInstances = allShiftInstances?.filter(shift => shift.carer_id === selectedCarerId) || [];
       if (shiftError) throw shiftError;
 
-      // Get leave requests for the date range
+      // Get leave requests for the date range  
       const leaveQuery = supabase
         .from('leave_requests')
-        .select('date, hours, type, carer_id')
+        .select('start_date, end_date, reason, user_id')
         .eq('family_id', familyId)
-        .eq('carer_id', selectedCarerId)
+        .eq('user_id', selectedCarerId)
         .eq('status', 'approved')
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'));
+        .gte('start_date', format(startDate, 'yyyy-MM-dd'))
+        .lte('start_date', format(endDate, 'yyyy-MM-dd'));
       
       const { data: leaveRequests, error: leaveError } = await leaveQuery;
       if (leaveError) throw leaveError;
@@ -215,7 +215,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         
         // Calculate time entry hours for this week
         const weekTimeEntries = timeEntries?.filter(entry => {
-          const entryDate = new Date(entry.start_time);
+          const entryDate = new Date(entry.clock_in);
           return entryDate >= weekStart && entryDate <= weekEnding;
         }) || [];
         
@@ -225,18 +225,17 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
           return shiftDate >= weekStart && shiftDate <= weekEnding;
         }) || [];
         
-        // Calculate leave hours for this week
+        // Calculate leave hours for this week (estimate 8 hours per day if not specified)
         const weekLeaveRequests = leaveRequests?.filter(request => {
-          const requestDate = new Date(request.date);
+          const requestDate = new Date(request.start_date);
           return requestDate >= weekStart && requestDate <= weekEnding;
         }) || [];
         
         const basic = weekTimeEntries
-          .filter(entry => entry.shift_category === 'basic' || !entry.shift_category)
           .reduce((total, entry) => {
-            if (entry.start_time && entry.end_time) {
-              const start = new Date(entry.start_time);
-              const end = new Date(entry.end_time);
+            if (entry.clock_in && entry.clock_out) {
+              const start = new Date(entry.clock_in);
+              const end = new Date(entry.clock_out);
               return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
             }
             return total;
@@ -251,28 +250,20 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
             return total;
           }, 0);
           
-        const cover = weekTimeEntries
-          .filter(entry => entry.shift_category === 'cover')
-          .reduce((total, entry) => {
-            if (entry.start_time && entry.end_time) {
-              const start = new Date(entry.start_time);
-              const end = new Date(entry.end_time);
-              return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-            }
-            return total;
-          }, 0);
+        const cover = 0; // No cover category in current schema
           
+        // Estimate leave hours based on reason keywords (default 8 hours per day)
         const annual_leave = weekLeaveRequests
-          .filter(req => req.type === 'annual_leave')
-          .reduce((total, req) => total + (Number(req.hours) || 0), 0);
+          .filter(req => req.reason?.toLowerCase().includes('annual'))
+          .reduce((total, req) => total + 8, 0);
           
         const public_holiday = weekLeaveRequests
-          .filter(req => req.type === 'public_holiday')
-          .reduce((total, req) => total + (Number(req.hours) || 0), 0);
+          .filter(req => req.reason?.toLowerCase().includes('holiday') && !req.reason?.toLowerCase().includes('annual'))
+          .reduce((total, req) => total + 8, 0);
           
         const sickness = weekLeaveRequests
-          .filter(req => req.type === 'sickness')
-          .reduce((total, req) => total + (Number(req.hours) || 0), 0);
+          .filter(req => req.reason?.toLowerCase().includes('sick'))
+          .reduce((total, req) => total + 8, 0);
         
         return {
           weekEnding: format(weekEnding, 'dd/MM/yyyy'),

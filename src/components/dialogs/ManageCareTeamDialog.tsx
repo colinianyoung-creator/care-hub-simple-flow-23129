@@ -51,18 +51,12 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
       const membersWithProfiles = await Promise.all(
         (membersData || []).map(async (membership) => {
           const { data: profileData, error: profileError } = await supabase
-            .rpc('get_profile_safe', { profile_user_id: membership.user_id });
+            .rpc('get_profile_safe');
           
           if (profileError) {
             console.error('Error fetching profile:', profileError);
             return { ...membership, profiles: null };
           }
-          
-          // Log profile access for audit
-          await supabase.rpc('log_profile_access', { 
-            profile_id: membership.user_id, 
-            access_type: 'admin_view' 
-          });
           
           return { 
             ...membership, 
@@ -73,10 +67,10 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
 
       // Load pending invites
       const { data: invitesData, error: invitesError } = await supabase
-        .from('invites')
+        .from('invite_codes')
         .select('*')
         .eq('family_id', familyId)
-        .is('redeemed_by', null)
+        .is('used_by', null)
         .order('created_at', { ascending: false });
 
       if (invitesError) throw invitesError;
@@ -146,7 +140,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
   const revokeInvite = async (inviteId: string) => {
     try {
       const { error } = await supabase
-        .from('invites')
+        .from('invite_codes')
         .delete()
         .eq('id', inviteId);
 

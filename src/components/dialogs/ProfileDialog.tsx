@@ -64,9 +64,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       if (!user.user) return;
 
       // Load profile using secure function
-      const { data: profileData, error: profileError } = await supabase.rpc('get_profile_safe', { 
-        profile_user_id: user.user.id 
-      });
+      const { data: profileData, error: profileError } = await supabase.rpc('get_profile_safe');
 
       if (profileError) {
         throw profileError;
@@ -313,10 +311,10 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       const { error } = await supabase
         .from('role_change_requests')
         .insert({
-          requester_id: user.user.id,
+          user_id: user.user.id,
           family_id: familyId,
-          current_role_type: currentUserRole as any,
-          requested_role_type: requestedRole as any,
+          from_role: currentUserRole as any,
+          requested_role: requestedRole as any,
           reason: roleChangeReason
         });
 

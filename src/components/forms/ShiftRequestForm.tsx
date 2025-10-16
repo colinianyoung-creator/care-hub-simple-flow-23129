@@ -68,8 +68,8 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
 
           const carersWithProfiles = await Promise.all(
             (carerMemberships || []).map(async (membership) => {
-              const { data: profile } = await supabase
-                .rpc('get_profile_safe', { profile_user_id: membership.user_id });
+          const { data: profile } = await supabase
+            .rpc('get_profile_safe');
               
               return {
                 user_id: membership.user_id,
@@ -105,30 +105,28 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           const { error } = await supabase
             .from('leave_requests')
             .update({
-              date: formData.start_date,
-              hours: parseFloat(formData.hours) || 8,
-              type: formData.request_type,
-              notes: formData.reason || null
+              start_date: formData.start_date,
+              end_date: formData.start_date,
+              reason: formData.reason || null
             })
             .eq('id', editShiftData.id);
 
           if (error) throw error;
         } else {
           // Admin creating/editing a basic or cover shift - goes directly to time_entries
-          const { data: disabledPersonId } = await supabase
-            .rpc('get_family_disabled_person_id', { _family_id: familyId });
-
           if (editShiftData?.id && !isEditingLeaveRequest) {
             // Update existing time entry
+            const startHour = 9;
+            const hours = parseInt(formData.hours) || 8;
+            const endHour = startHour + hours;
+            
             const { error } = await supabase
               .from('time_entries')
               .update({
                 user_id: formData.carer_id,
-                start_time: `${formData.start_date}T09:00:00`,
-                end_time: `${formData.start_date}T${formData.hours ? String(9 + parseInt(formData.hours)).padStart(2, '0') : '17'}:00:00`,
-                shift_category: formData.shift_category,
-                notes: formData.reason || null,
-                status: 'approved'
+                clock_in: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
+                clock_out: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
+                notes: formData.reason || null
               })
               .eq('id', editShiftData.id);
 
@@ -144,12 +142,8 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
               .insert({
                 family_id: familyId,
                 user_id: formData.carer_id,
-                disabled_person_id: disabledPersonId,
-                start_time: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
-                end_time: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
-                shift_category: formData.shift_category,
-                shift_type: 'scheduled',
-                status: 'approved',
+                clock_in: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
+                clock_out: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
                 notes: formData.reason || `${formData.shift_category} shift`
               });
 
@@ -169,13 +163,12 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           const { error } = await supabase
             .from('leave_requests')
             .update({
-              date: formData.start_date,
-              hours: parseFloat(formData.hours) || 8,
-              type: formData.request_type,
-              notes: formData.reason || null
+              start_date: formData.start_date,
+              end_date: formData.start_date,
+              reason: formData.reason || null
             })
             .eq('id', editShiftData.id)
-            .eq('carer_id', user.data.user.id); // Ensure user can only edit their own
+            .eq('user_id', user.data.user.id); // Ensure user can only edit their own
 
           if (error) throw error;
         } else {
@@ -188,30 +181,21 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
               .from('leave_requests')
               .insert({
                 family_id: familyId,
-                carer_id: user.data.user.id,
-                date: formData.start_date,
-                hours: parseFloat(formData.hours) || 8,
-                type: formData.request_type,
-                notes: formData.reason || null,
-                status: 'pending',
-                created_by: user.data.user.id
+                user_id: user.data.user.id,
+                start_date: formData.start_date,
+                end_date: formData.end_date || formData.start_date,
+                reason: formData.reason || null,
+                status: 'pending'
               });
 
             if (error) throw error;
           } else {
-            // Create shift request for other types
-            const { error } = await supabase
-              .from('shift_requests')
-              .insert({
-                family_id: familyId,
-                requester_id: user.data.user.id,
-                request_type: formData.request_type,
-                start_date: formData.start_date,
-                end_date: formData.end_date || null,
-                reason: formData.reason || null
-              });
-
-            if (error) throw error;
+            // Create new time entry for this carer - other request types handled elsewhere
+            toast({
+              title: "Note",
+              description: "Request type not yet implemented for direct entry creation",
+              variant: "destructive",
+            });
           }
         }
 

@@ -111,8 +111,8 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         // Get profile names for each carer using safe profile lookup
         const carersWithProfiles = await Promise.all(
           carerMemberships.map(async (membership) => {
-            const { data: profile } = await supabase
-              .rpc('get_profile_safe', { profile_user_id: membership.user_id });
+          const { data: profile } = await supabase
+            .rpc('get_profile_safe');
             
             console.log('Profile data for user', membership.user_id, ':', profile);
             
@@ -192,10 +192,6 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
 
-      // Get disabled person ID for this family
-      const { data: disabledPersonId } = await supabase
-        .rpc('get_family_disabled_person_id', { _family_id: familyId });
-
       // Calculate shift duration in hours
       const startTime = new Date(`2024-01-01T${formData.start_time}`);
       const endTime = new Date(`2024-01-01T${formData.end_time}`);
@@ -207,11 +203,9 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         let updateQuery = supabase
           .from('time_entries')
           .update({
-            start_time: `2024-01-01T${formData.start_time}:00`,
-            end_time: `2024-01-01T${formData.end_time}:00`,
-            hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
-            shift_category: 'basic',
-            status: 'approved'
+            clock_in: `2024-01-01T${formData.start_time}:00`,
+            clock_out: `2024-01-01T${formData.end_time}:00`,
+            notes: formData.title || 'Shift'
           });
 
         if (editRecurrenceOption === 'single') {
@@ -257,13 +251,8 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
                 await supabase.from('time_entries').insert({
                   family_id: familyId,
                   user_id: carerId,
-                  disabled_person_id: disabledPersonId,
-                  start_time: shiftStart.toISOString(),
-                  end_time: shiftEnd.toISOString(),
-                  hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
-                  shift_category: 'basic',
-                  shift_type: 'scheduled',
-                  status: 'approved',
+                  clock_in: shiftStart.toISOString(),
+                  clock_out: shiftEnd.toISOString(),
                   notes: formData.title || 'Basic Shift'
                 });
               }
@@ -279,13 +268,8 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
             await supabase.from('time_entries').insert({
               family_id: familyId,
               user_id: carerId,
-              disabled_person_id: disabledPersonId,
-              start_time: shiftStart.toISOString(),
-              end_time: shiftEnd.toISOString(),
-              hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
-              shift_category: 'basic',
-              shift_type: 'scheduled',
-              status: 'approved',
+              clock_in: shiftStart.toISOString(),
+              clock_out: shiftEnd.toISOString(),
               notes: formData.title || 'Basic Shift'
             });
           }

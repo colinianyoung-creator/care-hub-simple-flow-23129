@@ -46,7 +46,7 @@ export const DayShiftsModal: React.FC<DayShiftsModalProps> = ({
 
       for (const carerId of carerIds) {
         try {
-          const { data } = await supabase.rpc('get_profile_safe', { profile_user_id: carerId });
+          const { data } = await supabase.rpc('get_profile_safe');
           if (data?.[0]) {
             profiles[carerId] = {
               profile_picture_url: data[0].profile_picture_url,
