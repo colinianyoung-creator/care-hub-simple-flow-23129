@@ -209,15 +209,12 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           });
 
         if (editRecurrenceOption === 'single') {
-          // Update only this specific shift instance
           updateQuery = updateQuery.eq('id', editingAssignment.id);
         } else if (editRecurrenceOption === 'future') {
-          // Update this and all future shifts in the series
           updateQuery = updateQuery
             .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
-            .gte('start_time', new Date().toISOString());
+            .gte('clock_in', new Date().toISOString());
         } else {
-          // Update all shifts in the series (past and future)
           updateQuery = updateQuery
             .eq('shift_assignment_id', editingAssignment.shift_assignment_id);
         }

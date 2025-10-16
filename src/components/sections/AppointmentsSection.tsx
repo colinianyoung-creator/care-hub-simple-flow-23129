@@ -57,7 +57,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
-      setAppointments(data || []);
+      setAppointments(data as any || []);
     } catch (error) {
       console.error('Error loading appointments:', error);
       toast({

@@ -219,8 +219,7 @@ const Dashboard = () => {
       try {
         console.log('🎟️ Processing pending invite code...');
         await supabase.rpc('redeem_invite', {
-          _invite_code: pendingInviteCode,
-          _user_id: userId
+          _code: pendingInviteCode
         });
         localStorage.removeItem('pending_invite_code');
         toast({

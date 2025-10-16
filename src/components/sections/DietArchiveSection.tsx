@@ -60,7 +60,7 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEntries(data || []);
+      setEntries(data as any || []);
     } catch (error: any) {
       toast({
         title: 'Error loading entries',

@@ -99,7 +99,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
 
       clearTimeout(timeoutId);
       if (error) throw error;
-      setEntries(data || []);
+      setEntries(data as any || []);
     } catch (error) {
       clearTimeout(timeoutId);
       console.error('Error loading diet entries:', error);
@@ -120,15 +120,15 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
     try {
       const { error } = await supabase
         .from('diet_entries')
-        .insert({
-          family_id: familyId,
+          .insert([{
+            family_id: familyId,
           user_id: currentUserId,
           meal_type: selectedMealType,
           description: formData.description,
           portion_left: formData.portion_left,
           notes: formData.notes,
           photo_url: formData.photo_url || null
-        });
+        }] as any);
 
       if (error) throw error;
 

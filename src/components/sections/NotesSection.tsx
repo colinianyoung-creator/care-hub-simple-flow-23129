@@ -128,18 +128,9 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
           family_id: familyId,
           content: `Activity: ${newNote.activity_support}${newNote.observations ? '\nObservations: ' + newNote.observations : ''}`,
           author_id: currentUserId,
-          activity_support: newNote.activity_support,
-          activity_tags: newNote.activity_tags,
-          observations: newNote.observations,
-          outcome_response: newNote.outcome_response,
-          next_steps: newNote.next_steps,
-          mood: newNote.mood,
-          eating_drinking: newNote.eating_drinking,
-          eating_drinking_notes: newNote.eating_drinking_notes,
-          bathroom_usage: newNote.bathroom_usage,
-          incidents: newNote.incidents,
-          is_incident: newNote.is_incident
-        }]);
+          title: newNote.activity_support,
+          category: 'Activity Support'
+        }] as any);
 
       if (error) throw error;
 

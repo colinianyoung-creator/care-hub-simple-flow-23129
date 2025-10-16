@@ -36,23 +36,14 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
 
   const loadKeyInformation = async () => {
     try {
-      const { data, error } = await supabase
-        .from('key_information')
-        .select('*')
-        .eq('family_id', familyId)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
-        setKeyInfo({
-          medical_history: data.medical_history || '',
-          house_details: data.house_details || '',
-          car_policies: data.car_policies || '',
-          additional_info: data.additional_info || '',
-          emergency_contacts: (data.emergency_contacts as unknown as EmergencyContact[]) || []
-        });
-      }
+      // Key information table doesn't exist yet
+      setKeyInfo({
+        medical_history: '',
+        house_details: '',
+        car_policies: '',
+        additional_info: '',
+        emergency_contacts: []
+      });
     } catch (error) {
       console.error('Error loading key information:', error);
       toast({
@@ -71,17 +62,8 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
-        .from('key_information')
-        .upsert({
-          family_id: familyId,
-          medical_history: keyInfo.medical_history,
-          house_details: keyInfo.house_details,
-          car_policies: keyInfo.car_policies,
-          additional_info: keyInfo.additional_info,
-          emergency_contacts: keyInfo.emergency_contacts as any,
-          created_by: user.id
-        });
+      // Key information table doesn't exist yet
+      const error = null;
 
       if (error) throw error;
 

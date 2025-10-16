@@ -159,7 +159,6 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
       } else {
         // Carer request - check if editing pending leave request
         if (isEditingLeaveRequest && editShiftData?.id) {
-          // Update existing pending leave request
           const { error } = await supabase
             .from('leave_requests')
             .update({
@@ -168,15 +167,13 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
               reason: formData.reason || null
             })
             .eq('id', editShiftData.id)
-            .eq('user_id', user.data.user.id); // Ensure user can only edit their own
+            .eq('user_id', user.data.user.id);
 
           if (error) throw error;
         } else {
-          // Create new request
           const isAbsenceRequest = ['sickness', 'annual_leave', 'public_holiday'].includes(formData.request_type);
 
           if (isAbsenceRequest) {
-            // Create leave request for absence types
             const { error } = await supabase
               .from('leave_requests')
               .insert({
@@ -190,10 +187,9 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
 
             if (error) throw error;
           } else {
-            // Create new time entry for this carer - other request types handled elsewhere
             toast({
               title: "Note",
-              description: "Request type not yet implemented for direct entry creation",
+              description: "Request type not yet implemented",
               variant: "destructive",
             });
           }
