@@ -19,12 +19,11 @@ interface ApprovedAbsencesArchiveProps {
 
 interface ApprovedAbsence {
   id: string;
-  date: string;
+  start_date: string;
+  end_date: string;
   carer_name: string;
   carer_id: string;
-  type: string;
-  hours: number;
-  notes?: string;
+  reason?: string;
   created_at: string;
 }
 
@@ -45,11 +44,6 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
   const isCarer = userRole === 'carer';
   const canExport = isAdmin;
 
-  const leaveTypes = [
-    { value: 'annual_leave', label: 'Annual Leave', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'sickness', label: 'Sickness', color: 'bg-red-100 text-red-800' },
-    { value: 'public_holiday', label: 'Public Holiday', color: 'bg-blue-100 text-blue-800' }
-  ];
 
   useEffect(() => {
     loadApprovedAbsences();
@@ -69,12 +63,12 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
         .select('*')
         .eq('family_id', familyId)
         .eq('status', 'approved')
-        .order('date', { ascending: false });
+        .order('start_date', { ascending: false });
 
       if (error) throw error;
 
       // Get carer profiles for the leave requests
-      const carerIds = leaveRequests?.map(leave => leave.carer_id).filter(Boolean) || [];
+      const carerIds = leaveRequests?.map(leave => leave.user_id).filter(Boolean) || [];
       let carerProfiles: any[] = [];
       
       if (carerIds.length > 0) {
@@ -88,12 +82,11 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
       // Transform data with carer names
       const transformedData = (leaveRequests || []).map(request => ({
         id: request.id,
-        date: request.date,
-        carer_id: request.carer_id,
-        carer_name: carerProfiles.find(p => p.id === request.carer_id)?.full_name || 'Unknown Carer',
-        type: request.type,
-        hours: request.hours,
-        notes: request.notes,
+        start_date: request.start_date,
+        end_date: request.end_date,
+        carer_id: request.user_id,
+        carer_name: carerProfiles.find(p => p.id === request.user_id)?.full_name || 'Unknown Carer',
+        reason: request.reason,
         created_at: request.created_at
       }));
 
@@ -135,15 +128,15 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
     }
 
     if (filters.type && filters.type !== 'all-types') {
-      filtered = filtered.filter(absence => absence.type === filters.type);
+      // Type filter removed - leave_requests no longer has a type field
     }
 
     if (filters.startDate) {
-      filtered = filtered.filter(absence => absence.date >= filters.startDate);
+      filtered = filtered.filter(absence => absence.start_date >= filters.startDate);
     }
 
     if (filters.endDate) {
-      filtered = filtered.filter(absence => absence.date <= filters.endDate);
+      filtered = filtered.filter(absence => absence.end_date <= filters.endDate);
     }
 
     setFilteredAbsences(filtered);
@@ -152,15 +145,14 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
   const exportToCSV = () => {
     if (!canExport) return;
 
-    const headers = ['Date', 'Carer', 'Type', 'Hours', 'Notes'];
+    const headers = ['Start Date', 'End Date', 'Carer', 'Reason'];
     const csvContent = [
       headers.join(','),
       ...filteredAbsences.map(absence => [
-        absence.date,
+        absence.start_date,
+        absence.end_date,
         `"${absence.carer_name}"`,
-        absence.type.replace('_', ' '),
-        absence.hours,
-        `"${absence.notes || ''}"`
+        `"${absence.reason || ''}"`
       ].join(','))
     ].join('\n');
 
@@ -180,17 +172,6 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
     });
   };
 
-  const getTypeConfig = (type: string) => {
-    return leaveTypes.find(t => t.value === type) || { 
-      value: type, 
-      label: type.replace('_', ' '), 
-      color: 'bg-gray-100 text-gray-800' 
-    };
-  };
-
-  const getTotalHours = () => {
-    return filteredAbsences.reduce((total, absence) => total + absence.hours, 0);
-  };
 
   if (loading) {
     return (
@@ -232,23 +213,6 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
           )}
 
           <div>
-            <Label htmlFor="type-filter">Filter by Type</Label>
-            <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-types">All types</SelectItem>
-                {leaveTypes.map(type => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
             <Label htmlFor="start-date">From Date</Label>
             <Input
               id="start-date"
@@ -278,42 +242,32 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
         ) : (
           <>
             <div className="mb-4 text-sm text-muted-foreground">
-              Showing {filteredAbsences.length} approved absence{filteredAbsences.length !== 1 ? 's' : ''} 
-              • Total Hours: {getTotalHours().toFixed(1)}
+              Showing {filteredAbsences.length} approved absence{filteredAbsences.length !== 1 ? 's' : ''}
             </div>
 
             <div className="border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
                     {(isAdmin || carers.length > 1) && <TableHead>Carer</TableHead>}
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Hours</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead>Reason</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAbsences.map((absence) => {
-                    const typeConfig = getTypeConfig(absence.type);
-                    return (
-                      <TableRow key={absence.id}>
-                        <TableCell>{format(new Date(absence.date), 'MMM d, yyyy')}</TableCell>
-                        {(isAdmin || carers.length > 1) && (
-                          <TableCell className="font-medium">{absence.carer_name}</TableCell>
-                        )}
-                        <TableCell>
-                          <Badge variant="secondary" className={typeConfig.color}>
-                            {typeConfig.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">{absence.hours}h</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {absence.notes || '—'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredAbsences.map((absence) => (
+                    <TableRow key={absence.id}>
+                      <TableCell>{format(new Date(absence.start_date), 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{format(new Date(absence.end_date), 'MMM d, yyyy')}</TableCell>
+                      {(isAdmin || carers.length > 1) && (
+                        <TableCell className="font-medium">{absence.carer_name}</TableCell>
+                      )}
+                      <TableCell className="text-muted-foreground">
+                        {absence.reason || '—'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
         </TableBody>
       </Table>
     </div>

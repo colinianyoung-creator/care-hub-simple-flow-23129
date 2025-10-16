@@ -38,7 +38,7 @@ export const ClockInOut = ({ familyId, onUpdate }: ClockInOutProps) => {
         .select('*')
         .eq('family_id', familyId)
         .eq('user_id', user.data.user.id)
-        .is('end_time', null)
+        .is('clock_out', null)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -60,8 +60,7 @@ export const ClockInOut = ({ familyId, onUpdate }: ClockInOutProps) => {
         .insert({
           family_id: familyId,
           user_id: user.data.user.id,
-          start_time: new Date().toISOString(),
-          shift_type: 'variable'
+          clock_in: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -93,7 +92,7 @@ export const ClockInOut = ({ familyId, onUpdate }: ClockInOutProps) => {
       const { error } = await supabase
         .from('time_entries')
         .update({
-          end_time: new Date().toISOString(),
+          clock_out: new Date().toISOString(),
           notes: notes || null
         })
         .eq('id', activeEntry.id);
@@ -132,10 +131,9 @@ export const ClockInOut = ({ familyId, onUpdate }: ClockInOutProps) => {
         .insert({
           family_id: familyId,
           user_id: user.data.user.id,
-          start_time: manualEntry.start_time,
-          end_time: manualEntry.end_time,
-          notes: manualEntry.notes || null,
-          shift_type: 'variable'
+          clock_in: manualEntry.start_time,
+          clock_out: manualEntry.end_time,
+          notes: manualEntry.notes || null
         });
 
       if (error) throw error;
@@ -169,7 +167,7 @@ export const ClockInOut = ({ familyId, onUpdate }: ClockInOutProps) => {
 
   const getElapsedTime = () => {
     if (!activeEntry) return '';
-    const start = new Date(activeEntry.start_time);
+    const start = new Date(activeEntry.clock_in);
     const now = new Date();
     const diff = now.getTime() - start.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -195,7 +193,7 @@ export const ClockInOut = ({ familyId, onUpdate }: ClockInOutProps) => {
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="text-sm text-green-600 mb-2">Currently clocked in</div>
                 <div className="text-2xl font-bold text-green-700">
-                  {formatTime(activeEntry.start_time)}
+                  {formatTime(activeEntry.clock_in)}
                 </div>
                 <div className="text-sm text-green-600">
                   Elapsed: {getElapsedTime()}

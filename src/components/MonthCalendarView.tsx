@@ -101,17 +101,16 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         id: leave.id,
         shift_assignment_id: null,
         family_id: leave.family_id,
-        scheduled_date: leave.date,
+        scheduled_date: leave.start_date,
         start_time: null,
         end_time: null,
         status: 'approved',
-        carer_id: leave.carer_id,
-        carer_name: newCarers[leave.carer_id] || 'Carer',
-        care_recipient_name: '',
-        notes: leave.notes,
+        carer_id: leave.user_id,
+        carer_name: newCarers[leave.user_id] || 'Carer',
+        notes: leave.reason,
         created_at: leave.created_at,
         updated_at: leave.updated_at,
-        shift_type: leave.type,
+        shift_type: 'leave',
         is_leave_request: true
       }));
 

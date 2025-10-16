@@ -88,15 +88,14 @@ export const DisabledPersonDashboard = ({
       
       const { data: timeEntries } = await supabase
         .from('time_entries')
-        .select('start_time, end_time')
+        .select('clock_in, clock_out')
         .eq('family_id', familyId)
-        .eq('status', 'approved')
-        .gte('start_time', weekStart.toISOString());
+        .gte('clock_in', weekStart.toISOString());
 
       const totalHours = timeEntries?.reduce((total, entry) => {
-        if (entry.end_time) {
-          const start = new Date(entry.start_time);
-          const end = new Date(entry.end_time);
+        if (entry.clock_out) {
+          const start = new Date(entry.clock_in);
+          const end = new Date(entry.clock_out);
           const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
           return total + hours;
         }

@@ -10,11 +10,9 @@ import { format, startOfWeek, addDays, isSameDay, parseISO } from 'date-fns';
 
 interface TimeEntry {
   id: string;
-  start_time: string;
-  end_time: string | null;
+  clock_in: string;
+  clock_out: string | null;
   notes: string | null;
-  is_external?: boolean | null;
-  worked_by_name?: string | null;
 }
 
 interface ShiftSchedule {
@@ -72,11 +70,11 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
     
     const { data, error } = await supabase
       .from('time_entries')
-      .select('id, start_time, end_time, notes, is_external, worked_by_name')
+      .select('id, clock_in, clock_out, notes')
       .eq('family_id', familyId)
-      .gte('start_time', weekStart.toISOString())
-      .lt('start_time', weekEnd.toISOString())
-      .order('start_time', { ascending: true });
+      .gte('clock_in', weekStart.toISOString())
+      .lt('clock_in', weekEnd.toISOString())
+      .order('clock_in', { ascending: true });
 
     if (error) {
       console.error('Error loading time entries:', error);
@@ -108,11 +106,11 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
 
     const { data, error } = await supabase
       .from('time_entries')
-      .select('id, start_time, end_time, notes, is_external, worked_by_name')
+      .select('id, clock_in, clock_out, notes')
       .eq('family_id', familyId)
       .eq('user_id', user.id)
-      .is('end_time', null)
-      .order('start_time', { ascending: false })
+      .is('clock_out', null)
+      .order('clock_in', { ascending: false })
       .limit(1);
 
     if (error) {
@@ -131,12 +129,12 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
 
     const { data, error } = await supabase
       .from('time_entries')
-      .select('start_time, end_time')
+      .select('clock_in, clock_out')
       .eq('family_id', familyId)
       .eq('user_id', user.id)
-      .not('end_time', 'is', null)
-      .gte('start_time', weekStart.toISOString())
-      .lt('start_time', weekEnd.toISOString());
+      .not('clock_out', 'is', null)
+      .gte('clock_in', weekStart.toISOString())
+      .lt('clock_in', weekEnd.toISOString());
 
     if (error) {
       console.error('Error loading weekly hours:', error);
@@ -144,8 +142,8 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
     }
 
     const totalHours = data?.reduce((total, entry) => {
-      const start = new Date(entry.start_time);
-      const end = new Date(entry.end_time!);
+      const start = new Date(entry.clock_in);
+      const end = new Date(entry.clock_out!);
       const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
       return total + hours;
     }, 0) || 0;
@@ -163,7 +161,7 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
         .insert({
           user_id: user.id,
           family_id: familyId,
-          start_time: new Date().toISOString(),
+          clock_in: new Date().toISOString(),
           notes: 'Shift started'
         });
 
@@ -191,7 +189,7 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
     try {
       const { error } = await supabase
         .from('time_entries')
-        .update({ end_time: new Date().toISOString() })
+        .update({ clock_out: new Date().toISOString() })
         .eq('id', activeTimeEntry.id);
 
       if (error) throw error;
@@ -214,7 +212,7 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
 
   const getEntriesForDay = (day: Date) => {
     return timeEntries.filter(entry => 
-      isSameDay(parseISO(entry.start_time), day)
+      isSameDay(parseISO(entry.clock_in), day)
     );
   };
 
@@ -241,7 +239,7 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
           <div>
             <p className="text-sm text-muted-foreground">
               {activeTimeEntry 
-                ? `Clocked in at ${format(parseISO(activeTimeEntry.start_time), 'HH:mm')}`
+                ? `Clocked in at ${format(parseISO(activeTimeEntry.clock_in), 'HH:mm')}`
                 : `This week: ${weeklyHours} hours`
               }
             </p>
@@ -308,15 +306,8 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
                   {/* Actual time entries */}
                   {dayEntries.map((entry) => (
                     <Badge key={entry.id} variant="default" className="text-xs mb-1 block">
-                      {format(parseISO(entry.start_time), 'HH:mm')}
-                      {entry.end_time && ` - ${format(parseISO(entry.end_time), 'HH:mm')}`}
-                      {entry.is_external && (
-                        <>
-                          <br />
-                          <Users className="w-3 h-3 inline mr-1" />
-                          {entry.worked_by_name}
-                        </>
-                      )}
+                      {format(parseISO(entry.clock_in), 'HH:mm')}
+                      {entry.clock_out && ` - ${format(parseISO(entry.clock_out), 'HH:mm')}`}
                     </Badge>
                   ))}
                   

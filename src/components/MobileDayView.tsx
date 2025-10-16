@@ -69,12 +69,13 @@ export const MobileDayView = ({
         .select('*')
         .eq('family_id', familyId)
         .eq('status', 'approved')
-        .eq('date', dateStr);
+        .lte('start_date', dateStr)
+        .gte('end_date', dateStr);
 
       if (leaveError) throw leaveError;
 
       // Load carer profiles for leave requests
-      const carerIds = leaveData?.map(leave => leave.carer_id).filter(Boolean) || [];
+      const carerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
       let carerProfiles: any[] = [];
       if (carerIds.length > 0) {
         const { data: profiles } = await supabase
@@ -88,15 +89,14 @@ export const MobileDayView = ({
       const leaveShifts = leaveData?.map(leave => ({
         ...leave,
         id: `leave-${leave.id}`,
-        scheduled_date: leave.date,
+        scheduled_date: leave.start_date,
         start_time: '09:00:00',
         end_time: '17:00:00',
-        carer_name: carerProfiles.find(p => p.id === leave.carer_id)?.full_name || 'Unknown',
-        carer_id: leave.carer_id,
-        status: leave.type,
-        shift_type: leave.type,
+        carer_name: carerProfiles.find(p => p.id === leave.user_id)?.full_name || 'Unknown',
+        carer_id: leave.user_id,
+        status: 'approved',
+        shift_type: 'leave',
         is_leave_request: true,
-        care_recipient_name: shiftData?.[0]?.care_recipient_name || '',
       })) || [];
 
       // Apply override logic: remove basic shifts for carers with approved leave
@@ -133,13 +133,13 @@ export const MobileDayView = ({
         .select('*')
         .eq('family_id', familyId)
         .eq('status', 'approved')
-        .gte('date', today)
-        .lte('date', nextWeek);
+        .lte('start_date', nextWeek)
+        .gte('end_date', today);
 
       if (leaveError) throw leaveError;
 
       // Load carer profiles for leave requests
-      const carerIds = leaveData?.map(leave => leave.carer_id).filter(Boolean) || [];
+      const carerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
       let carerProfiles: any[] = [];
       if (carerIds.length > 0) {
         const { data: profiles } = await supabase
@@ -153,15 +153,14 @@ export const MobileDayView = ({
       const leaveShifts = leaveData?.map(leave => ({
         ...leave,
         id: `leave-${leave.id}`,
-        scheduled_date: leave.date,
+        scheduled_date: leave.start_date,
         start_time: '09:00:00',
         end_time: '17:00:00',
-        carer_name: carerProfiles.find(p => p.id === leave.carer_id)?.full_name || 'Unknown',
-        carer_id: leave.carer_id,
-        status: leave.type,
-        shift_type: leave.type,
+        carer_name: carerProfiles.find(p => p.id === leave.user_id)?.full_name || 'Unknown',
+        carer_id: leave.user_id,
+        status: 'approved',
+        shift_type: 'leave',
         is_leave_request: true,
-        care_recipient_name: shiftData?.[0]?.care_recipient_name || '',
       })) || [];
 
       // Apply override logic: remove basic shifts for carers with approved leave

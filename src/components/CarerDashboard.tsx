@@ -81,21 +81,20 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
       // Query time entries for current week
       const { data, error } = await supabase
         .from('time_entries')
-        .select('start_time, end_time, status')
+        .select('clock_in, clock_out')
         .eq('family_id', familyId)
         .eq('user_id', user.user.id)
-        .gte('start_time', startOfWeek.toISOString())
-        .lte('start_time', endOfWeek.toISOString())
-        .not('end_time', 'is', null)
-        .in('status', ['approved', 'pending']);
+        .gte('clock_in', startOfWeek.toISOString())
+        .lte('clock_in', endOfWeek.toISOString())
+        .not('clock_out', 'is', null);
 
       if (error) throw error;
 
       // Calculate total hours
       const totalHours = data?.reduce((sum, entry) => {
-        if (entry.end_time) {
-          const start = new Date(entry.start_time);
-          const end = new Date(entry.end_time);
+        if (entry.clock_out) {
+          const start = new Date(entry.clock_in);
+          const end = new Date(entry.clock_out);
           const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
           return sum + hours;
         }

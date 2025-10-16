@@ -48,8 +48,7 @@ export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: 
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase.rpc('redeem_invite', {
-        _invite_code: inviteCode.trim().toUpperCase(),
-        _user_id: user.id
+        _code: inviteCode.trim().toLowerCase()
       });
 
       if (error) throw error;
