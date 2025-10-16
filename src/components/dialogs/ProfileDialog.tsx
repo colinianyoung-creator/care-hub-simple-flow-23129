@@ -232,11 +232,14 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           return;
         }
 
-        console.log('📝 Calling update_own_role_safe RPC with role:', requestedRole);
+        console.log('📝 Calling update_own_role_safe RPC with role:', requestedRole, 'familyId:', familyId);
 
-        // Call the secure RPC function
+        // Call the secure RPC function with both parameters
         const { data: rawResult, error: rpcError } = await supabase
-          .rpc('update_own_role_safe' as any, { _new_role: requestedRole });
+          .rpc('update_own_role_safe' as any, { 
+            _family_id: familyId, 
+            _new_role: requestedRole 
+          });
 
         // Cast the result to the expected type
         const result = rawResult as { success: boolean; error?: string; new_role?: string; family_id?: string };

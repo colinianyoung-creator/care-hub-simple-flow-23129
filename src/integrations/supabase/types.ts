@@ -975,7 +975,7 @@ export type Database = {
           _family_id: string
           _new_role: Database["public"]["Enums"]["app_role"]
         }
-        Returns: undefined
+        Returns: Json
       }
     }
     Enums: {
