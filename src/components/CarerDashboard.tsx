@@ -55,9 +55,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
   const loadUserName = async () => {
     const { data: user } = await supabase.auth.getUser();
     if (user.user) {
-      const { data: profile } = await supabase.rpc('get_profile_safe', { 
-        profile_user_id: user.user.id 
-      });
+      const { data: profile } = await supabase.rpc('get_profile_safe');
       
       setUserName(profile?.[0]?.full_name || 'User');
     }

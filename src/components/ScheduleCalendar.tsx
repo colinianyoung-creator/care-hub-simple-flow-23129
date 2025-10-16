@@ -97,10 +97,7 @@ useEffect(() => {
         });
         setCarers(newCarers);
 
-        // Set care recipient name from the RPC result
-        if (weekInstancesWithNames?.[0]?.care_recipient_name && !careRecipientName) {
-          setCareRecipientName(weekInstancesWithNames[0].care_recipient_name);
-        }
+        // Care recipient name removed from schema
 
         // Load approved leave requests for this week
         const { data: leaveData, error: leaveError } = await supabase
@@ -116,7 +113,7 @@ useEffect(() => {
         }
 
         // Load carer profiles for leave requests
-        const carerIds = leaveData?.map(leave => leave.carer_id).filter(Boolean) || [];
+        const carerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
         if (carerIds.length > 0) {
           const { data: carerProfiles } = await supabase
             .from('profiles')
@@ -126,7 +123,7 @@ useEffect(() => {
           // Merge carer names into leave requests
           const leavesWithCarers = leaveData?.map(leave => ({
             ...leave,
-            carer_name: carerProfiles?.find(p => p.id === leave.carer_id)?.full_name || newCarers[leave.carer_id] || 'Unknown'
+            carer_name: carerProfiles?.find(p => p.id === leave.user_id)?.full_name || newCarers[leave.user_id] || 'Unknown'
           })) || [];
 
           setLeaveRequests(leavesWithCarers);

@@ -46,9 +46,7 @@ export const DashboardHeader = ({
     const loadUserName = async () => {
       const { data: user } = await supabase.auth.getUser();
       if (user.user) {
-        const { data: profile } = await supabase.rpc('get_profile_safe', { 
-          profile_user_id: user.user.id 
-        });
+        const { data: profile } = await supabase.rpc('get_profile_safe');
         
         const fullName = profile?.[0]?.full_name || 'User';
         const firstName = fullName.split(' ')[0];

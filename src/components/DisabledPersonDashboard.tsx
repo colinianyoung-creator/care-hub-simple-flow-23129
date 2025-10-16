@@ -63,9 +63,7 @@ export const DisabledPersonDashboard = ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.rpc('get_profile_safe', { 
-          profile_user_id: user.id 
-        });
+        const { data } = await supabase.rpc('get_profile_safe');
         
         if (data?.[0]?.full_name) {
           const firstName = data[0].full_name.split(' ')[0];

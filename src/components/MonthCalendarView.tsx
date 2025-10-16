@@ -118,10 +118,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const allShifts = [...(monthShiftsWithNames || []), ...convertedLeaves];
       setShifts(allShifts);
 
-      // Set care recipient name from the RPC result
-      if (monthShiftsWithNames?.[0]?.care_recipient_name && !careRecipientName) {
-        setCareRecipientName(monthShiftsWithNames[0].care_recipient_name);
-      }
+      // Care recipient name removed from schema
     } catch (error: any) {
       if (error.name === 'AbortError' || abortController?.signal.aborted) {
         console.log('Request was cancelled');

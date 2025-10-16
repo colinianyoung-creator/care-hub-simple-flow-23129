@@ -64,9 +64,7 @@ export const FamilyDashboard = ({
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { data: profileData } = await supabase.rpc('get_profile_safe', {
-            profile_user_id: user.id
-          });
+          const { data: profileData } = await supabase.rpc('get_profile_safe');
           
           if (profileData && profileData.length > 0) {
             setUserName(profileData[0].full_name || '');
