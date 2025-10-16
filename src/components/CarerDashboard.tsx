@@ -48,6 +48,8 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
   useEffect(() => {
     if (familyId) {
       loadWeeklyHours();
+    } else {
+      setLoading(false);
     }
     loadUserName();
   }, [familyId]);
@@ -64,7 +66,15 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
   const loadWeeklyHours = async () => {
     try {
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      if (!user.user) {
+        setLoading(false);
+        return;
+      }
+      
+      if (!familyId) {
+        setLoading(false);
+        return;
+      }
 
       // Get current week's start and end dates
       const now = new Date();
