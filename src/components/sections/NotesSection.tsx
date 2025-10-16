@@ -91,7 +91,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
           
           try {
             const { data: profileData } = await supabase
-              .rpc('get_profile_safe', { profile_user_id: note.author_id });
+              .rpc('get_profile_safe');
             authorProfile = profileData && profileData.length > 0 ? 
               { full_name: profileData[0].full_name || 'Unknown User' } : null;
           } catch (profileError) {

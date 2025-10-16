@@ -65,8 +65,8 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         .from('medications')
         .select('*')
         .eq('family_id', familyId)
-        .eq('active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false }) as any;
 
       if (error) throw error;
       setMedications((data as any) || []);
@@ -100,14 +100,12 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         .insert([{
           family_id: familyId,
           name: newMedication.name,
-          dosage: newMedication.dosage,
-          frequency: newMedication.frequency,
-          times_per_day: newMedication.times_per_day,
-          time_slots: newMedication.time_slots,
+          dosage: newMedication.dosage || null,
+          frequency: newMedication.frequency || null,
           instructions: newMedication.instructions || null,
-          start_date: newMedication.start_date,
+          start_date: newMedication.start_date || null,
           end_date: newMedication.end_date || null,
-          created_by: currentUserId
+          care_recipient_id: null
         }] as any);
 
       if (error) throw error;
@@ -165,7 +163,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     try {
       const { error } = await supabase
         .from('medications')
-        .update({ active: false })
+        .update({ is_archived: true })
         .eq('id', medicationId);
 
       if (error) throw error;

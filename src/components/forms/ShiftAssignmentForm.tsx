@@ -213,7 +213,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         } else if (editRecurrenceOption === 'future') {
           updateQuery = updateQuery
             .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
-            .gte('clock_in', new Date().toISOString());
+            .gte('clock_in', new Date().toISOString()) as any;
         } else {
           updateQuery = updateQuery
             .eq('shift_assignment_id', editingAssignment.shift_assignment_id);

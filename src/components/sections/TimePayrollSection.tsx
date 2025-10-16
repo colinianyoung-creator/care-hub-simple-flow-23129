@@ -39,17 +39,17 @@ export const TimePayrollSection = ({ familyId, userRole }: TimePayrollSectionPro
 
       const { data, error } = await supabase
         .from('time_entries')
-        .select('start_time, end_time')
+        .select('clock_in, clock_out')
         .eq('family_id', familyId)
-        .gte('start_time', startOfWeek.toISOString())
-        .lte('start_time', endOfWeek.toISOString())
-        .not('end_time', 'is', null);
+        .gte('clock_in', startOfWeek.toISOString())
+        .lte('clock_in', endOfWeek.toISOString())
+        .not('clock_out', 'is', null);
 
       if (error) throw error;
 
       const totalHours = data?.reduce((total, entry) => {
-        const start = new Date(entry.start_time);
-        const end = new Date(entry.end_time);
+        const start = new Date(entry.clock_in);
+        const end = new Date(entry.clock_out);
         const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
         return total + hours;
       }, 0) || 0;

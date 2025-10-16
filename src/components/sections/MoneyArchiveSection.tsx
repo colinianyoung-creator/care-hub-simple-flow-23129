@@ -82,7 +82,7 @@ export const MoneyArchiveSection: React.FC<MoneyArchiveSectionProps> = ({
   const handleDeleteEntry = async (entryId: string) => {
     try {
       const { error } = await supabase
-        .from('money_entries')
+        .from('money_records')
         .delete()
         .eq('id', entryId);
 

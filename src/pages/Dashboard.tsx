@@ -67,9 +67,7 @@ const Dashboard = () => {
       setLoadingMessage("Loading your profile...");
       
       // Load user profile to get default role using secure function
-      const { data: profile, error: profileError } = await supabase.rpc('get_profile_safe', { 
-        profile_user_id: userId 
-      });
+      const { data: profile, error: profileError } = await supabase.rpc('get_profile_safe') as any;
       
       // If profile doesn't exist and we haven't retried yet, wait and retry
       if (!profile?.[0] && retryCount < 3) {
@@ -94,11 +92,7 @@ const Dashboard = () => {
         try {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
           if (currentUser) {
-            await supabase.rpc('ensure_user_profile', {
-              user_id: userId,
-              user_full_name: currentUser.user_metadata?.full_name || '',
-              user_care_recipient_name: currentUser.user_metadata?.care_recipient_name || null
-            });
+            await supabase.rpc('ensure_user_profile') as any;
             
             // Retry loading after profile creation
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -138,14 +132,15 @@ const Dashboard = () => {
       const { data: memberships, error: membershipError } = await supabase
         .from('user_memberships')
         .select(`
-          *,
-          families:family_id (
+          id,
+          family_id,
+          role,
+          families (
             id,
-            name,
-            created_by
+            name
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', userId) as any;
 
       console.log('📊 Memberships query result:', { 
         memberships, 

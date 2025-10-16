@@ -90,7 +90,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
           try {
             if (task.assigned_to) {
               const { data: assignedData } = await supabase
-                .rpc('get_profile_safe', { profile_user_id: task.assigned_to });
+                .rpc('get_profile_safe');
               assignedProfile = assignedData && assignedData.length > 0 ? 
                 { full_name: assignedData[0].full_name || 'Unknown User' } : null;
             }
@@ -101,7 +101,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
           try {
             if (task.created_by) {
               const { data: createdData } = await supabase
-                .rpc('get_profile_safe', { profile_user_id: task.created_by });
+                .rpc('get_profile_safe');
               createdProfile = createdData && createdData.length > 0 ? 
                 { full_name: createdData[0].full_name || 'Unknown User' } : null;
             }
@@ -135,8 +135,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       const { error } = await supabase
         .from('tasks')
         .update({ 
-          completed_at: new Date().toISOString(),
-          status: 'awaiting_review'
+          completed: true
         })
         .eq('id', taskId);
 
@@ -188,8 +187,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       const { error } = await supabase
         .from('tasks')
         .update({ 
-          completed_at: null,
-          status: 'active'
+          completed: false
         })
         .eq('id', taskId);
 

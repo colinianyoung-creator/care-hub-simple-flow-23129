@@ -233,7 +233,7 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
             .from('time_entries')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('start_time', new Date().toISOString());
+            .gte('clock_in', new Date().toISOString()) as any;
           
           if (error) throw error;
         } else {
