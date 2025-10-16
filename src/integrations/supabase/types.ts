@@ -244,23 +244,34 @@ export type Database = {
       families: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "families_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invite_codes: {
         Row: {
@@ -516,6 +527,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          care_recipient_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -525,6 +539,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          care_recipient_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -534,6 +551,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          care_recipient_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -946,6 +966,13 @@ export type Database = {
       redeem_invite: {
         Args: { _code: string }
         Returns: string
+      }
+      update_own_role_safe: {
+        Args: {
+          _family_id: string
+          _new_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
       }
     }
     Enums: {
