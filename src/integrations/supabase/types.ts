@@ -923,6 +923,9 @@ export type Database = {
       get_profile_safe: {
         Args: Record<PropertyKey, never>
         Returns: {
+          care_recipient_name: string
+          contact_email: string
+          contact_phone: string
           email: string
           full_name: string
           id: string

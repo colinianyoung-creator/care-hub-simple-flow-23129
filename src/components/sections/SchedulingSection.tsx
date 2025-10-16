@@ -175,6 +175,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     try {
       setLoading(true);
       
+      // Check if familyId is provided
+      if (!familyId) {
+        console.warn('No familyId provided to loadSchedulingData');
+        setLoading(false);
+        return;
+      }
+      
       // Get current user ID first
       const userId = currentUserId || await getCurrentUser();
       if (!userId) {
