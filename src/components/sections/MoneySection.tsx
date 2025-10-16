@@ -119,15 +119,15 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
     try {
       const { data, error } = await supabase
-        .from('money_entries')
+        .from('money_records')
         .select('*')
         .eq('family_id', familyId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as any;
 
       clearTimeout(timeoutId);
       if (error) throw error;
-      setEntries(data || []);
+      setEntries((data || []) as any);
     } catch (error) {
       clearTimeout(timeoutId);
       console.error('Error loading money entries:', error);
@@ -147,16 +147,16 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
     try {
       const { error } = await supabase
-        .from('money_entries')
+        .from('money_records')
         .insert({
           family_id: familyId,
-          user_id: currentUserId,
+          created_by: currentUserId,
           description: formData.description,
           amount: parseFloat(formData.amount),
-          paid_by: formData.paid_by,
-          notes: formData.notes || null,
-          photo_url: formData.photo_url || null
-        });
+          type: 'expense',
+          category: 'general',
+          receipt_url: formData.photo_url || null
+        }) as any;
 
       if (error) throw error;
 
@@ -189,7 +189,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
     try {
       const { error } = await supabase
-        .from('money_entries')
+        .from('money_records')
         .delete()
         .eq('id', id);
 

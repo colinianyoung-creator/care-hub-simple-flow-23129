@@ -56,11 +56,13 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
 
       try {
         // Check if there are other time_entries with the same shift_assignment_id
-        const { data, error } = await supabase
+        const result: any = await (supabase as any)
           .from('time_entries')
           .select('id')
           .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
-          .limit(2); // We only need to know if there's more than 1
+          .limit(2);
+        
+        const { data, error } = result;
 
         if (error) {
           console.error('Error checking for recurring series:', error);
@@ -200,7 +202,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
       if (editingAssignment) {
         // For admin shifts, go directly to time_entries - no approval needed
         // Update existing time entries for this assignment based on recurrence option
-        let updateQuery = supabase
+        let updateQuery: any = supabase
           .from('time_entries')
           .update({
             clock_in: `2024-01-01T${formData.start_time}:00`,
@@ -213,7 +215,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         } else if (editRecurrenceOption === 'future') {
           updateQuery = updateQuery
             .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
-            .gte('clock_in', new Date().toISOString()) as any;
+            .gte('clock_in', new Date().toISOString());
         } else {
           updateQuery = updateQuery
             .eq('shift_assignment_id', editingAssignment.shift_assignment_id);

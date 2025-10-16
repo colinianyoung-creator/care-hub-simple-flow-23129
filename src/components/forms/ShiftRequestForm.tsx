@@ -229,12 +229,13 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
         // Delete shift - check if it's part of a series
         if (deleteOption === 'series') {
           // Delete all future instances with same shift_assignment_id
-          const { error } = await supabase
+          const result: any = await (supabase as any)
             .from('time_entries')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('clock_in', new Date().toISOString()) as any;
+            .gte('clock_in', new Date().toISOString());
           
+          const { error } = result;
           if (error) throw error;
         } else {
           // Delete only this instance

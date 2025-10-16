@@ -55,19 +55,18 @@ export const MoneyArchiveSection: React.FC<MoneyArchiveSectionProps> = ({
       const endDate = endOfDay(date);
 
       const { data, error } = await supabase
-        .from('money_entries')
+        .from('money_records')
         .select(`
           *,
-          user_profile:profiles!user_id(full_name),
-          payer_profile:profiles!paid_by(full_name)
+          payer_profile:profiles!money_records_created_by_fkey(full_name)
         `)
         .eq('family_id', familyId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
+        .gte('transaction_date', format(date, 'yyyy-MM-dd'))
+        .lte('transaction_date', format(date, 'yyyy-MM-dd'))
+        .order('created_at', { ascending: false }) as any;
 
       if (error) throw error;
-      setEntries(data || []);
+      setEntries((data || []) as any);
     } catch (error: any) {
       toast({
         title: 'Error loading entries',
