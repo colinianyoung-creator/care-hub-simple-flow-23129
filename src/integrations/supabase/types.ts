@@ -14,16 +14,950 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          care_recipient_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          family_id: string
+          id: string
+          location: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          care_recipient_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          family_id: string
+          id?: string
+          location?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          care_recipient_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          family_id?: string
+          id?: string
+          location?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_care_recipient_id_fkey"
+            columns: ["care_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_notes: {
+        Row: {
+          author_id: string
+          care_recipient_id: string | null
+          category: string | null
+          content: string
+          created_at: string
+          family_id: string
+          id: string
+          is_archived: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          care_recipient_id?: string | null
+          category?: string | null
+          content: string
+          created_at?: string
+          family_id: string
+          id?: string
+          is_archived?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          care_recipient_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          is_archived?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_notes_care_recipient_id_fkey"
+            columns: ["care_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_notes_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_recipients: {
+        Row: {
+          created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          family_id: string
+          id: string
+          medical_info: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          family_id: string
+          id?: string
+          medical_info?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          family_id?: string
+          id?: string
+          medical_info?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_recipients_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diet_entries: {
+        Row: {
+          care_recipient_id: string | null
+          created_at: string
+          created_by: string
+          description: string
+          entry_date: string
+          family_id: string
+          id: string
+          is_archived: boolean | null
+          meal_type: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          care_recipient_id?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          entry_date?: string
+          family_id: string
+          id?: string
+          is_archived?: boolean | null
+          meal_type?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          care_recipient_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          entry_date?: string
+          family_id?: string
+          id?: string
+          is_archived?: boolean | null
+          meal_type?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_entries_care_recipient_id_fkey"
+            columns: ["care_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diet_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diet_entries_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      families: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          family_id: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at: string
+          family_id: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          family_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_codes_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_codes_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          end_date: string
+          family_id: string
+          id: string
+          reason: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["leave_status"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date: string
+          family_id: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["leave_status"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date?: string
+          family_id?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["leave_status"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          care_recipient_id: string | null
+          created_at: string
+          dosage: string | null
+          end_date: string | null
+          family_id: string
+          frequency: string | null
+          id: string
+          instructions: string | null
+          is_archived: boolean | null
+          name: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          care_recipient_id?: string | null
+          created_at?: string
+          dosage?: string | null
+          end_date?: string | null
+          family_id: string
+          frequency?: string | null
+          id?: string
+          instructions?: string | null
+          is_archived?: boolean | null
+          name: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          care_recipient_id?: string | null
+          created_at?: string
+          dosage?: string | null
+          end_date?: string | null
+          family_id?: string
+          frequency?: string | null
+          id?: string
+          instructions?: string | null
+          is_archived?: boolean | null
+          name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medications_care_recipient_id_fkey"
+            columns: ["care_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medications_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      money_records: {
+        Row: {
+          amount: number
+          care_recipient_id: string | null
+          category: string | null
+          created_at: string
+          created_by: string
+          description: string
+          family_id: string
+          id: string
+          is_archived: boolean | null
+          receipt_url: string | null
+          transaction_date: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          care_recipient_id?: string | null
+          category?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          family_id: string
+          id?: string
+          is_archived?: boolean | null
+          receipt_url?: string | null
+          transaction_date?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          care_recipient_id?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          family_id?: string
+          id?: string
+          is_archived?: boolean | null
+          receipt_url?: string | null
+          transaction_date?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "money_records_care_recipient_id_fkey"
+            columns: ["care_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "money_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "money_records_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          profile_picture_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      role_change_requests: {
+        Row: {
+          created_at: string
+          family_id: string
+          from_role: Database["public"]["Enums"]["app_role"]
+          id: string
+          reason: string | null
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          from_role: Database["public"]["Enums"]["app_role"]
+          id?: string
+          reason?: string | null
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          from_role?: Database["public"]["Enums"]["app_role"]
+          id?: string
+          reason?: string | null
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_change_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_change_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_change_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_assignments: {
+        Row: {
+          active: boolean | null
+          carer_id: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          family_id: string
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          carer_id?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          family_id: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          carer_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          family_id?: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_assignments_carer_id_fkey"
+            columns: ["carer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_assignments_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_instances: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          shift_assignment_id: string
+          status: Database["public"]["Enums"]["shift_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          shift_assignment_id: string
+          status?: Database["public"]["Enums"]["shift_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          shift_assignment_id?: string
+          status?: Database["public"]["Enums"]["shift_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_instances_shift_assignment_id_fkey"
+            columns: ["shift_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "shift_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          completed: boolean | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          family_id: string
+          id: string
+          priority: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed?: boolean | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          family_id: string
+          id?: string
+          priority?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed?: boolean | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          family_id?: string
+          id?: string
+          priority?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_entries: {
+        Row: {
+          break_duration: number | null
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          family_id: string
+          id: string
+          notes: string | null
+          shift_instance_id: string | null
+          total_hours: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          break_duration?: number | null
+          clock_in: string
+          clock_out?: string | null
+          created_at?: string
+          family_id: string
+          id?: string
+          notes?: string | null
+          shift_instance_id?: string | null
+          total_hours?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          break_duration?: number | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          family_id?: string
+          id?: string
+          notes?: string | null
+          shift_instance_id?: string | null
+          total_hours?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_shift_instance_id_fkey"
+            columns: ["shift_instance_id"]
+            isOneToOne: false
+            referencedRelation: "shift_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_memberships: {
+        Row: {
+          created_at: string
+          family_id: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_memberships_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ensure_user_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_invite: {
+        Args: {
+          _expires_days?: number
+          _family_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      generate_shift_instances: {
+        Args: { _assignment_id: string; _end_date: string; _start_date: string }
+        Returns: number
+      }
+      get_profile_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          profile_picture_url: string
+        }[]
+      }
+      get_shift_instances_with_names: {
+        Args: { _end_date: string; _family_id: string; _start_date: string }
+        Returns: {
+          carer_id: string
+          carer_name: string
+          end_time: string
+          id: string
+          scheduled_date: string
+          shift_assignment_id: string
+          start_time: string
+          status: Database["public"]["Enums"]["shift_status"]
+        }[]
+      }
+      get_user_family_role: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_family_role: {
+        Args: {
+          _family_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_family_admin: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_family_member: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: boolean
+      }
+      redeem_invite: {
+        Args: { _code: string }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "carer"
+        | "family_admin"
+        | "family_viewer"
+        | "disabled_person"
+        | "manager"
+        | "agency"
+      leave_status: "pending" | "approved" | "denied" | "cancelled"
+      shift_status: "scheduled" | "completed" | "cancelled" | "absent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +1084,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "carer",
+        "family_admin",
+        "family_viewer",
+        "disabled_person",
+        "manager",
+        "agency",
+      ],
+      leave_status: ["pending", "approved", "denied", "cancelled"],
+      shift_status: ["scheduled", "completed", "cancelled", "absent"],
+    },
   },
 } as const
