@@ -167,7 +167,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       currentRole: currentUserRole 
     });
 
-    // If no family membership, user must create/join a family first
+    // If no family membership, create personal family automatically (transparent to user)
     if (!hasFamilyMembership && requestedRole) {
       try {
         setSaving(true);
@@ -177,43 +177,58 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           return;
         }
 
-        // Create a new family for the user
-        const familyName = `${profile.full_name || 'Personal'}'s Network`;
+        console.log('👤 Creating personal family for role:', requestedRole);
+
+        // Create a personal family (transparent to user - just for role management)
         const { data: newFamily, error: familyError } = await supabase
           .from('families')
-          .insert({ name: familyName, created_by: user.user.id })
+          .insert({
+            name: `${profile.full_name || 'Personal'} Care`,
+            created_by: user.user.id,
+          })
           .select()
           .single();
-        
-        if (familyError) throw familyError;
-        const newFamilyId = newFamily.id;
-        setFamilyId(newFamilyId);
-        console.log('✅ Created new family:', newFamilyId);
-        
-        // Create membership with requested role
+
+        if (familyError) {
+          console.error('❌ Family creation error:', familyError);
+          throw familyError;
+        }
+        if (!newFamily) throw new Error('Failed to create family');
+
+        console.log('✅ Family created:', newFamily.id);
+
+        // Add user as member with requested role
         const { error: membershipError } = await supabase
           .from('user_memberships')
-          .insert({ user_id: user.user.id, family_id: newFamilyId, role: requestedRole });
-        
-        if (membershipError) throw membershipError;
+          .insert({
+            user_id: user.user.id,
+            family_id: newFamily.id,
+            role: requestedRole,
+          });
 
-        console.log('✅ Role set successfully for new family');
+        if (membershipError) {
+          console.error('❌ Membership error:', membershipError);
+          throw membershipError;
+        }
+
+        console.log('✅ Membership created with role:', requestedRole);
         setCurrentUserRole(requestedRole);
+        setFamilyId(newFamily.id);
         setHasFamilyMembership(true);
 
         toast({
-          title: "Family Created & Role Set",
-          description: `Your family network has been created with role: ${requestedRole.replace(/_/g, ' ')}`,
+          title: "Role Updated",
+          description: `Your dashboard has been customized for: ${requestedRole.replace(/_/g, ' ')}`,
         });
 
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
         onProfileUpdate?.(requestedRole);
       } catch (error: any) {
-        console.error('❌ Error creating family and setting role:', error);
+        console.error('❌ Error setting up role:', error);
         toast({
           title: "Error",
-          description: error.message || "Failed to create family and set role",
+          description: error.message || "Failed to update role. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -685,7 +700,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                     <div>
                       <h4 className="font-medium">Default Role</h4>
                       <p className="text-sm text-muted-foreground">
-                        Change your role immediately - no approval needed
+                        Choose your role to customize your dashboard experience
                       </p>
                     </div>
                   </div>
@@ -880,7 +895,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
               {hasFamilyMembership && !isSoleMember ? 'Confirm Role Change Request' : 'Confirm Role Change'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {!hasFamilyMembership || isSoleMember ? (
+              {!hasFamilyMembership ? (
+                <p>Your dashboard will be customized for the selected role. You can change it again anytime from this profile page, and invite others to join your care network later.</p>
+              ) : isSoleMember ? (
                 <p>Your role will be changed immediately. You can change it again anytime from this profile page.</p>
               ) : (
                 <p>Your request will be sent to family administrators for approval. They will review and decide whether to approve your role change.</p>
