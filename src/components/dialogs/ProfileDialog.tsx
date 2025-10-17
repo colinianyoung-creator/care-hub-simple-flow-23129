@@ -222,8 +222,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       return;
     }
 
-    // If sole member OR admin role, use RPC function for safe role update
-    if ((isSoleMember || isAdminRole) && requestedRole) {
+    // If sole member, use RPC function for safe role update
+    if (isSoleMember && requestedRole) {
       try {
         setSaving(true);
         const { data: user } = await supabase.auth.getUser();
@@ -296,7 +296,20 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       return;
     }
 
-    // Non-admin submits request
+    // Connected admin roles (family_admin, disabled_person, manager) cannot change roles
+    // They must transfer administrative responsibility first
+    if (hasFamilyMembership && !isSoleMember && (currentUserRole === 'family_admin' || currentUserRole === 'disabled_person' || currentUserRole === 'manager')) {
+      toast({
+        title: "Cannot Change Role",
+        description: "You must transfer administrative responsibility to another member before changing your role. This ensures the family always has an administrator.",
+        variant: "destructive",
+      });
+      setShowRoleChangeForm(false);
+      setShowRoleChangeConfirm(false);
+      return;
+    }
+
+    // Non-admin roles (carer, family_viewer) submit request for approval
     if (!roleChangeReason.trim()) {
       toast({
         title: "Error",
@@ -644,8 +657,10 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                     <div>
                       <h4 className="font-medium">Role Change</h4>
                       <p className="text-sm text-muted-foreground">
-                        {isAdminRole || isSoleMember
-                          ? 'Change your role within this family'
+                        {isSoleMember
+                          ? 'Change your role within this family (you are the only member)'
+                          : isAdminRole
+                          ? 'You must transfer administrative responsibility before changing your role'
                           : 'Request a role change - requires admin approval'}
                       </p>
                     </div>
@@ -657,8 +672,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                       setRequestedRole(currentUserRole as any || 'carer');
                       setShowRoleChangeForm(true);
                     }}
+                    disabled={isAdminRole && !isSoleMember}
                   >
-                    {isAdminRole || isSoleMember ? 'Change Role' : 'Submit Request'}
+                    {isSoleMember ? 'Change Role' : isAdminRole ? 'Transfer Required' : 'Submit Request'}
                   </Button>
                 </div>
               )}
@@ -770,7 +786,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                       size="sm" 
                       onClick={() => {
                         console.log('🔘 Update Role button clicked', { requestedRole, hasFamilyMembership, isAdminRole, isSoleMember });
-                        if (!hasFamilyMembership || isAdminRole || isSoleMember) {
+                        if (!hasFamilyMembership || isSoleMember) {
                           setShowRoleChangeConfirm(true);
                         } else {
                           if (!roleChangeReason.trim()) {
@@ -784,9 +800,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                           setShowRoleChangeConfirm(true);
                         }
                       }}
-                      disabled={!requestedRole || (hasFamilyMembership && !isAdminRole && !isSoleMember && !roleChangeReason.trim())}
+                      disabled={!requestedRole || (hasFamilyMembership && !isSoleMember && !roleChangeReason.trim())}
                      >
-                       {hasFamilyMembership ? (isAdminRole || isSoleMember ? 'Change Role' : 'Submit Request') : 'Change Role'}
+                       {hasFamilyMembership ? (isSoleMember ? 'Change Role' : 'Submit Request') : 'Change Role'}
                      </Button>
                     <Button 
                       size="sm" 
@@ -861,22 +877,20 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {hasFamilyMembership && !isAdminRole && !isSoleMember ? 'Confirm Role Change Request' : 'Confirm Role Change'}
+              {hasFamilyMembership && !isSoleMember ? 'Confirm Role Change Request' : 'Confirm Role Change'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {!hasFamilyMembership || isSoleMember ? (
                 <p>Your role will be changed immediately. You can change it again anytime from this profile page.</p>
-              ) : isAdminRole ? (
-                <p>Your role will be changed immediately within the family. This action takes effect right away.</p>
               ) : (
                 <p>Your request will be sent to family administrators for approval. They will review and decide whether to approve your role change.</p>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+            <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleRoleChangeRequest}>
-              {hasFamilyMembership && !isAdminRole && !isSoleMember ? 'Submit Request' : 'Change Role'}
+              {hasFamilyMembership && !isSoleMember ? 'Submit Request' : 'Change Role'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
