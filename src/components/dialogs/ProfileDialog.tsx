@@ -716,51 +716,6 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   </Button>
                 </div>
               )}
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-destructive">Delete Profile</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {hasFamilyMembership 
-                        ? isAdminRole && familyMembersCount <= 1
-                          ? 'You are the only member of this family'
-                          : 'This will permanently remove your profile and sign you out'
-                        : 'This action will delete your account and cannot be undone'}
-                    </p>
-                  </div>
-                </div>
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={hasFamilyMembership && isAdminRole && familyMembersCount <= 1}
-                >
-                  Delete My Profile
-                </Button>
-              </div>
-
-              {/* Family Membership Section */}
-              {!familyId && (
-                <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
-                  <Label>Family Membership</Label>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    You're not currently part of any family. You can create a new family or join an existing one.
-                  </p>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        onClose();
-                        window.location.reload();
-                      }}
-                    >
-                      Join/Create Family
-                    </Button>
-                  </div>
-                </div>
-              )}
 
               {/* Role Change Request Form */}
               {showRoleChangeForm && (
@@ -828,6 +783,51 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                       }}
                     >
                       Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-destructive">Delete Profile</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {hasFamilyMembership 
+                        ? isAdminRole && familyMembersCount <= 1
+                          ? 'You are the only member of this family'
+                          : 'This will permanently remove your profile and sign you out'
+                        : 'This action will delete your account and cannot be undone'}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={hasFamilyMembership && isAdminRole && familyMembersCount <= 1}
+                >
+                  Delete My Profile
+                </Button>
+              </div>
+
+              {/* Family Membership Section */}
+              {!familyId && (
+                <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+                  <Label>Family Membership</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    You're not currently part of any family. You can create a new family or join an existing one.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        onClose();
+                        window.location.reload();
+                      }}
+                    >
+                      Join/Create Family
                     </Button>
                   </div>
                 </div>

@@ -904,6 +904,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_family: {
+        Args: { _created_by: string; _user_id: string }
+        Returns: boolean
+      }
       ensure_user_profile: {
         Args: Record<PropertyKey, never>
         Returns: string
