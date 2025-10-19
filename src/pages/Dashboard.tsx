@@ -163,13 +163,14 @@ const Dashboard = () => {
       setFamilies(memberships || []);
       console.log('✅ Families set:', memberships?.length || 0);
       
-      // Set user role from first membership
+      // Set user role from first membership, or use preferred_role as fallback
       if (memberships && memberships.length > 0) {
         console.log('✅ Setting role from membership:', memberships[0].role);
         setUserRole(memberships[0].role);
       } else {
-        console.log('⚠️ No memberships found, using fallback: carer');
-        setUserRole('carer'); // fallback
+        const fallbackRole = profileData?.preferred_role || 'carer';
+        console.log('⚠️ No memberships found, using preferred_role:', fallbackRole);
+        setUserRole(fallbackRole);
       }
       
       setDataLoaded(true);

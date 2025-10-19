@@ -167,68 +167,45 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       currentRole: currentUserRole 
     });
 
-    // If no family membership, create personal family automatically (transparent to user)
+    // ✅ NEW: If no family membership, just update preferred_role in profiles
     if (!hasFamilyMembership && requestedRole) {
       try {
         setSaving(true);
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
           console.error('❌ No user found');
           return;
         }
 
-        console.log('👤 Creating personal family for role:', requestedRole);
+        console.log('👤 Updating preferred_role to:', requestedRole);
 
-        // Create a personal family (transparent to user - just for role management)
-        const { data: newFamily, error: familyError } = await supabase
-          .from('families')
-          .insert({
-            name: `${profile.full_name || 'Personal'} Care`,
-            created_by: user.user.id,
-          })
-          .select()
-          .single();
+        // Simply update the preferred_role in profiles table
+        const { error } = await supabase
+          .from('profiles')
+          .update({ preferred_role: requestedRole })
+          .eq('id', user.id);
 
-        if (familyError) {
-          console.error('❌ Family creation error:', familyError);
-          throw familyError;
-        }
-        if (!newFamily) throw new Error('Failed to create family');
-
-        console.log('✅ Family created:', newFamily.id);
-
-        // Add user as member with requested role
-        const { error: membershipError } = await supabase
-          .from('user_memberships')
-          .insert({
-            user_id: user.user.id,
-            family_id: newFamily.id,
-            role: requestedRole,
-          });
-
-        if (membershipError) {
-          console.error('❌ Membership error:', membershipError);
-          throw membershipError;
+        if (error) {
+          console.error('❌ Profile update error:', error);
+          throw error;
         }
 
-        console.log('✅ Membership created with role:', requestedRole);
-        setCurrentUserRole(requestedRole);
-        setFamilyId(newFamily.id);
-        setHasFamilyMembership(true);
+        console.log('✅ Preferred role updated');
 
         toast({
           title: "Role Updated",
           description: `Your dashboard has been customized for: ${requestedRole.replace(/_/g, ' ')}`,
         });
 
+        setCurrentUserRole(requestedRole);
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
         onProfileUpdate?.(requestedRole);
       } catch (error: any) {
-        console.error('❌ Error setting up role:', error);
+        console.error('❌ Error updating preferred role:', error);
         toast({
           title: "Error",
-          description: error.message || "Failed to update role. Please try again.",
+          description: error.message || "Failed to update role preference",
           variant: "destructive",
         });
       } finally {

@@ -535,6 +535,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          preferred_role: Database["public"]["Enums"]["app_role"] | null
           profile_picture_url: string | null
           updated_at: string
         }
@@ -547,6 +548,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          preferred_role?: Database["public"]["Enums"]["app_role"] | null
           profile_picture_url?: string | null
           updated_at?: string
         }
@@ -559,6 +561,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          preferred_role?: Database["public"]["Enums"]["app_role"] | null
           profile_picture_url?: string | null
           updated_at?: string
         }
@@ -934,6 +937,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+          preferred_role: Database["public"]["Enums"]["app_role"]
           profile_picture_url: string
         }[]
       }
