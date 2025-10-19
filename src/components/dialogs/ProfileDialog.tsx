@@ -668,6 +668,75 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   >
                     {isSoleMember ? 'Change Role' : isAdminRole ? 'Transfer Required' : 'Submit Request'}
                   </Button>
+
+                  {/* Role Change Request Form - appears right below button */}
+                  {showRoleChangeForm && (
+                    <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Requested Role</Label>
+                        <Select value={requestedRole} onValueChange={(value: any) => setRequestedRole(value)}>
+                          <SelectTrigger id="role">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="carer">Carer</SelectItem>
+                            <SelectItem value="family_admin">Family Admin</SelectItem>
+                            <SelectItem value="disabled_person">Disabled Person</SelectItem>
+                            <SelectItem value="family_viewer">Family Viewer</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                       
+                      {!isAdminRole && !isSoleMember && (
+                        <div className="space-y-2">
+                          <Label htmlFor="reason">Reason for Change</Label>
+                          <textarea
+                            id="reason"
+                            value={roleChangeReason}
+                            onChange={(e) => setRoleChangeReason(e.target.value)}
+                            placeholder="Explain why you want to change your role..."
+                            className="w-full p-2 border rounded text-sm resize-none"
+                            rows={3}
+                          />
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            console.log('🔘 Update Role button clicked', { requestedRole, hasFamilyMembership, isAdminRole, isSoleMember });
+                            if (isSoleMember) {
+                              setShowRoleChangeConfirm(true);
+                            } else {
+                              if (!roleChangeReason.trim()) {
+                                toast({
+                                  title: "Error",
+                                  description: "Please provide a reason for the role change",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setShowRoleChangeConfirm(true);
+                            }
+                          }}
+                          disabled={!requestedRole || (!isSoleMember && !roleChangeReason.trim())}
+                        >
+                          {isSoleMember ? 'Change Role' : 'Submit Request'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            setShowRoleChangeForm(false);
+                            setRoleChangeReason('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -691,77 +760,49 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   >
                     Change Role
                   </Button>
-                </div>
-              )}
 
-              {/* Role Change Request Form */}
-              {showRoleChangeForm && (
-                <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
-                  <div className="space-y-2">
-                    <Label htmlFor="role">
-                      {hasFamilyMembership ? 'Requested Role' : 'Default Role'}
-                    </Label>
-                    <Select value={requestedRole} onValueChange={(value: any) => setRequestedRole(value)}>
-                      <SelectTrigger id="role">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="carer">Carer</SelectItem>
-                        <SelectItem value="family_admin">Family Admin</SelectItem>
-                        <SelectItem value="disabled_person">Disabled Person</SelectItem>
-                        <SelectItem value="family_viewer">Family Viewer</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                   
-                  {hasFamilyMembership && !isAdminRole && !isSoleMember && (
-                    <div className="space-y-2">
-                      <Label htmlFor="reason">Reason for Change</Label>
-                      <textarea
-                        id="reason"
-                        value={roleChangeReason}
-                        onChange={(e) => setRoleChangeReason(e.target.value)}
-                        placeholder="Explain why you want to change your role..."
-                        className="w-full p-2 border rounded text-sm resize-none"
-                        rows={3}
-                      />
+                  {/* Role Change Form - appears right below button */}
+                  {showRoleChangeForm && (
+                    <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Default Role</Label>
+                        <Select value={requestedRole} onValueChange={(value: any) => setRequestedRole(value)}>
+                          <SelectTrigger id="role">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="carer">Carer</SelectItem>
+                            <SelectItem value="family_admin">Family Admin</SelectItem>
+                            <SelectItem value="disabled_person">Disabled Person</SelectItem>
+                            <SelectItem value="family_viewer">Family Viewer</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            console.log('🔘 Change Role button clicked', { requestedRole, hasFamilyMembership });
+                            setShowRoleChangeConfirm(true);
+                          }}
+                          disabled={!requestedRole}
+                        >
+                          Change Role
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            setShowRoleChangeForm(false);
+                            setRoleChangeReason('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   )}
-                  <div className="flex gap-2">
-                     <Button 
-                      size="sm" 
-                      onClick={() => {
-                        console.log('🔘 Update Role button clicked', { requestedRole, hasFamilyMembership, isAdminRole, isSoleMember });
-                        if (!hasFamilyMembership || isSoleMember) {
-                          setShowRoleChangeConfirm(true);
-                        } else {
-                          if (!roleChangeReason.trim()) {
-                            toast({
-                              title: "Error",
-                              description: "Please provide a reason for the role change",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                          setShowRoleChangeConfirm(true);
-                        }
-                      }}
-                      disabled={!requestedRole || (hasFamilyMembership && !isSoleMember && !roleChangeReason.trim())}
-                     >
-                       {hasFamilyMembership ? (isSoleMember ? 'Change Role' : 'Submit Request') : 'Change Role'}
-                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => {
-                        setShowRoleChangeForm(false);
-                        setRoleChangeReason('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
                 </div>
               )}
               
