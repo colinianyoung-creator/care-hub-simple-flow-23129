@@ -94,23 +94,36 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         .eq('user_id', user.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (membershipError && membershipError.code !== 'PGRST116') {
-        console.error('Error loading membership:', membershipError);
-      } else if (membershipData) {
-        console.log('[ProfileDialog] Found family membership, role:', membershipData.role);
+      console.log('✅ Membership query result:', { membershipData, membershipError, preferredRole });
+
+      if (membershipError) {
+        console.error('❌ Error loading membership:', membershipError);
+        toast({ title: "Error loading membership", variant: "destructive" });
+      } 
+
+      // Strict validation: check if membershipData exists AND has required properties
+      if (membershipData && membershipData.role && membershipData.family_id) {
+        console.log('✅ Found valid family membership, role:', membershipData.role);
         setCurrentUserRole(membershipData.role);
         setFamilyId(membershipData.family_id);
         setHasFamilyMembership(true);
         setIsAdminRole(membershipData.role === 'family_admin' || membershipData.role === 'disabled_person');
       } else {
-        console.log('[ProfileDialog] No family membership, using preferred_role:', preferredRole);
-        // No family membership - use preferred_role from profile
-        setCurrentUserRole(preferredRole);
+        console.log('✅ No family membership, using preferred_role:', preferredRole);
+        // Defensive: ensure we have a valid role
+        const safeRole = preferredRole || 'carer';
+        setCurrentUserRole(safeRole);
         setHasFamilyMembership(false);
         setIsAdminRole(false);
       }
+
+      console.log('✅ Final state:', { 
+        hasFamilyMembership, 
+        currentUserRole, 
+        isAdminRole 
+      });
 
       // Get family members count if user is in a family
       if (membershipData) {
@@ -764,7 +777,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      setRequestedRole(currentUserRole as any || 'carer');
+                      setRequestedRole((currentUserRole && currentUserRole !== '') ? currentUserRole as any : 'carer');
                       setShowRoleChangeForm(true);
                     }}
                   >
