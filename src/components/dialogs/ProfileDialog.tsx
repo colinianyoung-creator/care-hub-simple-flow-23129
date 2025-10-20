@@ -70,6 +70,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         throw profileError;
       }
 
+      let preferredRole = 'carer'; // Default fallback
+      
       if (profileData?.[0]) {
         const profileInfo = profileData[0] as any;
         setProfile({
@@ -79,6 +81,10 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           care_recipient_name: profileInfo.care_recipient_name || '',
           profile_picture_url: profileInfo.profile_picture_url || ''
         });
+        
+        // Store the preferred_role for users without family membership
+        preferredRole = profileInfo.preferred_role || 'carer';
+        console.log('[ProfileDialog] Loaded preferred_role:', preferredRole);
       }
 
       // Load current user role and family info
@@ -93,11 +99,15 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       if (membershipError && membershipError.code !== 'PGRST116') {
         console.error('Error loading membership:', membershipError);
       } else if (membershipData) {
+        console.log('[ProfileDialog] Found family membership, role:', membershipData.role);
         setCurrentUserRole(membershipData.role);
         setFamilyId(membershipData.family_id);
         setHasFamilyMembership(true);
         setIsAdminRole(membershipData.role === 'family_admin' || membershipData.role === 'disabled_person');
       } else {
+        console.log('[ProfileDialog] No family membership, using preferred_role:', preferredRole);
+        // No family membership - use preferred_role from profile
+        setCurrentUserRole(preferredRole);
         setHasFamilyMembership(false);
         setIsAdminRole(false);
       }
