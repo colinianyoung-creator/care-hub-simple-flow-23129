@@ -52,16 +52,49 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   const { remove: removeProfilePicture } = useFileUpload('profile_pictures');
 
   useEffect(() => {
-    if (isOpen) {
-      loadProfile();
+    let cancelled = false;
+
+    const loadData = async () => {
+      if (isOpen && !cancelled) {
+        await loadProfile(() => cancelled);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  // Debug effect to log state changes AFTER they've been applied
+  useEffect(() => {
+    console.log('🔄 ProfileDialog state changed:', {
+      hasFamilyMembership,
+      currentUserRole,
+      isAdminRole,
+      isSoleMember,
+      familyMembersCount
+    });
+  }, [hasFamilyMembership, currentUserRole, isAdminRole, isSoleMember, familyMembersCount]);
+
+  // Reset form state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowRoleChangeForm(false);
+      setRoleChangeReason('');
+      setShowDeleteConfirm(false);
+      setShowRoleChangeConfirm(false);
     }
   }, [isOpen]);
 
-  const loadProfile = async () => {
+  const loadProfile = async (checkCancelled?: () => boolean) => {
     setLoading(true);
     try {
+      if (checkCancelled?.()) return;
+      
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      if (!user.user || checkCancelled?.()) return;
 
       // Load profile using secure function
       const { data: profileData, error: profileError } = await supabase.rpc('get_profile_safe');
@@ -71,6 +104,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       }
 
       let preferredRole = 'carer'; // Default fallback
+      
+      if (checkCancelled?.()) return;
       
       if (profileData?.[0]) {
         const profileInfo = profileData[0] as any;
@@ -86,6 +121,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         preferredRole = profileInfo.preferred_role || 'carer';
         console.log('[ProfileDialog] Loaded preferred_role:', preferredRole);
       }
+
+      if (checkCancelled?.()) return;
 
       // Load current user role and family info
       const { data: membershipData, error: membershipError } = await supabase
@@ -103,6 +140,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         toast({ title: "Error loading membership", variant: "destructive" });
       } 
 
+      if (checkCancelled?.()) return;
+
       // Strict validation: check if membershipData exists AND has required properties
       if (membershipData && membershipData.role && membershipData.family_id) {
         console.log('✅ Found valid family membership, role:', membershipData.role);
@@ -119,22 +158,24 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         setIsAdminRole(false);
       }
 
-      console.log('✅ Final state:', { 
-        hasFamilyMembership, 
-        currentUserRole, 
-        isAdminRole 
-      });
+      if (checkCancelled?.()) return;
 
-      // Get family members count if user is in a family
-      if (membershipData) {
+      // Get family members count ONLY if we validated membership
+      if (membershipData && membershipData.role && membershipData.family_id) {
         const { data: membersData } = await supabase
           .from('user_memberships')
           .select('id')
           .eq('family_id', membershipData.family_id);
         
+        if (checkCancelled?.()) return;
+        
         const memberCount = membersData?.length || 0;
         setFamilyMembersCount(memberCount);
         setIsSoleMember(memberCount === 1);
+      } else {
+        // No valid membership - reset counts
+        setFamilyMembersCount(0);
+        setIsSoleMember(false);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -144,7 +185,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!checkCancelled?.()) {
+        setLoading(false);
+      }
     }
   };
 
