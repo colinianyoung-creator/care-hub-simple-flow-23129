@@ -142,15 +142,57 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   };
 
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      if (cancelled || !familyId) return;
+
+      try {
+        setLoading(true);
+
+        // 10s timeout
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please try again.",
+              variant: "destructive"
+            });
+            setLoading(false);
+          }
+        }, 10000);
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setCurrentUserId(user?.id || null);
+
+        // Load appointments
+        if (!cancelled) {
+          await loadAppointments();
+        }
+
+        clearTimeout(timeoutId);
+      } catch (error: any) {
+        if (!cancelled && error.name !== 'AbortError') {
+          console.error('Error loading data:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     };
-    
-    getCurrentUser();
-    if (familyId) {
-      loadAppointments();
-    }
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false); // ✅ Immediate UI reset
+    };
   }, [familyId]);
 
   const getAppointmentStatus = (appointment: Appointment) => {

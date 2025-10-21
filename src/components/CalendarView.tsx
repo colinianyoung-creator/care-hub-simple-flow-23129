@@ -42,7 +42,49 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   useEffect(() => {
-    loadCalendarData();
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      if (cancelled) return;
+
+      try {
+        setLoading(true);
+
+        // 10s timeout
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please try again.",
+              variant: "destructive"
+            });
+            setLoading(false);
+          }
+        }, 10000);
+
+        await loadCalendarData();
+
+        clearTimeout(timeoutId);
+      } catch (error: any) {
+        if (!cancelled && error.name !== 'AbortError') {
+          console.error('Error loading calendar data:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false); // ✅ Immediate UI reset
+    };
   }, [familyId, currentWeek]);
 
   const loadCalendarData = async () => {

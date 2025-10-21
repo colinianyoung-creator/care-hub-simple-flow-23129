@@ -189,15 +189,51 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   };
 
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setCurrentUserId(user?.id || null);
+
+        // Load notes if familyId exists
+        if (!familyId || cancelled) return;
+
+        setLoading(true);
+
+        // 10s timeout
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please try again.",
+              variant: "destructive"
+            });
+            setLoading(false);
+          }
+        }, 10000);
+
+        await loadNotes();
+
+        clearTimeout(timeoutId);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Error in loadData:', error);
+        }
+      }
     };
-    
-    getCurrentUser();
-    if (familyId) {
-      loadNotes();
-    }
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false); // ✅ Immediate UI reset
+    };
   }, [familyId]);
 
   const canDeleteNote = (note: CareNote) => {

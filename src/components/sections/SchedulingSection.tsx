@@ -145,22 +145,40 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   }, [assignments, currentUserId]);
 
   useEffect(() => {
+    let cancelled = false;
+    const abortController = new AbortController();
+
     const loadData = async () => {
-      await getCurrentUser();
-      await loadSchedulingData();
+      if (cancelled) return;
+
+      try {
+        await getCurrentUser();
+        if (cancelled) return;
+        
+        await loadSchedulingData();
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Error loading data:', error);
+        }
+      }
     };
+
     loadData();
 
     // Refresh data when window becomes visible
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && !cancelled) {
         console.log('🔄 Window became visible, refreshing data...');
         loadData();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false); // ✅ Immediate UI reset
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [familyId]);
@@ -171,9 +189,23 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     return user?.id || null;
   };
 
-  const loadSchedulingData = async (retryCount = 0) => {
+  const loadSchedulingData = async (retryCount = 0, signal?: AbortSignal) => {
+    // 10s timeout - define outside try block so it's accessible in catch
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     try {
+      if (signal?.aborted) return;
       setLoading(true);
+
+      timeoutId = setTimeout(() => {
+        if (!signal?.aborted) {
+          toast({
+            title: "Loading timeout",
+            description: "Scheduling data is taking longer than expected.",
+            variant: "destructive"
+          });
+        }
+      }, 10000);
       
       // Check if familyId is provided
       if (!familyId) {
@@ -284,6 +316,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       const { data: instancesData, error: instancesError } = await instancesQuery;
       if (instancesError) throw instancesError;
 
+      if (timeoutId) clearTimeout(timeoutId);
+
+      if (signal?.aborted) return;
+
       setAssignments(assignmentsData || []);
       
       // Combine requests with type information for better handling
@@ -295,6 +331,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       setRequests(allRequests);
       setInstances(instancesData || []);
     } catch (error: any) {
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      if (signal?.aborted) return;
       console.error('Error loading scheduling data:', error);
       
       // Retry logic with exponential backoff

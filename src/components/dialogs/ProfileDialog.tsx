@@ -90,11 +90,30 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
   const loadProfile = async (checkCancelled?: () => boolean) => {
     setLoading(true);
+    
+    // 10s timeout
+    const timeoutId = setTimeout(() => {
+      if (!checkCancelled?.()) {
+        toast({
+          title: "Loading timeout",
+          description: "Profile loading is taking longer than expected.",
+          variant: "destructive"
+        });
+        setLoading(false);
+      }
+    }, 10000);
+
     try {
-      if (checkCancelled?.()) return;
+      if (checkCancelled?.()) {
+        clearTimeout(timeoutId);
+        return;
+      }
       
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user || checkCancelled?.()) return;
+      if (!user.user || checkCancelled?.()) {
+        clearTimeout(timeoutId);
+        return;
+      }
 
       // Load profile using secure function
       const { data: profileData, error: profileError } = await supabase.rpc('get_profile_safe');
@@ -177,13 +196,19 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         setFamilyMembersCount(0);
         setIsSoleMember(false);
       }
+
+      clearTimeout(timeoutId);
     } catch (error) {
-      console.error('Error loading profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
+      clearTimeout(timeoutId);
+      
+      if (!checkCancelled?.()) {
+        console.error('Error loading profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile",
+          variant: "destructive",
+        });
+      }
     } finally {
       if (!checkCancelled?.()) {
         setLoading(false);

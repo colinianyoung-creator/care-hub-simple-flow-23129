@@ -34,34 +34,73 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   const isCarer = userRole === 'carer';
 
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
-    };
+    let cancelled = false;
+    const abortController = new AbortController();
 
-    const loadTeamMembers = async () => {
+    const loadData = async () => {
+      if (cancelled || !familyId) return;
+
       try {
-        const { data, error } = await supabase
-          .from('user_memberships')
-          .select(`
-            user_id,
-            profiles!inner(full_name)
-          `)
-          .eq('family_id', familyId);
+        setLoading(true);
 
-        if (!error && data) {
-          setTeamMembers(data);
+        // 10s timeout
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please try again.",
+              variant: "destructive"
+            });
+            setLoading(false);
+          }
+        }, 10000);
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setCurrentUserId(user?.id || null);
+
+        // Load team members
+        if (!cancelled) {
+          const { data, error } = await supabase
+            .from('user_memberships')
+            .select(`
+              user_id,
+              profiles!inner(full_name)
+            `)
+            .eq('family_id', familyId)
+            .abortSignal(abortController.signal);
+
+          if (!error && data && !cancelled) {
+            setTeamMembers(data);
+          }
         }
-      } catch (error) {
-        console.error('Error loading team members:', error);
+
+        // Load tasks
+        if (!cancelled) {
+          await loadTasks();
+        }
+
+        clearTimeout(timeoutId);
+      } catch (error: any) {
+        if (!cancelled && error.name !== 'AbortError') {
+          console.error('Error loading data:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
-    if (familyId) {
-      getCurrentUser();
-      loadTasks();
-      loadTeamMembers();
-    }
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false); // ✅ Immediate UI reset
+    };
   }, [familyId]);
 
   const loadTasks = async () => {

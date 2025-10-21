@@ -116,7 +116,49 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
   };
 
   useEffect(() => {
-    loadNotesForDate(selectedDate);
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      if (cancelled) return;
+
+      try {
+        setLoading(true);
+
+        // 10s timeout
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please try again.",
+              variant: "destructive"
+            });
+            setLoading(false);
+          }
+        }, 10000);
+
+        await loadNotesForDate(selectedDate);
+
+        clearTimeout(timeoutId);
+      } catch (error: any) {
+        if (!cancelled && error.name !== 'AbortError') {
+          console.error('Error loading archive notes:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false); // ✅ Immediate UI reset
+    };
   }, [familyId, selectedDate]);
 
   const canDeleteNote = (note: CareNote) => {
