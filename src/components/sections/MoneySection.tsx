@@ -59,14 +59,22 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const abortController = new AbortController();
     
-    if (familyId && currentUserId) {
-      loadEntries();
-      loadFamilyMembers();
-    }
+    const loadData = async () => {
+      if (cancelled || !familyId || !currentUserId) return;
+      
+      await Promise.all([
+        loadEntries(abortController.signal),
+        loadFamilyMembers(abortController.signal)
+      ]);
+    };
+
+    loadData();
 
     return () => {
+      cancelled = true;
       abortController.abort();
       setLoading(false);
     };
@@ -80,14 +88,15 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
     }
   };
 
-  const loadFamilyMembers = async () => {
+  const loadFamilyMembers = async (signal?: AbortSignal) => {
     if (!familyId) return;
 
     try {
       const { data, error } = await supabase
         .from('user_memberships')
         .select('user_id, profiles(id, full_name)')
-        .eq('family_id', familyId);
+        .eq('family_id', familyId)
+        .abortSignal(signal);
 
       if (error) throw error;
 
@@ -104,40 +113,45 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
     }
   };
 
-  const loadEntries = async () => {
+  const loadEntries = async (signal?: AbortSignal) => {
     if (!familyId) return;
 
     setLoading(true);
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Loading timeout",
-        description: "Taking longer than expected. Please refresh the page.",
-        variant: "destructive"
-      });
-    }, 10000);
+    let timeoutId: NodeJS.Timeout | null = null;
 
     try {
+      timeoutId = setTimeout(() => {
+        if (!signal?.aborted) {
+          toast({
+            title: "Loading timeout",
+            description: "Taking longer than expected. Please refresh the page.",
+            variant: "destructive"
+          });
+        }
+      }, 10000);
+
       const { data, error } = await supabase
         .from('money_records')
         .select('*')
         .eq('family_id', familyId)
         .order('created_at', { ascending: false })
-        .limit(50) as any;
+        .limit(50)
+        .abortSignal(signal) as any;
 
-      clearTimeout(timeoutId);
       if (error) throw error;
       setEntries((data || []) as any);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      console.error('Error loading money entries:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load money entries",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error loading money entries:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load money entries",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 

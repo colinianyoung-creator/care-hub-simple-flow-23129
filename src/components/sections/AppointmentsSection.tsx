@@ -43,7 +43,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     notes: ''
   });
 
-  const loadAppointments = async () => {
+  const loadAppointments = async (signal?: AbortSignal) => {
     try {
       if (!familyId) {
         console.error('No familyId provided to loadAppointments');
@@ -54,19 +54,20 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
         .from('appointments')
         .select('*')
         .eq('family_id', familyId)
-        .order('appointment_date', { ascending: true });
+        .order('appointment_date', { ascending: true })
+        .abortSignal(signal);
 
       if (error) throw error;
       setAppointments(data as any || []);
-    } catch (error) {
-      console.error('Error loading appointments:', error);
-      toast({
-        title: "Error loading appointments",
-        description: "There was an error loading the appointments.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error loading appointments:', error);
+        toast({
+          title: "Error loading appointments",
+          description: "There was an error loading the appointments.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -147,12 +148,12 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
 
     const loadData = async () => {
       if (cancelled || !familyId) return;
+      
+      setLoading(true);
+      let timeoutId: NodeJS.Timeout | null = null;
 
       try {
-        setLoading(true);
-
-        // 10s timeout
-        const timeoutId = setTimeout(() => {
+        timeoutId = setTimeout(() => {
           if (!cancelled) {
             abortController.abort();
             toast({
@@ -160,29 +161,28 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
               description: "Taking longer than expected. Please try again.",
               variant: "destructive"
             });
-            setLoading(false);
           }
         }, 10000);
 
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
         setCurrentUserId(user?.id || null);
 
-        // Load appointments
         if (!cancelled) {
-          await loadAppointments();
+          await loadAppointments(abortController.signal);
         }
-
-        clearTimeout(timeoutId);
       } catch (error: any) {
         if (!cancelled && error.name !== 'AbortError') {
-          console.error('Error loading data:', error);
+          console.error('Error loading appointments:', error);
+          toast({
+            title: "Error loading appointments",
+            description: "Please try again.",
+            variant: "destructive"
+          });
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -191,7 +191,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false); // ✅ Immediate UI reset
+      setLoading(false);
     };
   }, [familyId]);
 

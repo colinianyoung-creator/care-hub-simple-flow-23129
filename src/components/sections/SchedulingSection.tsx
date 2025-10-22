@@ -155,7 +155,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         await getCurrentUser();
         if (cancelled) return;
         
-        await loadSchedulingData();
+        await loadSchedulingData(0, abortController.signal);
       } catch (error) {
         if (!cancelled) {
           console.error('Error loading data:', error);
@@ -165,10 +165,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
     loadData();
 
-    // Refresh data when window becomes visible
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !cancelled) {
-        console.log('🔄 Window became visible, refreshing data...');
         loadData();
       }
     };
@@ -178,7 +176,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false); // ✅ Immediate UI reset
+      setLoading(false);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [familyId]);
@@ -331,26 +329,26 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       setRequests(allRequests);
       setInstances(instancesData || []);
     } catch (error: any) {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (signal?.aborted || error.name === 'AbortError') return;
       
-      if (signal?.aborted) return;
       console.error('Error loading scheduling data:', error);
       
-      // Retry logic with exponential backoff
-      if (retryCount < 3) {
-        const delay = Math.pow(2, retryCount) * 1000;
-        console.log(`⏳ Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return loadSchedulingData(retryCount + 1);
+      if (retryCount < 2) {
+        console.log(`⏳ Retrying... (${retryCount + 1}/2)`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return loadSchedulingData(retryCount + 1, signal);
       }
       
       toast({
-        title: "Error",
-        description: "Failed to load scheduling data. Please try refreshing the page.",
-        variant: "destructive",
+        title: "Error loading schedule",
+        description: "Unable to load scheduling data. Please try again.",
+        variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 

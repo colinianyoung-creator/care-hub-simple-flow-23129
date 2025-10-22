@@ -46,13 +46,13 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
     const abortController = new AbortController();
 
     const loadData = async () => {
-      if (cancelled) return;
+      if (cancelled || !familyId) return;
+      
+      setLoading(true);
+      let timeoutId: NodeJS.Timeout | null = null;
 
       try {
-        setLoading(true);
-
-        // 10s timeout
-        const timeoutId = setTimeout(() => {
+        timeoutId = setTimeout(() => {
           if (!cancelled) {
             abortController.abort();
             toast({
@@ -60,21 +60,22 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
               description: "Taking longer than expected. Please try again.",
               variant: "destructive"
             });
-            setLoading(false);
           }
         }, 10000);
 
-        await loadCalendarData();
-
-        clearTimeout(timeoutId);
+        await loadCalendarData(abortController.signal);
       } catch (error: any) {
         if (!cancelled && error.name !== 'AbortError') {
-          console.error('Error loading calendar data:', error);
+          console.error('Error loading calendar:', error);
+          toast({
+            title: "Error loading calendar",
+            description: "Please try again.",
+            variant: "destructive"
+          });
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -83,31 +84,19 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false); // ✅ Immediate UI reset
+      setLoading(false);
     };
   }, [familyId, currentWeek]);
 
-  const loadCalendarData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([
-        loadTimeEntries(),
-        loadActiveTimeEntry(),
-        loadWeeklyHours()
-      ]);
-    } catch (error) {
-      console.error('Error loading calendar data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load calendar data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const loadCalendarData = async (signal?: AbortSignal) => {
+    await Promise.all([
+      loadTimeEntries(signal),
+      loadActiveTimeEntry(signal),
+      loadWeeklyHours(signal)
+    ]);
   };
 
-  const loadTimeEntries = async () => {
+  const loadTimeEntries = async (signal?: AbortSignal) => {
     const weekEnd = addDays(weekStart, 7);
     
     const { data, error } = await supabase
@@ -116,7 +105,8 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
       .eq('family_id', familyId)
       .gte('clock_in', weekStart.toISOString())
       .lt('clock_in', weekEnd.toISOString())
-      .order('clock_in', { ascending: true });
+      .order('clock_in', { ascending: true })
+      .abortSignal(signal);
 
     if (error) {
       console.error('Error loading time entries:', error);
@@ -142,7 +132,7 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
   //   setSchedules(data || []);
   // };
 
-  const loadActiveTimeEntry = async () => {
+  const loadActiveTimeEntry = async (signal?: AbortSignal) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -153,7 +143,8 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
       .eq('user_id', user.id)
       .is('clock_out', null)
       .order('clock_in', { ascending: false })
-      .limit(1);
+      .limit(1)
+      .abortSignal(signal);
 
     if (error) {
       console.error('Error loading active time entry:', error);
@@ -163,7 +154,7 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
     setActiveTimeEntry(data?.[0] || null);
   };
 
-  const loadWeeklyHours = async () => {
+  const loadWeeklyHours = async (signal?: AbortSignal) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -176,7 +167,8 @@ export const CalendarView = ({ familyId, userRole }: CalendarViewProps) => {
       .eq('user_id', user.id)
       .not('clock_out', 'is', null)
       .gte('clock_in', weekStart.toISOString())
-      .lt('clock_in', weekEnd.toISOString());
+      .lt('clock_in', weekEnd.toISOString())
+      .abortSignal(signal);
 
     if (error) {
       console.error('Error loading weekly hours:', error);

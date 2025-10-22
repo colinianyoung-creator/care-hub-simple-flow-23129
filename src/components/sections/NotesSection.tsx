@@ -62,7 +62,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     is_incident: false
   });
 
-  const loadNotes = async () => {
+  const loadNotes = async (signal?: AbortSignal) => {
     try {
       if (!familyId) {
         console.error('No familyId provided to loadNotes');
@@ -80,7 +80,8 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
         .eq('family_id', familyId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(signal);
 
       if (error) throw error;
 
@@ -193,19 +194,13 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     const abortController = new AbortController();
 
     const loadData = async () => {
+      if (cancelled || !familyId) return;
+      
+      setLoading(true);
+      let timeoutId: NodeJS.Timeout | null = null;
+
       try {
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (cancelled) return;
-        setCurrentUserId(user?.id || null);
-
-        // Load notes if familyId exists
-        if (!familyId || cancelled) return;
-
-        setLoading(true);
-
-        // 10s timeout
-        const timeoutId = setTimeout(() => {
+        timeoutId = setTimeout(() => {
           if (!cancelled) {
             abortController.abort();
             toast({
@@ -213,17 +208,28 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
               description: "Taking longer than expected. Please try again.",
               variant: "destructive"
             });
-            setLoading(false);
           }
         }, 10000);
 
-        await loadNotes();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setCurrentUserId(user?.id || null);
 
-        clearTimeout(timeoutId);
-      } catch (error) {
         if (!cancelled) {
-          console.error('Error in loadData:', error);
+          await loadNotes(abortController.signal);
         }
+      } catch (error: any) {
+        if (!cancelled && error.name !== 'AbortError') {
+          console.error('Error in loadData:', error);
+          toast({
+            title: "Error loading notes",
+            description: "Please try again.",
+            variant: "destructive"
+          });
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -232,7 +238,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false); // ✅ Immediate UI reset
+      setLoading(false);
     };
   }, [familyId]);
 

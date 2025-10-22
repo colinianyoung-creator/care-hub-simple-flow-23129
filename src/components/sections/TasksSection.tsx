@@ -40,11 +40,11 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     const loadData = async () => {
       if (cancelled || !familyId) return;
 
-      try {
-        setLoading(true);
+      setLoading(true);
+      let timeoutId: NodeJS.Timeout | null = null;
 
-        // 10s timeout
-        const timeoutId = setTimeout(() => {
+      try {
+        timeoutId = setTimeout(() => {
           if (!cancelled) {
             abortController.abort();
             toast({
@@ -52,45 +52,40 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               description: "Taking longer than expected. Please try again.",
               variant: "destructive"
             });
-            setLoading(false);
           }
         }, 10000);
 
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
         setCurrentUserId(user?.id || null);
 
-        // Load team members
         if (!cancelled) {
           const { data, error } = await supabase
             .from('user_memberships')
-            .select(`
-              user_id,
-              profiles!inner(full_name)
-            `)
+            .select(`user_id, profiles!inner(full_name)`)
             .eq('family_id', familyId)
             .abortSignal(abortController.signal);
 
           if (!error && data && !cancelled) {
-            setTeamMembers(data);
+            setTeamMembers(data as any);
           }
         }
 
-        // Load tasks
         if (!cancelled) {
-          await loadTasks();
+          await loadTasks(abortController.signal);
         }
-
-        clearTimeout(timeoutId);
       } catch (error: any) {
         if (!cancelled && error.name !== 'AbortError') {
           console.error('Error loading data:', error);
+          toast({
+            title: "Error loading tasks",
+            description: "Please try again.",
+            variant: "destructive"
+          });
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -99,14 +94,12 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false); // ✅ Immediate UI reset
+      setLoading(false);
     };
   }, [familyId]);
 
-  const loadTasks = async () => {
+  const loadTasks = async (signal?: AbortSignal) => {
     try {
-      setLoading(true);
-      
       if (!familyId) {
         console.error('No familyId provided to loadTasks');
         return;
@@ -116,7 +109,8 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         .from('tasks')
         .select('*')
         .eq('family_id', familyId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(signal);
 
       if (error) throw error;
 
@@ -157,15 +151,15 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       );
 
       setTasks(tasksWithProfiles);
-    } catch (error) {
-      console.error('Error loading tasks:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load tasks",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error loading tasks:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load tasks",
+          variant: "destructive",
+        });
+      }
     }
   };
 

@@ -38,16 +38,40 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (familyId) {
-      loadEntriesForDate(selectedDate);
-    }
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      if (cancelled || !familyId) return;
+      await loadEntriesForDate(selectedDate, abortController.signal);
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false);
+    };
   }, [familyId, selectedDate]);
 
-  const loadEntriesForDate = async (date: Date) => {
+  const loadEntriesForDate = async (date: Date, signal?: AbortSignal) => {
     if (!familyId) return;
 
     setLoading(true);
+    let timeoutId: NodeJS.Timeout | null = null;
+
     try {
+      timeoutId = setTimeout(() => {
+        if (!signal?.aborted) {
+          toast({
+            title: 'Loading timeout',
+            description: 'Taking longer than expected.',
+            variant: 'destructive',
+          });
+        }
+      }, 10000);
+
       const startDate = startOfDay(date);
       const endDate = endOfDay(date);
 
@@ -57,18 +81,22 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
         .eq('family_id', familyId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(signal);
 
       if (error) throw error;
       setEntries(data as any || []);
     } catch (error: any) {
-      toast({
-        title: 'Error loading entries',
-        description: error.message,
-        variant: 'destructive',
-      });
+      if (error.name !== 'AbortError') {
+        toast({
+          title: 'Error loading entries',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 

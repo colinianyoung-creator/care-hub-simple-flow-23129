@@ -53,13 +53,19 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const abortController = new AbortController();
     
-    if (familyId && currentUserId) {
-      loadEntries(selectedMealType);
-    }
+    const loadData = async () => {
+      if (cancelled || !familyId || !currentUserId) return;
+      
+      await loadEntries(selectedMealType, abortController.signal);
+    };
+
+    loadData();
 
     return () => {
+      cancelled = true;
       abortController.abort();
       setLoading(false);
     };
@@ -72,20 +78,23 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
     }
   };
 
-  const loadEntries = async (mealType: string) => {
+  const loadEntries = async (mealType: string, signal?: AbortSignal) => {
     if (!familyId) return;
 
     setLoading(true);
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Loading timeout",
-        description: "Taking longer than expected. Please refresh the page.",
-        variant: "destructive"
-      });
-    }, 10000);
+    let timeoutId: NodeJS.Timeout | null = null;
 
     try {
+      timeoutId = setTimeout(() => {
+        if (!signal?.aborted) {
+          toast({
+            title: "Loading timeout",
+            description: "Taking longer than expected. Please refresh the page.",
+            variant: "destructive"
+          });
+        }
+      }, 10000);
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -95,21 +104,23 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
         .eq('family_id', familyId)
         .eq('meal_type', mealType)
         .gte('created_at', today.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(signal);
 
-      clearTimeout(timeoutId);
       if (error) throw error;
       setEntries(data as any || []);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      console.error('Error loading diet entries:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load diet entries",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error loading diet entries:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load diet entries",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
