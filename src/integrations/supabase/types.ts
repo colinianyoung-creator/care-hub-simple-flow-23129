@@ -911,10 +911,7 @@ export type Database = {
         Args: { _created_by: string; _user_id: string }
         Returns: boolean
       }
-      ensure_user_profile: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      ensure_user_profile: { Args: never; Returns: string }
       generate_invite: {
         Args: {
           _expires_days?: number
@@ -928,7 +925,7 @@ export type Database = {
         Returns: number
       }
       get_profile_safe: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           care_recipient_name: string
           contact_email: string
@@ -974,16 +971,17 @@ export type Database = {
         Args: { _family_id: string; _user_id: string }
         Returns: boolean
       }
-      redeem_invite: {
-        Args: { _code: string }
-        Returns: string
-      }
+      redeem_invite: { Args: { _code: string }; Returns: string }
       update_own_role_safe: {
         Args: {
           _family_id: string
           _new_role: Database["public"]["Enums"]["app_role"]
         }
         Returns: Json
+      }
+      users_in_same_family: {
+        Args: { _user1_id: string; _user2_id: string }
+        Returns: boolean
       }
     }
     Enums: {

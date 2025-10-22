@@ -209,22 +209,32 @@ const Dashboard = () => {
   };
 
   const handleFirstTimeUser = async (userId: string, profileData: any) => {
-    // Check for pending invite code from sign-up
-    const pendingInviteCode = localStorage.getItem('pending_invite_code');
+    // Check for pending invite code from user metadata
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const pendingInviteCode = currentUser?.user_metadata?.pending_invite_code;
+    
     if (pendingInviteCode) {
       try {
         console.log('🎟️ Processing pending invite code...');
         await supabase.rpc('redeem_invite', {
           _code: pendingInviteCode
         });
-        localStorage.removeItem('pending_invite_code');
+        
+        // Clear the pending invite code from user metadata
+        await supabase.auth.updateUser({
+          data: { pending_invite_code: null }
+        });
+        
         toast({
           title: "Welcome!",
           description: "You've been added to the care network.",
         });
       } catch (error) {
         console.error('Error redeeming invite:', error);
-        localStorage.removeItem('pending_invite_code');
+        // Clear the invite code even on error to prevent retry loops
+        await supabase.auth.updateUser({
+          data: { pending_invite_code: null }
+        });
       }
     }
     // Note: Family creation is now handled automatically by the handle_new_user_profile trigger

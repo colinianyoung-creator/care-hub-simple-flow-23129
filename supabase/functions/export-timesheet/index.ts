@@ -184,12 +184,11 @@ serve(async (req) => {
         .select('family_id')
         .eq('user_id', user.id);
       
-      console.error('Authorization failed:', {
-        user_id: user.id,
-        requested_family: familyId,
-        accessible_families: allMemberships?.map(m => m.family_id) || [],
-        timestamp: new Date().toISOString()
-      });
+    // Log only essential security information (no family membership details)
+    console.error('Authorization failed', {
+      user_id: user.id,
+      timestamp: new Date().toISOString()
+    });
       
       return new Response(
         JSON.stringify({ 

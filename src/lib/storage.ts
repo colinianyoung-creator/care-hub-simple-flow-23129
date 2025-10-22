@@ -24,14 +24,28 @@ export async function uploadFile(
   
   if (error) throw error;
   
-  return getPublicUrl(bucket, data.path);
+  // Return the path - components should call getSignedUrl to display
+  return data.path;
 }
 
 /**
- * Get the public URL for a file in storage
+ * Get a signed URL for a file in storage (secure, expires after 1 hour)
  * @param bucket - The storage bucket name
  * @param path - The file path within the bucket
- * @returns The public URL
+ * @returns The signed URL with expiration
+ */
+export async function getSignedUrl(bucket: string, path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(path, 3600); // 1 hour expiration
+  
+  if (error) throw error;
+  
+  return data.signedUrl;
+}
+
+/**
+ * @deprecated Use getSignedUrl instead for secure access
  */
 export function getPublicUrl(bucket: string, path: string): string {
   const { data } = supabase.storage

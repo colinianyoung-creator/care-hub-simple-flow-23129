@@ -64,7 +64,8 @@ const Auth = () => {
           data: {
             full_name: fullName,
             selected_role: selectedRole,
-            care_recipient_name: careRecipientName || null
+            care_recipient_name: careRecipientName || null,
+            pending_invite_code: inviteCode || null
           }
         }
       });
@@ -73,11 +74,6 @@ const Auth = () => {
 
       if (data.user) {
         // Profile will be created by trigger, no manual call needed
-        
-        if (inviteCode) {
-          // Store invite code in localStorage for dashboard to process after email confirmation
-          localStorage.setItem('pending_invite_code', inviteCode);
-        }
         
         toast({
           title: "Success!",

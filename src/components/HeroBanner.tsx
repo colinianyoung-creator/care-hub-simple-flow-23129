@@ -1,6 +1,6 @@
 import { Heart, Shield, Users, User } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 
 interface HeroBannerProps {
   title: string;
@@ -36,12 +36,11 @@ export const HeroBanner = ({ title, subtitle, children, careRecipientName, profi
             size="icon"
             className="rounded-full h-14 w-14 md:h-20 md:w-20 p-0 hover:bg-white/20 transition-all hover:scale-105"
           >
-            <Avatar className="h-12 w-12 md:h-18 md:w-18 border-2 border-white/30">
-              <AvatarImage src={profilePictureUrl} alt="Profile" />
-              <AvatarFallback className="bg-white/20">
-                <User className="h-8 w-8 md:h-10 md:w-10 text-white" />
-              </AvatarFallback>
-            </Avatar>
+            <ProfileAvatar 
+              profilePicturePath={profilePictureUrl}
+              fallbackIcon={<User className="h-8 w-8 md:h-10 md:w-10 text-white" />}
+              className="h-12 w-12 md:h-18 md:w-18 border-2 border-white/30"
+            />
           </Button>
         </div>
       )}

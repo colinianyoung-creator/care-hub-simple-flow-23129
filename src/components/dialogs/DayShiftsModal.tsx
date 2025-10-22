@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, Edit, Trash2 } from 'lucide-react';
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { Clock, Edit, Trash2, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatShiftType } from "@/lib/textUtils";
 import { supabase } from '@/integrations/supabase/client';
@@ -112,12 +113,11 @@ export const DayShiftsModal: React.FC<DayShiftsModalProps> = ({
                     </Badge>
                     
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={carerProfiles[shift.carer_id]?.profile_picture_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(shift.carer_name || carersMap[shift.carer_id] || 'UC')}
-                        </AvatarFallback>
-                      </Avatar>
+                      <ProfileAvatar 
+                        profilePicturePath={carerProfiles[shift.carer_id]?.profile_picture_url || undefined}
+                        fallbackIcon={<span className="text-xs">{getInitials(shift.carer_name || carersMap[shift.carer_id] || 'UC')}</span>}
+                        className="h-8 w-8"
+                      />
                       <p className="text-sm text-muted-foreground">
                         {shift.carer_name || carersMap[shift.carer_id] || 'Unknown Carer'}
                       </p>

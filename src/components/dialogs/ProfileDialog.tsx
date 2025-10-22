@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { User, Camera } from 'lucide-react';
 import { ImageCropDialog } from './ImageCropDialog';
 import { validateImageFile, resizeImage, compressImage } from '@/lib/imageUtils';
@@ -647,12 +648,11 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
               <div className="space-y-4">
                 <Label>Profile Picture</Label>
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profile.profile_picture_url} alt={profile.full_name} />
-                    <AvatarFallback>
-                      <User className="h-10 w-10" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <ProfileAvatar 
+                    profilePicturePath={profile.profile_picture_url}
+                    fallbackIcon={<User className="h-10 w-10" />}
+                    className="h-20 w-20"
+                  />
                   <div className="flex-1 space-y-2">
                     <input
                       type="file"
