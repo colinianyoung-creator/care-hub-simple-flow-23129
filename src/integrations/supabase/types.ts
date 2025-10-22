@@ -907,6 +907,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_add_admin_role: {
+        Args: {
+          _family_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       can_create_family: {
         Args: { _created_by: string; _user_id: string }
         Returns: boolean
@@ -951,6 +958,10 @@ export type Database = {
           status: Database["public"]["Enums"]["shift_status"]
         }[]
       }
+      get_user_admin_role: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_user_family_role: {
         Args: { _family_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -968,6 +979,10 @@ export type Database = {
         Returns: boolean
       }
       is_family_member: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_protected_admin: {
         Args: { _family_id: string; _user_id: string }
         Returns: boolean
       }

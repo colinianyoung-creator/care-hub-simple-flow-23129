@@ -386,7 +386,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                   </Button>
 
                   {newInviteCode && (
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="p-3 bg-muted rounded-lg space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium">New Invite Code:</div>
@@ -399,6 +399,11 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
+                      {(inviteRole === 'family_admin' || inviteRole === 'disabled_person') && (
+                        <p className="text-xs text-muted-foreground">
+                          ⚠️ This will add a co-admin to your care space who will share full administrative access with you. Neither admin can remove or demote the other.
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardContent>
