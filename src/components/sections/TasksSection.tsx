@@ -312,6 +312,14 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   const awaitingReviewTasks = tasks.filter(task => task.status === 'awaiting_review');
   const completedTasks = tasks.filter(task => task.completed_at && task.status !== 'awaiting_review');
 
+  if (!familyId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No family selected. Create or join a family to view tasks.</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <Card>

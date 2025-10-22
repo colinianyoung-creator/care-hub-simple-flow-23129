@@ -223,6 +223,14 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   const pastAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'past');
   const canManageAppointments = userRole === 'family_admin' || userRole === 'disabled_person';
 
+  if (!familyId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No family selected. Create or join a family to view appointments.</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="text-center py-4">Loading appointments...</div>;
   }

@@ -272,6 +272,14 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
   const predefinedTags = ['Personal Care', 'Meal Prep', 'Medication', 'Outing', 'Exercise', 'Social', 'Medical'];
 
+  if (!familyId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No family selected. Create or join a family to view care notes.</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="text-center py-4">Loading notes...</div>;
   }

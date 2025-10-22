@@ -114,6 +114,14 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
     }
   }, [familyId]);
 
+  if (!familyId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No family selected. Create or join a family to view key information.</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="text-center py-4">Loading key information...</div>;
   }
