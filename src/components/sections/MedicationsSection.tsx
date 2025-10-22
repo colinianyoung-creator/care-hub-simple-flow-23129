@@ -59,24 +59,29 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     end_date: ''
   });
 
-  const loadMedications = async () => {
+  const loadMedications = async (signal?: AbortSignal) => {
+    if (!familyId) return;
+    
     try {
       const { data, error } = await supabase
         .from('medications')
         .select('*')
         .eq('family_id', familyId)
         .eq('is_archived', false)
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false })
+        .abortSignal(signal) as any;
 
       if (error) throw error;
       setMedications((data as any) || []);
-    } catch (error) {
-      console.error('Error loading medications:', error);
-      toast({
-        title: "Error loading medications",
-        description: "There was an error loading the medications.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error loading medications:', error);
+        toast({
+          title: "Error loading medications",
+          description: "There was an error loading the medications.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -93,6 +98,15 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
 
   const handleAddMedication = async () => {
     if (!newMedication.name.trim() || !newMedication.dosage.trim()) return;
+    
+    if (!familyId) {
+      toast({
+        title: "No family selected",
+        description: "Please create or join a family first.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -215,17 +229,71 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   };
 
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
+    let cancelled = false;
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      if (cancelled || !familyId) return;
+      
+      setLoading(true);
+      let timeoutId: NodeJS.Timeout | null = null;
+
+      try {
+        timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please try again.",
+              variant: "destructive"
+            });
+          }
+        }, 10000);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setCurrentUserId(user?.id || null);
+
+        if (!cancelled) {
+          await loadMedications(abortController.signal);
+        }
+
+        if (!cancelled) {
+          await loadMedicationLogs();
+        }
+      } catch (error: any) {
+        if (!cancelled && error.name !== 'AbortError') {
+          console.error('Error loading data:', error);
+          toast({
+            title: "Error loading medications",
+            description: "Please try again.",
+            variant: "destructive"
+          });
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
+      }
     };
-    
-    getCurrentUser();
-    loadMedications();
-    loadMedicationLogs();
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      setLoading(false);
+    };
   }, [familyId]);
 
   const canManageMedications = userRole === 'family_admin' || userRole === 'disabled_person';
+
+  if (!familyId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>No family selected. Create or join a family to view medications.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="text-center py-4">Loading medications...</div>;
