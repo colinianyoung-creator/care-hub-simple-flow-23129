@@ -259,7 +259,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       currentRole: currentUserRole 
     });
 
-    // ✅ NEW: If no family membership, just update preferred_role in profiles
+    // ✅ If no family membership, update preferred_role and auto-create family for admin roles
     if (!hasFamilyMembership && requestedRole) {
       try {
         setSaving(true);
@@ -271,33 +271,140 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
         console.log('👤 Updating preferred_role to:', requestedRole);
 
-        // Simply update the preferred_role in profiles table
-        const { error } = await supabase
+        // Update the preferred_role in profiles table
+        const { error: profileError } = await supabase
           .from('profiles')
           .update({ preferred_role: requestedRole })
           .eq('id', user.id);
 
-        if (error) {
-          console.error('❌ Profile update error:', error);
-          throw error;
+        if (profileError) {
+          console.error('❌ Profile update error:', profileError);
+          throw profileError;
         }
 
         console.log('✅ Preferred role updated');
 
+        // If switching to admin roles, auto-create personal family
+        if (requestedRole === 'family_admin' || requestedRole === 'disabled_person') {
+          console.log('🏠 Creating personal family for admin role...');
+          
+          const firstName = profile.full_name?.split(' ')[0] || 'User';
+          
+          // Create family
+          const { data: newFamily, error: familyError } = await supabase
+            .from('families')
+            .insert({ 
+              name: `${firstName}'s Care Space`, 
+              created_by: user.id 
+            })
+            .select()
+            .single();
+
+          if (familyError) {
+            console.error('❌ Family creation error:', familyError);
+            throw familyError;
+          }
+
+          console.log('✅ Family created:', newFamily.id);
+
+          // Add membership
+          const { error: membershipError } = await supabase
+            .from('user_memberships')
+            .insert({
+              user_id: user.id,
+              family_id: newFamily.id,
+              role: requestedRole
+            });
+
+          if (membershipError) {
+            console.error('❌ Membership creation error:', membershipError);
+            throw membershipError;
+          }
+
+          console.log('✅ Membership created');
+
+          toast({
+            title: "Role Updated",
+            description: "Your personal care space has been created!",
+          });
+        } else {
+          toast({
+            title: "Role Updated",
+            description: `Your dashboard has been customized for: ${requestedRole.replace(/_/g, ' ')}`,
+          });
+        }
+
+        setCurrentUserRole(requestedRole);
+        setShowRoleChangeForm(false);
+        setShowRoleChangeConfirm(false);
+        
+        // Reload page to refresh all data
+        window.location.reload();
+      } catch (error: any) {
+        console.error('❌ Error updating role:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update role",
+          variant: "destructive",
+        });
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // ✅ If connected and switching to carer/family_viewer, remove all memberships
+    if (hasFamilyMembership && (requestedRole === 'carer' || requestedRole === 'family_viewer')) {
+      try {
+        setSaving(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('❌ No user found');
+          return;
+        }
+
+        console.log('🔓 Removing all family memberships...');
+
+        // Remove all memberships
+        const { error: deleteError } = await supabase
+          .from('user_memberships')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (deleteError) {
+          console.error('❌ Error removing memberships:', deleteError);
+          throw deleteError;
+        }
+
+        console.log('✅ Memberships removed');
+
+        // Update preferred_role as fallback
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ preferred_role: requestedRole })
+          .eq('id', user.id);
+
+        if (profileError) {
+          console.error('❌ Profile update error:', profileError);
+          throw profileError;
+        }
+
         toast({
           title: "Role Updated",
-          description: `Your dashboard has been customized for: ${requestedRole.replace(/_/g, ' ')}`,
+          description: "You've been disconnected from your family. You can join or be invited to a family anytime.",
         });
 
         setCurrentUserRole(requestedRole);
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
-        onProfileUpdate?.(requestedRole);
+        
+        // Reload page to refresh all data
+        window.location.reload();
       } catch (error: any) {
-        console.error('❌ Error updating preferred role:', error);
+        console.error('❌ Error updating role:', error);
         toast({
           title: "Error",
-          description: error.message || "Failed to update role preference",
+          description: error.message || "Failed to update role",
           variant: "destructive",
         });
       } finally {
@@ -366,7 +473,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
-        onProfileUpdate?.(requestedRole);
+        
+        // Reload page to refresh all data
+        window.location.reload();
       } catch (error: any) {
         console.error('❌ Error updating role:', error);
         toast({
@@ -1003,9 +1112,24 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
             <AlertDialogTitle>
               {hasFamilyMembership && !isSoleMember ? 'Confirm Role Change Request' : 'Confirm Role Change'}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {!hasFamilyMembership ? (
-                <p>Your dashboard will be customized for the selected role. You can change it again anytime from this profile page, and invite others to join your care network later.</p>
+            <AlertDialogDescription className="space-y-3">
+              {!hasFamilyMembership && (requestedRole === 'family_admin' || requestedRole === 'disabled_person') ? (
+                <div className="space-y-2">
+                  <p className="font-medium">Changing your role will create a new personal care space for you.</p>
+                  <p className="text-sm">You can invite carers or family members later.</p>
+                  <p className="text-sm font-semibold">Proceed?</p>
+                </div>
+              ) : !hasFamilyMembership ? (
+                <div className="space-y-2">
+                  <p>Your dashboard will be customized for the selected role.</p>
+                  <p className="text-sm">You can change it again anytime from this profile page, and join or be invited to a family later.</p>
+                </div>
+              ) : hasFamilyMembership && (requestedRole === 'carer' || requestedRole === 'family_viewer') ? (
+                <div className="space-y-2">
+                  <p className="font-medium text-destructive">Changing your role will disconnect you from your current family space.</p>
+                  <p className="text-sm">You'll still keep your profile, but you'll need to be invited to join a family again.</p>
+                  <p className="text-sm font-semibold">Proceed?</p>
+                </div>
               ) : isSoleMember ? (
                 <p>Your role will be changed immediately. You can change it again anytime from this profile page.</p>
               ) : (

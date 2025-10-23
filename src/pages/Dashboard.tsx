@@ -348,17 +348,11 @@ const Dashboard = () => {
       userName={userName}
       profilePictureUrl={profilePictureUrl}
       currentFamilyId={currentFamilyId}
-      onProfileUpdate={(newRole) => {
-        if (newRole) {
+      onProfileUpdate={async (newRole) => {
+        if (newRole && user) {
           setUserRole(newRole);
-          // Update families array to reflect the new role for consistency
-          setFamilies(prevFamilies => 
-            prevFamilies.map(family => 
-              family.family_id === currentFamilyId 
-                ? { ...family, role: newRole }
-                : family
-            )
-          );
+          // Reload all user data to reflect membership changes
+          await loadUserData(user.id);
         }
       }}
     />
