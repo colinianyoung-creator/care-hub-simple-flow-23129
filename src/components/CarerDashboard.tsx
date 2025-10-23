@@ -166,7 +166,8 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             </Alert>
           )}
 
-          <div className="space-y-4">
+          {familyId ? (
+            <div className="space-y-4">
               <ExpandableDashboardSection 
                 id="scheduling"
                 title="Scheduling & Time Tracking" 
@@ -231,7 +232,24 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
               >
                 <AppointmentsSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
-        </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 space-y-4">
+              <p className="text-muted-foreground text-lg">
+                Once you join a family, you'll be able to access:
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-2 max-w-md mx-auto">
+                <li className="flex items-center gap-2 justify-center">📅 Scheduling & Time Tracking</li>
+                <li className="flex items-center gap-2 justify-center">✅ Tasks Management</li>
+                <li className="flex items-center gap-2 justify-center">📝 Care Notes</li>
+                <li className="flex items-center gap-2 justify-center">🍽️ Diet Tracking</li>
+                <li className="flex items-center gap-2 justify-center">💰 Money Tracking</li>
+                <li className="flex items-center gap-2 justify-center">👤 Key Information (View Only)</li>
+                <li className="flex items-center gap-2 justify-center">💊 Medications (View Only)</li>
+                <li className="flex items-center gap-2 justify-center">📅 Appointments</li>
+              </ul>
+            </div>
+          )}
         </>
       )}
 

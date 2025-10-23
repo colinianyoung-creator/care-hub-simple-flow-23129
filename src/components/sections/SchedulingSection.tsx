@@ -193,6 +193,14 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     
     try {
       if (signal?.aborted) return;
+      
+      // Check if familyId is provided BEFORE setting timeout
+      if (!familyId) {
+        console.warn('No familyId provided to loadSchedulingData');
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
 
       timeoutId = setTimeout(() => {
@@ -204,13 +212,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           });
         }
       }, 10000);
-      
-      // Check if familyId is provided
-      if (!familyId) {
-        console.warn('No familyId provided to loadSchedulingData');
-        setLoading(false);
-        return;
-      }
       
       // Get current user ID first
       const userId = currentUserId || await getCurrentUser();
