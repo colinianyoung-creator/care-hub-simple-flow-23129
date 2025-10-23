@@ -304,12 +304,15 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
       let instancesQuery = supabase
         .from('shift_instances')
-        .select('*')
+        .select(`
+          *,
+          shift_assignments!inner(carer_id)
+        `)
         .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
-        .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]) as any;
+        .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
       
       if (isCarerRole) {
-        instancesQuery = instancesQuery.eq('user_id', userId) as any;
+        instancesQuery = instancesQuery.eq('shift_assignments.carer_id', userId);
       }
       
       const { data: instancesData, error: instancesError } = await instancesQuery;

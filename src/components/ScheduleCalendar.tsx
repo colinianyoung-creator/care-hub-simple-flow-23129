@@ -105,8 +105,7 @@ useEffect(() => {
           .select('*')
           .eq('family_id', familyId)
           .eq('status', 'approved')
-          .gte('date', format(weekStart, 'yyyy-MM-dd'))
-          .lte('date', format(weekEnd, 'yyyy-MM-dd'));
+          .or(`and(start_date.lte.${format(weekEnd, 'yyyy-MM-dd')},end_date.gte.${format(weekStart, 'yyyy-MM-dd')})`);
 
         if (leaveError) {
           console.error('Error loading leave requests:', leaveError);
@@ -143,9 +142,11 @@ useEffect(() => {
     const shifts = weekInstances.filter(instance => instance.scheduled_date === dayString);
     
     // Include leave requests that are approved (filter out denied ones)
-    const leaves = leaveRequests.filter(leave => 
-      leave.date === dayString && leave.status === 'approved'
-    );
+    const leaves = leaveRequests.filter(leave => {
+      const leaveStart = leave.start_date;
+      const leaveEnd = leave.end_date;
+      return dayString >= leaveStart && dayString <= leaveEnd && leave.status === 'approved';
+    });
     
     // Convert leave requests to shift-like objects for display
     const leaveShifts = leaves.map(leave => ({
