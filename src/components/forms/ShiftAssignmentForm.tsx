@@ -9,6 +9,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { timeRangeSchema } from "@/lib/validation";
+import { sanitizeError } from "@/lib/errorHandler";
 
 interface ShiftAssignmentFormProps {
   familyId: string;
@@ -141,10 +143,10 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         console.log('Carers with profiles:', carersWithProfiles);
         setCarers(carersWithProfiles);
       } catch (error) {
-        console.error('Error loading carers:', error);
+        const sanitized = sanitizeError(error);
         toast({
-          title: "Error",
-          description: "Failed to load carers",
+          title: sanitized.title,
+          description: sanitized.description,
           variant: "destructive",
         });
       }
@@ -181,8 +183,23 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
     
     if (selectedCarerIds.length === 0) {
       toast({
-        title: "Error",
+        title: "Validation Error",
         description: "Please select at least one carer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate time range
+    const timeValidation = timeRangeSchema.safeParse({
+      start_time: formData.start_time,
+      end_time: formData.end_time
+    });
+
+    if (!timeValidation.success) {
+      toast({
+        title: "Validation Error",
+        description: timeValidation.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -282,10 +299,10 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
 
       onSuccess();
     } catch (error) {
-      console.error('Error creating shift:', error);
+      const sanitized = sanitizeError(error);
       toast({
-        title: "Error",
-        description: "Failed to create shift",
+        title: sanitized.title,
+        description: sanitized.description,
         variant: "destructive",
       });
     } finally {

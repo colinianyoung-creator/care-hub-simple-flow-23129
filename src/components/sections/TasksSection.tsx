@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { sanitizeError } from "@/lib/errorHandler";
 
 
 interface TasksSectionProps {
@@ -76,10 +77,10 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         }
       } catch (error: any) {
         if (!cancelled && error.name !== 'AbortError') {
-          console.error('Error loading data:', error);
+          const sanitized = sanitizeError(error);
           toast({
-            title: "Error loading tasks",
-            description: "Please try again.",
+            title: sanitized.title,
+            description: sanitized.description,
             variant: "destructive"
           });
         }

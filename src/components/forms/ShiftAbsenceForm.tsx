@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { shiftAbsenceSchema } from "@/lib/validation";
+import { sanitizeError } from "@/lib/errorHandler";
 
 interface ShiftAbsenceFormProps {
   familyId: string;
@@ -40,6 +42,25 @@ export const ShiftAbsenceForm = ({ familyId, userRole, onSuccess, onCancel }: Sh
     setLoading(true);
 
     try {
+      // Validate input using Zod schema
+      const validationResult = shiftAbsenceSchema.safeParse({
+        type: formData.type,
+        date: formData.date,
+        hours: parseFloat(formData.hours),
+        notes: formData.notes || undefined
+      });
+
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const user = await supabase.auth.getUser();
       if (!user.data.user) throw new Error('Not authenticated');
 
@@ -49,7 +70,7 @@ export const ShiftAbsenceForm = ({ familyId, userRole, onSuccess, onCancel }: Sh
       if (isShift) {
         // For shifts, create a time_entry directly for basic shifts
         const startHour = 9; // Default start hour
-        const hours = parseFloat(formData.hours) || 8;
+        const hours = validationResult.data.hours;
         const endHour = startHour + hours;
         const shiftDate = new Date(formData.date);
         
@@ -113,10 +134,10 @@ export const ShiftAbsenceForm = ({ familyId, userRole, onSuccess, onCancel }: Sh
 
       onSuccess();
     } catch (error) {
-      console.error('Error creating entry:', error);
+      const sanitized = sanitizeError(error);
       toast({
-        title: "Error",
-        description: "Failed to create entry",
+        title: sanitized.title,
+        description: sanitized.description,
         variant: "destructive",
       });
     } finally {

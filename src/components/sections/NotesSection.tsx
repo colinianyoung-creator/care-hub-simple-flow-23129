@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive } from "lucide-react";
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
+import { sanitizeError } from "@/lib/errorHandler";
 
 interface CareNote {
   id: string;
@@ -108,10 +109,10 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
       setNotes(notesWithProfiles);
     } catch (error) {
-      console.error('Error loading notes:', error);
+      const sanitized = sanitizeError(error);
       toast({
-        title: "Error loading notes",
-        description: "There was an error loading the care notes.",
+        title: sanitized.title,
+        description: sanitized.description,
         variant: "destructive",
       });
     } finally {
