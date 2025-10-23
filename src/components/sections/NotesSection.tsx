@@ -275,7 +275,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   if (!familyId) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No family selected. Create or join a family to view care notes.</p>
+        Please join or create a family to view care notes.
       </div>
     );
   }

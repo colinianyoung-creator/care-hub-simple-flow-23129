@@ -226,7 +226,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   if (!familyId) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No family selected. Create or join a family to view appointments.</p>
+        Please join or create a family to manage appointments.
       </div>
     );
   }

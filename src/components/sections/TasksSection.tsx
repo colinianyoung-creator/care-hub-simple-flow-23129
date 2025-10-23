@@ -315,7 +315,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   if (!familyId) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No family selected. Create or join a family to view tasks.</p>
+        Please join or create a family to manage tasks.
       </div>
     );
   }

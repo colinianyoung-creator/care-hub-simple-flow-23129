@@ -290,7 +290,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   if (!familyId) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No family selected. Create or join a family to view medications.</p>
+        Please join or create a family to track medications.
       </div>
     );
   }
