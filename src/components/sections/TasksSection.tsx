@@ -12,7 +12,7 @@ import { sanitizeError } from "@/lib/errorHandler";
 
 
 interface TasksSectionProps {
-  familyId: string;
+  familyId: string | undefined;
   userRole: string;
 }
 
@@ -33,6 +33,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
+  const canEdit = familyId && (isAdmin || isCarer);
 
   useEffect(() => {
     let cancelled = false;
@@ -336,7 +337,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   return (
     <div className="space-y-6">
       {/* Add Task Form */}
-      {showAddForm && (isAdmin || isCarer) && (
+      {showAddForm && canEdit && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add New Task</CardTitle>
@@ -400,7 +401,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Tasks</h3>
-        {(isAdmin || isCarer) && (
+        {canEdit && (
           <Button 
             onClick={() => setShowAddForm(true)}
             className="h-10 px-4 text-sm min-h-[44px] md:min-h-[40px]"

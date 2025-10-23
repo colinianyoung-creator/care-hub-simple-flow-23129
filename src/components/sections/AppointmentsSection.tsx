@@ -23,7 +23,7 @@ interface Appointment {
 }
 
 interface AppointmentsSectionProps {
-  familyId: string;
+  familyId: string | undefined;
   userRole: string;
 }
 
@@ -221,7 +221,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
 
   const upcomingAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'upcoming' || getAppointmentStatus(apt) === 'today');
   const pastAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'past');
-  const canManageAppointments = userRole === 'family_admin' || userRole === 'disabled_person';
+  const canManageAppointments = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
 
   if (!familyId) {
     return (
@@ -318,7 +318,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : canManageAppointments ? (
         <Button 
           onClick={() => setShowAddForm(true)} 
           className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
@@ -326,7 +326,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
           <Plus className="h-4 w-4 mr-2" />
           Add New Appointment
         </Button>
-      )}
+      ) : null}
 
       {/* Upcoming Appointments */}
       <Card>

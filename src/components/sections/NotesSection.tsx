@@ -37,7 +37,7 @@ interface CareNote {
 }
 
 interface NotesSectionProps {
-  familyId: string;
+  familyId: string | undefined;
   userRole: string;
 }
 
@@ -285,6 +285,8 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     return <div className="text-center py-4">Loading notes...</div>;
   }
 
+  const canEdit = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
+
   return (
     <Tabs defaultValue="today" className="space-y-6">
       <TabsList className="grid w-full grid-cols-2">
@@ -297,7 +299,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
       <TabsContent value="today" className="space-y-6">
         {/* Add Note Form */}
-        {showAddForm ? (
+        {canEdit && showAddForm ? (
         <Card>
           <CardHeader>
             <CardTitle>Add Daily Note</CardTitle>
@@ -465,7 +467,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : canEdit ? (
         <Button 
           onClick={() => setShowAddForm(true)} 
           className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
@@ -473,7 +475,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
           <Plus className="h-4 w-4 mr-2" />
           Add Daily Note
         </Button>
-      )}
+      ) : null}
 
       {/* Notes List */}
       <div className="space-y-4">
