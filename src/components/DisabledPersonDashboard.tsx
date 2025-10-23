@@ -6,12 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Users, FileText, UserPlus, Copy } from "lucide-react";
+import { Clock, Users, FileText, UserPlus, Copy, CheckSquare, Pill, Calendar, Utensils, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HeroBanner } from "@/components/HeroBanner";
 import { ExpandableDashboardSection } from "./ExpandableDashboardSection";
 import { KeyInformationSection } from "./sections/KeyInformationSection";
+import { SchedulingSection } from "./sections/SchedulingSection";
+import { TasksSection } from "./sections/TasksSection";
+import { NotesSection } from "./sections/NotesSection";
+import { DietSection } from "./sections/DietSection";
+import { MoneySection } from "./sections/MoneySection";
+import { MedicationsSection } from "./sections/MedicationsSection";
+import { AppointmentsSection } from "./sections/AppointmentsSection";
 import { DashboardHeader } from './DashboardHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileDialog } from './dialogs/ProfileDialog';
@@ -310,14 +317,73 @@ export const DisabledPersonDashboard = ({
           </Button>
         </div>
 
-        {/* Key Information Section */}
-        <ExpandableDashboardSection
-          id="key-information"
-          title="Key Information"
-          icon={<Users className="h-5 w-5" />}
-        >
-          <KeyInformationSection familyId={familyId} userRole="disabled_person" />
-        </ExpandableDashboardSection>
+        {/* All Care Coordination Sections */}
+        <div className="space-y-4">
+          <ExpandableDashboardSection
+            id="scheduling"
+            title="Scheduling & Time Management"
+            defaultOpen={true}
+            icon={<Clock className="h-5 w-5" />}
+          >
+            <SchedulingSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection
+            id="tasks"
+            title="Tasks"
+            icon={<CheckSquare className="h-5 w-5" />}
+          >
+            <TasksSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection 
+            id="notes"
+            title="Care Notes" 
+            icon={<FileText className="h-5 w-5" />}
+          >
+            <NotesSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection 
+            id="diet"
+            title="Diet Tracking" 
+            icon={<Utensils className="h-5 w-5" />}
+          >
+            <DietSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection 
+            id="money"
+            title="Money Tracking" 
+            icon={<Wallet className="h-5 w-5" />}
+          >
+            <MoneySection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection
+            id="key-information"
+            title="Key Information"
+            icon={<Users className="h-5 w-5" />}
+          >
+            <KeyInformationSection familyId={familyId} userRole="disabled_person" />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection
+            id="medications"
+            title="Medications"
+            icon={<Pill className="h-5 w-5" />}
+          >
+            <MedicationsSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection
+            id="appointments"
+            title="Appointments"
+            icon={<Calendar className="h-5 w-5" />}
+          >
+            <AppointmentsSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+        </div>
       </div>
 
       <ProfileDialog 

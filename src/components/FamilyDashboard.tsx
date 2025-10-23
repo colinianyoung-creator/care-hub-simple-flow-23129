@@ -79,6 +79,9 @@ export const FamilyDashboard = ({
   }, [familyId]);
 
   const isAdminRole = userRole === 'family_admin' || userRole === 'disabled_person';
+  const isViewerRole = userRole === 'family_viewer';
+  const canEditWithoutFamily = isAdminRole; // Admin roles can edit sections even without family
+  const showJoinMessage = !familyId && isViewerRole; // Viewers need to join a family first
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-care-background to-care-background-alt">
@@ -91,29 +94,41 @@ export const FamilyDashboard = ({
         familyId={familyId}
         showInviteButton={!!familyId && isAdminRole}
         showCreateButton={!familyId && isAdminRole}
+        showJoinButton={!familyId && isViewerRole}
         onProfileUpdate={onProfileUpdate}
       />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         <HeroBanner 
           title={`Welcome back, ${userName?.split(' ')[0] || 'there'}`}
-          subtitle={familyId ? "Manage your family's care with ease" : "Create a family to start coordinating care"}
+          subtitle={familyId ? "Manage your family's care with ease" : canEditWithoutFamily ? "Create a family to start coordinating care" : "Join a family to access care features"}
           careRecipientName={familyId && userRole !== 'disabled_person' ? careRecipientName : undefined}
           profilePictureUrl={profilePictureUrl}
           onProfileClick={() => setShowProfileDialog(true)}
         />
 
-        {!familyId && (
+        {showJoinMessage && (
           <Alert>
             <UserPlus className="h-5 w-5" />
             <AlertDescription>
-              <p className="font-medium">Create your family to access care coordination features</p>
-              <p className="text-sm mt-1">Click "Create Family" above to get started.</p>
+              <p className="font-medium">Join a family to access care coordination features</p>
+              <p className="text-sm mt-1">Click "Join Family" above or ask a family admin to invite you.</p>
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="space-y-4">
+        {!familyId && isAdminRole && (
+          <Alert>
+            <UserPlus className="h-5 w-5" />
+            <AlertDescription>
+              <p className="font-medium">Create your family to get started</p>
+              <p className="text-sm mt-1">Click "Create Family" above to begin coordinating care.</p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {(familyId || canEditWithoutFamily) && !showJoinMessage && (
+          <div className="space-y-4">
           <ExpandableDashboardSection
             id="scheduling"
             title="Scheduling & Time Management"
@@ -178,7 +193,8 @@ export const FamilyDashboard = ({
           >
             <AppointmentsSection familyId={familyId} userRole={userRole} />
           </ExpandableDashboardSection>
-        </div>
+          </div>
+        )}
       </div>
       
       <ProfileDialog 
