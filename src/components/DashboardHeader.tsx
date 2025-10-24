@@ -22,6 +22,7 @@ interface DashboardHeaderProps {
   showJoinButton?: boolean;
   showCreateButton?: boolean;
   onProfileUpdate?: () => void;
+  isLoading?: boolean;
 }
 
 export const DashboardHeader = ({ 
@@ -36,7 +37,8 @@ export const DashboardHeader = ({
   showInviteButton = false,
   showJoinButton = false,
   showCreateButton = false,
-  onProfileUpdate
+  onProfileUpdate,
+  isLoading = false
 }: DashboardHeaderProps) => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
@@ -99,13 +101,13 @@ export const DashboardHeader = ({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        {showInviteButton && familyId && (
+        {!isLoading && showInviteButton && familyId && (
           <InviteMembersButton familyId={familyId} variant="outline" className="hidden sm:flex" />
         )}
-        {showJoinButton && (
+        {!isLoading && showJoinButton && (
           <JoinFamilyButton variant="outline" className="hidden sm:flex" />
         )}
-        {showCreateButton && (
+        {!isLoading && showCreateButton && (
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />
         )}
         

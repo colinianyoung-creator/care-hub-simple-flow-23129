@@ -350,8 +350,17 @@ const Dashboard = () => {
       currentFamilyId={currentFamilyId}
       onProfileUpdate={async (newRole) => {
         if (newRole && user) {
+          console.log('🔄 Profile update callback triggered with role:', newRole);
           setUserRole(newRole);
+          setLoading(true);
+          setLoadingMessage('Refreshing dashboard...');
+          
+          // Add delay to account for database replication lag in production
+          console.log('⏳ Waiting 1s for database replication...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           // Reload all user data to reflect membership changes
+          console.log('🔄 Reloading user data...');
           await loadUserData(user.id);
         }
       }}

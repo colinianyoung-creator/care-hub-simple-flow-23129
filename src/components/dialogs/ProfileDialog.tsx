@@ -261,6 +261,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
     // ✅ If no family membership, update preferred_role and auto-create family for admin roles
     if (!hasFamilyMembership && requestedRole) {
+      const originalRole = currentUserRole; // Store for rollback
+      
       try {
         setSaving(true);
         const { data: { user } } = await supabase.auth.getUser();
@@ -270,6 +272,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         }
 
         console.log('👤 Updating preferred_role to:', requestedRole);
+
+        // Optimistic update
+        setCurrentUserRole(requestedRole);
 
         // Update the preferred_role in profiles table
         const { error: profileError } = await supabase
@@ -334,14 +339,21 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           });
         }
 
-        setCurrentUserRole(requestedRole);
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
         
-        // Reload page to refresh all data
-        window.location.reload();
+        // Use callback instead of page reload
+        if (onProfileUpdate) {
+          console.log('🔄 Triggering profile update callback...');
+          await onProfileUpdate(requestedRole);
+        }
+        
+        onClose();
       } catch (error: any) {
         console.error('❌ Error updating role:', error);
+        // Rollback optimistic update
+        setCurrentUserRole(originalRole);
+        
         toast({
           title: "Error",
           description: error.message || "Failed to update role",
@@ -355,6 +367,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
     // ✅ If connected and switching to carer/family_viewer, remove all memberships
     if (hasFamilyMembership && (requestedRole === 'carer' || requestedRole === 'family_viewer')) {
+      const originalRole = currentUserRole; // Store for rollback
+      
       try {
         setSaving(true);
         const { data: { user } } = await supabase.auth.getUser();
@@ -364,6 +378,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         }
 
         console.log('🔓 Removing all family memberships...');
+
+        // Optimistic update
+        setCurrentUserRole(requestedRole);
 
         // Remove all memberships
         const { error: deleteError } = await supabase
@@ -394,14 +411,21 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           description: "You've been disconnected from your family. You can join or be invited to a family anytime.",
         });
 
-        setCurrentUserRole(requestedRole);
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
         
-        // Reload page to refresh all data
-        window.location.reload();
+        // Use callback instead of page reload
+        if (onProfileUpdate) {
+          console.log('🔄 Triggering profile update callback...');
+          await onProfileUpdate(requestedRole);
+        }
+        
+        onClose();
       } catch (error: any) {
         console.error('❌ Error updating role:', error);
+        // Rollback optimistic update
+        setCurrentUserRole(originalRole);
+        
         toast({
           title: "Error",
           description: error.message || "Failed to update role",
@@ -415,6 +439,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
     // If sole member, use RPC function for safe role update
     if (isSoleMember && requestedRole) {
+      const originalRole = currentUserRole; // Store for rollback
+      
       try {
         setSaving(true);
         const { data: user } = await supabase.auth.getUser();
@@ -424,6 +450,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         }
 
         console.log('📝 Calling update_own_role_safe RPC with role:', requestedRole, 'familyId:', familyId);
+
+        // Optimistic update
+        setCurrentUserRole(requestedRole);
 
         // Call the secure RPC function with both parameters
         const { data: rawResult, error: rpcError } = await supabase
@@ -464,7 +493,6 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         }
 
         console.log('✅ Role updated successfully');
-        setCurrentUserRole(requestedRole);
 
         toast({
           title: "Role Updated",
@@ -474,10 +502,18 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         setShowRoleChangeForm(false);
         setShowRoleChangeConfirm(false);
         
-        // Reload page to refresh all data
-        window.location.reload();
+        // Use callback instead of page reload
+        if (onProfileUpdate) {
+          console.log('🔄 Triggering profile update callback...');
+          await onProfileUpdate(requestedRole);
+        }
+        
+        onClose();
       } catch (error: any) {
         console.error('❌ Error updating role:', error);
+        // Rollback optimistic update
+        setCurrentUserRole(originalRole);
+        
         toast({
           title: "Error",
           description: error.message || "Failed to update role",

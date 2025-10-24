@@ -147,6 +147,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             onSwitchFamily={() => setShowFamilySwitcher(true)}
             showJoinButton={!familyId}
             onProfileUpdate={onProfileUpdate}
+            isLoading={loading}
           />
           
           <HeroBanner 
