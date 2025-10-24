@@ -145,7 +145,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             onSignOut={onSignOut}
             familyId={familyId}
             onSwitchFamily={() => setShowFamilySwitcher(true)}
-            showJoinButton={true}
+            showJoinButton={!familyId}
             onProfileUpdate={onProfileUpdate}
           />
           
