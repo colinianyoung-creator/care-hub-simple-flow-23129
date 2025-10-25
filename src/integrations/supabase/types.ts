@@ -918,7 +918,6 @@ export type Database = {
         Args: { _created_by: string; _user_id: string }
         Returns: boolean
       }
-      can_update_own_profile: { Args: { _user_id: string }; Returns: boolean }
       change_user_role: {
         Args: { _new_role: Database["public"]["Enums"]["app_role"] }
         Returns: Json
