@@ -535,8 +535,8 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
-          preferred_role: Database["public"]["Enums"]["app_role"] | null
           profile_picture_url: string | null
+          ui_preference: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
         }
         Insert: {
@@ -548,8 +548,8 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
-          preferred_role?: Database["public"]["Enums"]["app_role"] | null
           profile_picture_url?: string | null
+          ui_preference?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
         Update: {
@@ -561,8 +561,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
-          preferred_role?: Database["public"]["Enums"]["app_role"] | null
           profile_picture_url?: string | null
+          ui_preference?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
         Relationships: []
@@ -917,6 +917,11 @@ export type Database = {
       can_create_family: {
         Args: { _created_by: string; _user_id: string }
         Returns: boolean
+      }
+      can_update_own_profile: { Args: { _user_id: string }; Returns: boolean }
+      change_user_role: {
+        Args: { _new_role: Database["public"]["Enums"]["app_role"] }
+        Returns: Json
       }
       ensure_user_profile: { Args: never; Returns: string }
       generate_invite: {

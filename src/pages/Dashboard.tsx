@@ -16,7 +16,24 @@ const Dashboard = () => {
   const [loadingMessage, setLoadingMessage] = useState("Checking authentication...");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string>("");
   const [currentFamilyId, setCurrentFamilyId] = useState<string | undefined>(undefined);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { toast } = useToast();
+
+  // Add timeout for loading state
+  useEffect(() => {
+    if (!loading || dataLoaded) {
+      setLoadingTimeout(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      if (loading && !dataLoaded) {
+        setLoadingTimeout(true);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading, dataLoaded]);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -163,13 +180,13 @@ const Dashboard = () => {
       setFamilies(memberships || []);
       console.log('✅ Families set:', memberships?.length || 0);
       
-      // Set user role from first membership, or use preferred_role as fallback
+      // Set user role from first membership, or use ui_preference as fallback
       if (memberships && memberships.length > 0) {
         console.log('✅ Setting role from membership:', memberships[0].role);
         setUserRole(memberships[0].role);
       } else {
-        const fallbackRole = profileData?.preferred_role || 'carer';
-        console.log('⚠️ No memberships found, using preferred_role:', fallbackRole);
+        const fallbackRole = profileData?.ui_preference || 'carer';
+        console.log('⚠️ No memberships found, using ui_preference:', fallbackRole);
         setUserRole(fallbackRole);
       }
       
@@ -239,7 +256,7 @@ const Dashboard = () => {
     }
 
     // Auto-create family for existing admin users who don't have one
-    const userRole = profileData?.preferred_role;
+    const userRole = profileData?.ui_preference;
     const { data: existingMemberships } = await supabase
       .from('user_memberships')
       .select('id')
@@ -355,13 +372,46 @@ const Dashboard = () => {
           setLoading(true);
           setLoadingMessage('Refreshing dashboard...');
           
-          // Add delay to account for database replication lag in production
-          console.log('⏳ Waiting 1s for database replication...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Reload all user data to reflect membership changes
-          console.log('🔄 Reloading user data...');
-          await loadUserData(user.id);
+          // Use retry logic to handle replication lag
+          try {
+            const { retryQueryUntilSuccess } = await import('@/lib/retryQuery');
+            
+            await retryQueryUntilSuccess(
+              async () => {
+                const { data, error } = await supabase
+                  .from('user_memberships')
+                  .select(`
+                    id,
+                    family_id,
+                    role,
+                    families (id, name)
+                  `)
+                  .eq('user_id', user.id);
+                
+                if (error) throw error;
+                return data || [];
+              },
+              (data) => {
+                console.log(`⏳ Membership query returned ${data.length} results`);
+                return true; // Accept any result after retries
+              },
+              5,    // 5 attempts
+              1000  // 1 second between attempts
+            );
+
+            console.log('✅ Memberships loaded after role change');
+            
+            // Reload all user data
+            await loadUserData(user.id);
+          } catch (error) {
+            console.error('❌ Failed to refresh after role change:', error);
+            toast({
+              title: "Refresh Failed",
+              description: "Please refresh the page manually to see your changes.",
+              variant: "destructive",
+            });
+            setLoading(false);
+          }
         }
       }}
     />

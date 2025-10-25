@@ -44,6 +44,7 @@ export const FamilyDashboard = ({
   const [careRecipientName, setCareRecipientName] = useState('');
   const [userName, setUserName] = useState('');
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -95,7 +96,14 @@ export const FamilyDashboard = ({
         showInviteButton={!!familyId && isAdminRole}
         showCreateButton={!familyId && isAdminRole}
         showJoinButton={!familyId && isViewerRole}
-        onProfileUpdate={onProfileUpdate}
+        onProfileUpdate={() => {
+          setLoading(true);
+          if (onProfileUpdate) {
+            onProfileUpdate();
+          }
+          setTimeout(() => setLoading(false), 2000);
+        }}
+        isLoading={loading}
       />
 
       <div className="container mx-auto px-4 py-8 space-y-8">

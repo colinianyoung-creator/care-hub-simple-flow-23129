@@ -137,9 +137,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           profile_picture_url: profileInfo.profile_picture_url || ''
         });
         
-        // Store the preferred_role for users without family membership
-        preferredRole = profileInfo.preferred_role || 'carer';
-        console.log('[ProfileDialog] Loaded preferred_role:', preferredRole);
+        // Store the ui_preference for users without family membership
+        preferredRole = profileInfo.ui_preference || 'carer';
+        console.log('[ProfileDialog] Loaded ui_preference:', preferredRole);
       }
 
       if (checkCancelled?.()) return;
@@ -170,7 +170,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         setHasFamilyMembership(true);
         setIsAdminRole(membershipData.role === 'family_admin' || membershipData.role === 'disabled_person');
       } else {
-        console.log('✅ No family membership, using preferred_role:', preferredRole);
+        console.log('✅ No family membership, using ui_preference:', preferredRole);
         // Defensive: ensure we have a valid role
         const safeRole = preferredRole || 'carer';
         setCurrentUserRole(safeRole);
@@ -251,338 +251,74 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   };
 
   const handleRoleChangeRequest = async () => {
-    console.log('🔍 handleRoleChangeRequest called', { 
-      hasFamilyMembership, 
-      requestedRole, 
-      isAdminRole,
-      isSoleMember,
-      currentRole: currentUserRole 
-    });
-
-    // ✅ If no family membership, update preferred_role and auto-create family for admin roles
-    if (!hasFamilyMembership && requestedRole) {
-      const originalRole = currentUserRole; // Store for rollback
-      
-      try {
-        setSaving(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error('❌ No user found');
-          return;
-        }
-
-        console.log('👤 Updating preferred_role to:', requestedRole);
-
-        // Optimistic update
-        setCurrentUserRole(requestedRole);
-
-        // Update the preferred_role in profiles table
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ preferred_role: requestedRole })
-          .eq('id', user.id);
-
-        if (profileError) {
-          console.error('❌ Profile update error:', profileError);
-          throw profileError;
-        }
-
-        console.log('✅ Preferred role updated');
-
-        // If switching to admin roles, auto-create personal family
-        if (requestedRole === 'family_admin' || requestedRole === 'disabled_person') {
-          console.log('🏠 Creating personal family for admin role...');
-          
-          const firstName = profile.full_name?.split(' ')[0] || 'User';
-          
-          // Create family
-          const { data: newFamily, error: familyError } = await supabase
-            .from('families')
-            .insert({ 
-              name: `${firstName}'s Care Space`, 
-              created_by: user.id 
-            })
-            .select()
-            .single();
-
-          if (familyError) {
-            console.error('❌ Family creation error:', familyError);
-            throw familyError;
-          }
-
-          console.log('✅ Family created:', newFamily.id);
-
-          // Add membership
-          const { error: membershipError } = await supabase
-            .from('user_memberships')
-            .insert({
-              user_id: user.id,
-              family_id: newFamily.id,
-              role: requestedRole
-            });
-
-          if (membershipError) {
-            console.error('❌ Membership creation error:', membershipError);
-            throw membershipError;
-          }
-
-          console.log('✅ Membership created');
-
-          toast({
-            title: "Role Updated",
-            description: "Your personal care space has been created!",
-          });
-        } else {
-          toast({
-            title: "Role Updated",
-            description: `Your dashboard has been customized for: ${requestedRole.replace(/_/g, ' ')}`,
-          });
-        }
-
-        setShowRoleChangeForm(false);
-        setShowRoleChangeConfirm(false);
-        
-        // Use callback instead of page reload
-        if (onProfileUpdate) {
-          console.log('🔄 Triggering profile update callback...');
-          await onProfileUpdate(requestedRole);
-        }
-        
-        onClose();
-      } catch (error: any) {
-        console.error('❌ Error updating role:', error);
-        // Rollback optimistic update
-        setCurrentUserRole(originalRole);
-        
-        toast({
-          title: "Error",
-          description: error.message || "Failed to update role",
-          variant: "destructive",
-        });
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
-
-    // ✅ If connected and switching to carer/family_viewer, remove all memberships
-    if (hasFamilyMembership && (requestedRole === 'carer' || requestedRole === 'family_viewer')) {
-      const originalRole = currentUserRole; // Store for rollback
-      
-      try {
-        setSaving(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error('❌ No user found');
-          return;
-        }
-
-        console.log('🔓 Removing all family memberships...');
-
-        // Optimistic update
-        setCurrentUserRole(requestedRole);
-
-        // Remove all memberships
-        const { error: deleteError } = await supabase
-          .from('user_memberships')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (deleteError) {
-          console.error('❌ Error removing memberships:', deleteError);
-          throw deleteError;
-        }
-
-        console.log('✅ Memberships removed');
-
-        // Update preferred_role as fallback
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ preferred_role: requestedRole })
-          .eq('id', user.id);
-
-        if (profileError) {
-          console.error('❌ Profile update error:', profileError);
-          throw profileError;
-        }
-
-        toast({
-          title: "Role Updated",
-          description: "You've been disconnected from your family. You can join or be invited to a family anytime.",
-        });
-
-        setShowRoleChangeForm(false);
-        setShowRoleChangeConfirm(false);
-        
-        // Use callback instead of page reload
-        if (onProfileUpdate) {
-          console.log('🔄 Triggering profile update callback...');
-          await onProfileUpdate(requestedRole);
-        }
-        
-        onClose();
-      } catch (error: any) {
-        console.error('❌ Error updating role:', error);
-        // Rollback optimistic update
-        setCurrentUserRole(originalRole);
-        
-        toast({
-          title: "Error",
-          description: error.message || "Failed to update role",
-          variant: "destructive",
-        });
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
-
-    // If sole member, use RPC function for safe role update
-    if (isSoleMember && requestedRole) {
-      const originalRole = currentUserRole; // Store for rollback
-      
-      try {
-        setSaving(true);
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) {
-          console.error('❌ No user found');
-          return;
-        }
-
-        console.log('📝 Calling update_own_role_safe RPC with role:', requestedRole, 'familyId:', familyId);
-
-        // Optimistic update
-        setCurrentUserRole(requestedRole);
-
-        // Call the secure RPC function with both parameters
-        const { data: rawResult, error: rpcError } = await supabase
-          .rpc('update_own_role_safe' as any, { 
-            _family_id: familyId, 
-            _new_role: requestedRole 
-          });
-
-        // Cast the result to the expected type
-        const result = rawResult as { success: boolean; error?: string; new_role?: string; family_id?: string };
-        console.log('📊 RPC result:', result);
-
-        if (rpcError) {
-          console.error('❌ RPC error:', rpcError);
-          throw rpcError;
-        }
-
-        if (!result.success) {
-          console.error('❌ RPC returned failure:', result.error);
-          throw new Error(result.error || 'Failed to update role');
-        }
-
-        // Verify the update by querying the database
-        const { data: verifyData, error: verifyError } = await supabase
-          .from('user_memberships')
-          .select('role')
-          .eq('user_id', user.user.id)
-          .eq('family_id', result.family_id || familyId)
-          .single();
-
-        if (verifyError) {
-          console.error('⚠️ Could not verify update:', verifyError);
-        } else {
-          console.log('✅ Verified role in database:', verifyData.role);
-          if (verifyData.role !== requestedRole) {
-            throw new Error('Role update verification failed - database does not reflect the change');
-          }
-        }
-
-        console.log('✅ Role updated successfully');
-
-        toast({
-          title: "Role Updated",
-          description: `Your role has been updated to ${requestedRole.replace(/_/g, ' ')}`,
-        });
-
-        setShowRoleChangeForm(false);
-        setShowRoleChangeConfirm(false);
-        
-        // Use callback instead of page reload
-        if (onProfileUpdate) {
-          console.log('🔄 Triggering profile update callback...');
-          await onProfileUpdate(requestedRole);
-        }
-        
-        onClose();
-      } catch (error: any) {
-        console.error('❌ Error updating role:', error);
-        // Rollback optimistic update
-        setCurrentUserRole(originalRole);
-        
-        toast({
-          title: "Error",
-          description: error.message || "Failed to update role",
-          variant: "destructive",
-        });
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
-
-    // Connected admin roles (family_admin, disabled_person, manager) cannot change roles
-    // They must transfer administrative responsibility first
-    if (hasFamilyMembership && !isSoleMember && (currentUserRole === 'family_admin' || currentUserRole === 'disabled_person' || currentUserRole === 'manager')) {
-      toast({
-        title: "Cannot Change Role",
-        description: "You must transfer administrative responsibility to another member before changing your role. This ensures the family always has an administrator.",
-        variant: "destructive",
-      });
-      setShowRoleChangeForm(false);
-      setShowRoleChangeConfirm(false);
-      return;
-    }
-
-    // Non-admin roles (carer, family_viewer) submit request for approval
-    if (!roleChangeReason.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide a reason for the role change",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    const originalRole = currentUserRole;
+    
     try {
       setSaving(true);
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('role_change_requests')
-        .insert({
-          user_id: user.user.id,
-          family_id: familyId,
-          from_role: currentUserRole as any,
-          requested_role: requestedRole as any,
-          reason: roleChangeReason
-        });
+      console.log('🔄 Calling change_user_role RPC with:', requestedRole);
 
-      if (error) throw error;
+      // Optimistic update
+      setCurrentUserRole(requestedRole);
+
+      // Single RPC call handles ALL logic server-side (secure, auditable)
+      const { data: rawResult, error: rpcError } = await supabase
+        .rpc('change_user_role', { _new_role: requestedRole });
+
+      if (rpcError) throw rpcError;
+
+      const result = rawResult as {
+        success: boolean;
+        error?: string;
+        action?: string;
+        family_id?: string;
+        new_role?: string;
+      };
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update role');
+      }
+
+      console.log('✅ Role change successful:', result);
+
+      // User-friendly messages based on action
+      const messages: Record<string, string> = {
+        created_family: "Your personal care space has been created!",
+        updated_preference: `Dashboard customized for ${requestedRole.replace(/_/g, ' ')}`,
+        updated_role: `Role updated to ${requestedRole.replace(/_/g, ' ')}`,
+        left_family: "You've left the family. You can join or be invited anytime."
+      };
 
       toast({
-        title: "Request Submitted",
-        description: "Your role change request has been sent to family administrators for approval",
+        title: "Role Updated",
+        description: messages[result.action || ''] || "Role updated successfully",
       });
 
       setShowRoleChangeForm(false);
       setShowRoleChangeConfirm(false);
-      setRoleChangeReason('');
-    } catch (error) {
-      console.error('Error submitting role change request:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit role change request",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+
+      // Trigger parent refresh with retry logic
+      if (onProfileUpdate) {
+        console.log('🔄 Triggering profile update callback...');
+        await onProfileUpdate(requestedRole);
+      }
+        
+        onClose();
+      } catch (error: any) {
+        console.error('❌ Error updating role:', error);
+        // Rollback optimistic update
+        setCurrentUserRole(originalRole);
+        
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update role",
+          variant: "destructive",
+        });
+      } finally {
+        setSaving(false);
+      }
   };
 
   const handleDeleteProfile = async () => {
