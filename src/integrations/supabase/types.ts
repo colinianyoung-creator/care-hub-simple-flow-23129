@@ -946,8 +946,8 @@ export type Database = {
           full_name: string
           id: string
           phone: string
-          preferred_role: Database["public"]["Enums"]["app_role"]
           profile_picture_url: string
+          ui_preference: Database["public"]["Enums"]["app_role"]
         }[]
       }
       get_shift_instances_with_names: {
