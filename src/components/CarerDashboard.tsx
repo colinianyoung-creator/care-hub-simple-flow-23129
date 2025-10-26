@@ -122,15 +122,6 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
     }
   };
 
-  const sections = [
-    <SchedulingSection familyId={familyId} userRole={userRole} careRecipientNameHint={careRecipientNameHint || familyName} />,
-    <TasksSection familyId={familyId} userRole={userRole} />,
-    <NotesSection familyId={familyId} userRole={userRole} />,
-    <KeyInformationSection familyId={familyId} userRole={userRole} />,
-    <MedicationsSection familyId={familyId} userRole={userRole} />,
-    <AppointmentsSection familyId={familyId} userRole={userRole} />
-  ];
-
   return (
     <div className="space-y-6">
       {loading ? (

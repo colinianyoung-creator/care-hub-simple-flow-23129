@@ -322,14 +322,10 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   };
 
   const handleContinueToDashboard = () => {
-    toast({
-      title: "Refreshing Dashboard",
-      description: "Loading your new role...",
-    });
-    
+    // Don't show toast - parent will handle loading message
     onClose();
     
-    // Trigger parent refresh with longer delay
+    // Trigger parent refresh
     if (onProfileUpdate) {
       console.log('🔄 Triggering profile update callback...');
       onProfileUpdate(requestedRole);
@@ -659,17 +655,25 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   {/* Success Banner - shows after role change */}
                   {roleChangeSuccess && (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                      <p className="font-medium text-green-900">Role change successful!</p>
+                      <p className="font-medium text-green-900 mb-2">
+                        ✅ Role change successful!
+                      </p>
                       {roleChangeAction === 'left_family' && (
-                        <p className="text-sm text-green-700 mt-1">
-                          You've been disconnected from your family. Click below to refresh your dashboard.
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-2">
+                          ⚠️ You've left the family and will lose access to family data.
+                        </p>
+                      )}
+                      {roleChangeAction === 'created_family' && (
+                        <p className="text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded p-2 mb-2">
+                          🎉 Your personal care space has been created!
                         </p>
                       )}
                       <Button 
                         onClick={handleContinueToDashboard}
-                        className="mt-3 w-full"
+                        className="w-full mt-2"
+                        size="lg"
                       >
-                        Continue to Dashboard
+                        Continue to Dashboard →
                       </Button>
                     </div>
                   )}

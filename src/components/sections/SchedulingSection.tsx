@@ -149,7 +149,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     const abortController = new AbortController();
 
     const loadData = async () => {
-      if (cancelled) return;
+      if (cancelled || !familyId) {
+        setLoading(false);
+        return;
+      }
 
       try {
         await getCurrentUser();
@@ -164,6 +167,14 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     };
 
     loadData();
+    
+    // Loading timeout protection
+    const timeout = setTimeout(() => {
+      if (loading && !cancelled) {
+        console.warn('Scheduling section loading timeout');
+        setLoading(false);
+      }
+    }, 5000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !cancelled) {
@@ -177,9 +188,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       cancelled = true;
       abortController.abort();
       setLoading(false);
+      clearTimeout(timeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [familyId]);
+  }, [familyId, loading]);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -188,18 +200,18 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   };
 
   const loadSchedulingData = async (retryCount = 0, signal?: AbortSignal) => {
+    // Check if familyId is provided FIRST
+    if (!familyId) {
+      console.warn('No familyId provided to loadSchedulingData');
+      setLoading(false);
+      return;
+    }
+    
     // 10s timeout - define outside try block so it's accessible in catch
     let timeoutId: NodeJS.Timeout | null = null;
     
     try {
       if (signal?.aborted) return;
-      
-      // Check if familyId is provided BEFORE setting timeout
-      if (!familyId) {
-        console.warn('No familyId provided to loadSchedulingData');
-        setLoading(false);
-        return;
-      }
       
       setLoading(true);
 

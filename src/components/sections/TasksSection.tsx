@@ -40,7 +40,10 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     const abortController = new AbortController();
 
     const loadData = async () => {
-      if (cancelled || !familyId) return;
+      if (cancelled || !familyId) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       let timeoutId: NodeJS.Timeout | null = null;
@@ -92,13 +95,22 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     };
 
     loadData();
+    
+    // Loading timeout protection
+    const timeout = setTimeout(() => {
+      if (loading && !cancelled) {
+        console.warn('Tasks section loading timeout');
+        setLoading(false);
+      }
+    }, 5000);
 
     return () => {
       cancelled = true;
       abortController.abort();
       setLoading(false);
+      clearTimeout(timeout);
     };
-  }, [familyId]);
+  }, [familyId, loading]);
 
   const loadTasks = async (signal?: AbortSignal) => {
     try {

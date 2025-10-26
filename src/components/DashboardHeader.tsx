@@ -101,13 +101,13 @@ export const DashboardHeader = ({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        {!isLoading && showInviteButton && familyId && (
+        {showInviteButton && familyId && (
           <InviteMembersButton familyId={familyId} variant="outline" className="hidden sm:flex" />
         )}
-        {!isLoading && showJoinButton && (
+        {showJoinButton && (
           <JoinFamilyButton variant="outline" className="hidden sm:flex" />
         )}
-        {!isLoading && showCreateButton && (
+        {showCreateButton && (
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />
         )}
         

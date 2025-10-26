@@ -233,7 +233,10 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     const abortController = new AbortController();
 
     const loadData = async () => {
-      if (cancelled || !familyId) return;
+      if (cancelled || !familyId) {
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
       let timeoutId: NodeJS.Timeout | null = null;
@@ -277,13 +280,22 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     };
 
     loadData();
+    
+    // Loading timeout protection
+    const timeout = setTimeout(() => {
+      if (loading && !cancelled) {
+        console.warn('Medications section loading timeout');
+        setLoading(false);
+      }
+    }, 5000);
 
     return () => {
       cancelled = true;
       abortController.abort();
       setLoading(false);
+      clearTimeout(timeout);
     };
-  }, [familyId]);
+  }, [familyId, loading]);
 
   const canManageMedications = userRole === 'family_admin' || userRole === 'disabled_person';
 

@@ -367,25 +367,19 @@ const Dashboard = () => {
       currentFamilyId={currentFamilyId}
       onProfileUpdate={async (newRole) => {
         if (newRole && user) {
-          console.log('🔄 Profile update callback triggered with role:', newRole);
+          console.log('🔄 Profile update - reloading for role:', newRole);
+          
+          // Immediately show loading state
           setLoading(true);
-          setLoadingMessage('Refreshing dashboard...');
+          setLoadingMessage('Loading your new dashboard...');
           
-          // Longer delay to ensure database commit completes
-          // This is especially important for production with replication lag
+          // Force full page reload after brief delay
+          // We do this instead of trying to re-fetch data to avoid
+          // stale cache and replication lag issues
           setTimeout(() => {
-            console.log('🔄 Reloading page with fresh data...');
+            console.log('🔄 Executing page reload...');
             window.location.reload();
-          }, 1000);
-          
-          // Timeout protection - if reload doesn't happen, reset
-          setTimeout(() => {
-            if (window.document.readyState === 'complete') {
-              console.warn('⚠️ Reload timeout - resetting state');
-              setLoading(false);
-              setLoadingMessage('Checking authentication...');
-            }
-          }, 10000);
+          }, 800);
         }
       }}
     />
