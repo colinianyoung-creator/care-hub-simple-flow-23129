@@ -31,6 +31,18 @@ interface DietSectionProps {
 }
 
 export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) => {
+  console.log('[DietSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <p className="text-sm text-muted-foreground">
+          Create your personal care space or join a family to start tracking diet.
+        </p>
+      </div>
+    );
+  }
+
   const [entries, setEntries] = useState<DietEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

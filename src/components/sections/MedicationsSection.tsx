@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Check } from "lucide-react";
+import { Plus, Trash2, Check, AlertCircle } from "lucide-react";
 import { format } from 'date-fns';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Medication {
   id: string;
@@ -42,6 +43,19 @@ interface MedicationsSectionProps {
 }
 
 export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionProps) => {
+  console.log('[MedicationsSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access medications.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   const { toast } = useToast();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [medicationLogs, setMedicationLogs] = useState<MedicationLog[]>([]);

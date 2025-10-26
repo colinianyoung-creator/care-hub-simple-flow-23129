@@ -365,13 +365,15 @@ const Dashboard = () => {
       userName={userName}
       profilePictureUrl={profilePictureUrl}
       currentFamilyId={currentFamilyId}
-            onProfileUpdate={(newRole) => {
-              if (newRole && user) {
-                console.log('🔄 Dashboard reload triggered for role:', newRole);
-                // Immediate reload for deterministic behavior
-                window.location.reload();
-              }
-            }}
+      onProfileUpdate={(newRole) => {
+        if (newRole && user) {
+          console.log('🔄 Dashboard reload triggered for role:', newRole);
+          // Brief delay to ensure database transaction commits
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
+      }}
     />
   );
 };

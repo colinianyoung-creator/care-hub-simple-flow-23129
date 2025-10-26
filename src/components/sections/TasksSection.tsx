@@ -17,6 +17,18 @@ interface TasksSectionProps {
 }
 
 export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
+  console.log('[TasksSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <p className="text-sm text-muted-foreground">
+          Create your personal care space or join a family to start tracking tasks.
+        </p>
+      </div>
+    );
+  }
+
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);

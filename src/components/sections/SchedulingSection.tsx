@@ -23,8 +23,18 @@ interface SchedulingSectionProps {
 }
 
 export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }: SchedulingSectionProps) => {
-  console.log('SchedulingSection rendering with userRole:', userRole);
-  
+  console.log('[SchedulingSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <p className="text-sm text-muted-foreground">
+          Create your personal care space or join a family to start tracking schedules.
+        </p>
+      </div>
+    );
+  }
+
   const [assignments, setAssignments] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [instances, setInstances] = useState<any[]>([]);

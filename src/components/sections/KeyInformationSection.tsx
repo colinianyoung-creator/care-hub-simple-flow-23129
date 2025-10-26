@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Save, X } from "lucide-react";
+import { Plus, Edit, Save, X, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EmergencyContact {
   name: string;
@@ -20,6 +21,19 @@ interface KeyInformationSectionProps {
 }
 
 export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSectionProps) => {
+  console.log('[KeyInformationSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access key information.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   const { toast } = useToast();
   const [keyInfo, setKeyInfo] = useState({
     medical_history: '',

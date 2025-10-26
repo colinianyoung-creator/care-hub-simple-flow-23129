@@ -36,6 +36,18 @@ interface MoneySectionProps {
 }
 
 export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }) => {
+  console.log('[MoneySection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <p className="text-sm text-muted-foreground">
+          Create your personal care space or join a family to start tracking finances.
+        </p>
+      </div>
+    );
+  }
+
   const [entries, setEntries] = useState<MoneyEntry[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);

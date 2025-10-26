@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calendar, Clock, MapPin } from "lucide-react";
+import { Plus, Trash2, Calendar, Clock, MapPin, AlertCircle } from "lucide-react";
 import { format, isPast, isToday, isFuture } from 'date-fns';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Appointment {
   id: string;
@@ -28,6 +29,19 @@ interface AppointmentsSectionProps {
 }
 
 export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionProps) => {
+  console.log('[AppointmentsSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access appointments.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);

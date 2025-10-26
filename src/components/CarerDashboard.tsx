@@ -42,10 +42,28 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false);
   const [userName, setUserName] = useState('');
+  const [showJoinButton, setShowJoinButton] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    const loadMemberships = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('user_memberships')
+        .select('id, role, family_id')
+        .eq('user_id', user.id);
+      
+      setMemberships(data || []);
+      
+      // Show join button if user has exactly one membership (their personal space)
+      setShowJoinButton((data || []).length === 1);
+    };
+    
+    loadMemberships();
+    
     if (familyId) {
       loadWeeklyHours();
     } else {
@@ -136,7 +154,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             onSignOut={onSignOut}
             familyId={familyId}
             onSwitchFamily={() => setShowFamilySwitcher(true)}
-            showJoinButton={!familyId}
+            showJoinButton={showJoinButton}
             onProfileUpdate={onProfileUpdate}
           />
           
@@ -147,87 +165,39 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             onProfileClick={() => setShowProfileDialog(true)}
           />
 
-          {!familyId && (
-            <Alert>
-              <UserPlus className="h-5 w-5" />
-              <AlertDescription>
-                <p className="font-medium">Join a family to access care coordination features</p>
-                <p className="text-sm mt-1">Click "Join a Family" above or ask your family admin for an invite code.</p>
-              </AlertDescription>
-            </Alert>
-          )}
+          <div className="space-y-4">
+            <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
+              <SchedulingSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-      {familyId ? (
-        (() => {
-          const hasMembership = memberships.length > 0;
-          
-          // Unconnected non-admins: show join message
-          if (!hasMembership && userRole !== 'family_admin' && userRole !== 'disabled_person') {
-            return (
-              <Alert>
-                <UserPlus className="h-5 w-5" />
-                <AlertDescription>
-                  <p className="font-medium">Join a family to access care features</p>
-                  <p className="text-sm mt-1">Click "Join a Family" above to get started.</p>
-                </AlertDescription>
-              </Alert>
-            );
-          }
-          
-          // Connected or admin: show sections
-          return (
-            <div className="space-y-4">
-              <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
-                <SchedulingSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
+            <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>
+              <TasksSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>
-                <TasksSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
+            <ExpandableDashboardSection id="notes" title="Care Notes" icon={<FileText className="h-5 w-5" />}>
+              <NotesSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection id="notes" title="Care Notes" icon={<FileText className="h-5 w-5" />}>
-                <NotesSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
+            <ExpandableDashboardSection id="diet" title="Diet & Nutrition" icon={<Utensils className="h-5 w-5" />}>
+              <DietSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection id="diet" title="Diet & Nutrition" icon={<Utensils className="h-5 w-5" />}>
-                <DietSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
+            <ExpandableDashboardSection id="money" title="Money & Expenses" icon={<Wallet className="h-5 w-5" />}>
+              <MoneySection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection id="money" title="Money & Expenses" icon={<Wallet className="h-5 w-5" />}>
-                <MoneySection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
+            <ExpandableDashboardSection id="key-info" title="Key Information" icon={<Info className="h-5 w-5" />}>
+              <KeyInformationSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection id="key-info" title="Key Information" icon={<Info className="h-5 w-5" />}>
-                <KeyInformationSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
+            <ExpandableDashboardSection id="medications" title="Medications" icon={<Pill className="h-5 w-5" />}>
+              <MedicationsSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection id="medications" title="Medications" icon={<Pill className="h-5 w-5" />}>
-                <MedicationsSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
-
-              <ExpandableDashboardSection id="appointments" title="Appointments" icon={<CalendarClock className="h-5 w-5" />}>
-                <AppointmentsSection familyId={familyId} userRole={userRole} />
-              </ExpandableDashboardSection>
-            </div>
-          );
-        })()
-      ) : (
-            <div className="text-center py-12 space-y-4">
-              <p className="text-muted-foreground text-lg">
-                Once you join a family, you'll be able to access:
-              </p>
-              <ul className="text-sm text-muted-foreground space-y-2 max-w-md mx-auto">
-                <li className="flex items-center gap-2 justify-center">📅 Scheduling & Time Tracking</li>
-                <li className="flex items-center gap-2 justify-center">✅ Tasks Management</li>
-                <li className="flex items-center gap-2 justify-center">📝 Care Notes</li>
-                <li className="flex items-center gap-2 justify-center">🍽️ Diet Tracking</li>
-                <li className="flex items-center gap-2 justify-center">💰 Money Tracking</li>
-                <li className="flex items-center gap-2 justify-center">👤 Key Information (View Only)</li>
-                <li className="flex items-center gap-2 justify-center">💊 Medications (View Only)</li>
-                <li className="flex items-center gap-2 justify-center">📅 Appointments</li>
-              </ul>
-            </div>
-          )}
+            <ExpandableDashboardSection id="appointments" title="Appointments" icon={<CalendarClock className="h-5 w-5" />}>
+              <AppointmentsSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          </div>
         </>
       )}
 

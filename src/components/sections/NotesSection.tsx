@@ -42,6 +42,18 @@ interface NotesSectionProps {
 }
 
 export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
+  console.log('[NotesSection] render:', { familyId, userRole });
+
+  if (!familyId) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <p className="text-sm text-muted-foreground">
+          Create your personal care space or join a family to start adding notes.
+        </p>
+      </div>
+    );
+  }
+
   const { toast } = useToast();
   const [notes, setNotes] = useState<CareNote[]>([]);
   const [loading, setLoading] = useState(true);
