@@ -45,6 +45,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   const [isSoleMember, setIsSoleMember] = useState(false);
   const [requestedRole, setRequestedRole] = useState<'disabled_person' | 'family_admin' | 'family_viewer' | 'carer' | 'manager'>('carer');
   const [roleChangeReason, setRoleChangeReason] = useState('');
+  const [roleChangeSuccess, setRoleChangeSuccess] = useState(false);
+  const [roleChangeAction, setRoleChangeAction] = useState<string>('');
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [uploadingPicture, setUploadingPicture] = useState(false);
@@ -283,10 +285,14 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
       console.log('✅ Role change successful:', result);
 
-      // User-friendly messages based on action
+      // Store action for display
+      setRoleChangeAction(result.action || 'updated_role');
+      setRoleChangeSuccess(true);
+      
+      // Show success message based on action
       const messages: Record<string, string> = {
-        created_family: "Your personal care space has been created!",
-        updated_preference: `Dashboard customized for ${requestedRole.replace(/_/g, ' ')}`,
+        created_family: "Personal care space created successfully",
+        updated_preference: "Dashboard preference updated",
         updated_role: `Role updated to ${requestedRole.replace(/_/g, ' ')}`,
         left_family: "You've left the family. You can join or be invited anytime."
       };
@@ -296,36 +302,38 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         description: messages[result.action || ''] || "Role updated successfully",
       });
 
+      // Close the confirmation dialog but keep main dialog open
       setShowRoleChangeForm(false);
       setShowRoleChangeConfirm(false);
 
-      // Close dialog immediately
-      onClose();
+    } catch (error: any) {
+      console.error('❌ Error updating role:', error);
+      // Rollback optimistic update
+      setCurrentUserRole(originalRole);
       
-      // Show refreshing toast
       toast({
-        title: "Refreshing Dashboard",
-        description: "Loading your new role...",
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
       });
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      // Trigger parent refresh (will reload page)
-      if (onProfileUpdate) {
-        console.log('🔄 Triggering profile update callback...');
-        await onProfileUpdate(requestedRole);
-      }
-      } catch (error: any) {
-        console.error('❌ Error updating role:', error);
-        // Rollback optimistic update
-        setCurrentUserRole(originalRole);
-        
-        toast({
-          title: "Error",
-          description: error.message || "Failed to update role",
-          variant: "destructive",
-        });
-      } finally {
-        setSaving(false);
-      }
+  const handleContinueToDashboard = () => {
+    toast({
+      title: "Refreshing Dashboard",
+      description: "Loading your new role...",
+    });
+    
+    onClose();
+    
+    // Trigger parent refresh with longer delay
+    if (onProfileUpdate) {
+      console.log('🔄 Triggering profile update callback...');
+      onProfileUpdate(requestedRole);
+    }
   };
 
   const handleDeleteProfile = async () => {
@@ -647,6 +655,24 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   >
                     {isSoleMember ? 'Change Role' : isAdminRole ? 'Transfer Required' : 'Submit Request'}
                   </Button>
+
+                  {/* Success Banner - shows after role change */}
+                  {roleChangeSuccess && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                      <p className="font-medium text-green-900">Role change successful!</p>
+                      {roleChangeAction === 'left_family' && (
+                        <p className="text-sm text-green-700 mt-1">
+                          You've been disconnected from your family. Click below to refresh your dashboard.
+                        </p>
+                      )}
+                      <Button 
+                        onClick={handleContinueToDashboard}
+                        className="mt-3 w-full"
+                      >
+                        Continue to Dashboard
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Role Change Request Form - appears right below button */}
                   {showRoleChangeForm && (

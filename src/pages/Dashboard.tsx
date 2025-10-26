@@ -371,11 +371,21 @@ const Dashboard = () => {
           setLoading(true);
           setLoadingMessage('Refreshing dashboard...');
           
-          // Brief delay to allow database commit, then force page reload
-          // This ensures completely fresh data and avoids replication lag issues
+          // Longer delay to ensure database commit completes
+          // This is especially important for production with replication lag
           setTimeout(() => {
+            console.log('🔄 Reloading page with fresh data...');
             window.location.reload();
-          }, 500);
+          }, 1000);
+          
+          // Timeout protection - if reload doesn't happen, reset
+          setTimeout(() => {
+            if (window.document.readyState === 'complete') {
+              console.warn('⚠️ Reload timeout - resetting state');
+              setLoading(false);
+              setLoadingMessage('Checking authentication...');
+            }
+          }, 10000);
         }
       }}
     />
