@@ -368,50 +368,14 @@ const Dashboard = () => {
       onProfileUpdate={async (newRole) => {
         if (newRole && user) {
           console.log('🔄 Profile update callback triggered with role:', newRole);
-          setUserRole(newRole);
           setLoading(true);
           setLoadingMessage('Refreshing dashboard...');
           
-          // Use retry logic to handle replication lag
-          try {
-            const { retryQueryUntilSuccess } = await import('@/lib/retryQuery');
-            
-            await retryQueryUntilSuccess(
-              async () => {
-                const { data, error } = await supabase
-                  .from('user_memberships')
-                  .select(`
-                    id,
-                    family_id,
-                    role,
-                    families (id, name)
-                  `)
-                  .eq('user_id', user.id);
-                
-                if (error) throw error;
-                return data || [];
-              },
-              (data) => {
-                console.log(`⏳ Membership query returned ${data.length} results`);
-                return true; // Accept any result after retries
-              },
-              5,    // 5 attempts
-              1000  // 1 second between attempts
-            );
-
-            console.log('✅ Memberships loaded after role change');
-            
-            // Reload all user data
-            await loadUserData(user.id);
-          } catch (error) {
-            console.error('❌ Failed to refresh after role change:', error);
-            toast({
-              title: "Refresh Failed",
-              description: "Please refresh the page manually to see your changes.",
-              variant: "destructive",
-            });
-            setLoading(false);
-          }
+          // Brief delay to allow database commit, then force page reload
+          // This ensures completely fresh data and avoids replication lag issues
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
         }
       }}
     />

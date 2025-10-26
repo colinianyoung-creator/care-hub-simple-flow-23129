@@ -299,13 +299,20 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       setShowRoleChangeForm(false);
       setShowRoleChangeConfirm(false);
 
-      // Trigger parent refresh with retry logic
+      // Close dialog immediately
+      onClose();
+      
+      // Show refreshing toast
+      toast({
+        title: "Refreshing Dashboard",
+        description: "Loading your new role...",
+      });
+
+      // Trigger parent refresh (will reload page)
       if (onProfileUpdate) {
         console.log('🔄 Triggering profile update callback...');
         await onProfileUpdate(requestedRole);
       }
-        
-        onClose();
       } catch (error: any) {
         console.error('❌ Error updating role:', error);
         // Rollback optimistic update
