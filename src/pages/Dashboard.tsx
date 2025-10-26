@@ -365,23 +365,13 @@ const Dashboard = () => {
       userName={userName}
       profilePictureUrl={profilePictureUrl}
       currentFamilyId={currentFamilyId}
-      onProfileUpdate={async (newRole) => {
-        if (newRole && user) {
-          console.log('🔄 Profile update - reloading for role:', newRole);
-          
-          // Immediately show loading state
-          setLoading(true);
-          setLoadingMessage('Loading your new dashboard...');
-          
-          // Force full page reload after brief delay
-          // We do this instead of trying to re-fetch data to avoid
-          // stale cache and replication lag issues
-          setTimeout(() => {
-            console.log('🔄 Executing page reload...');
-            window.location.reload();
-          }, 800);
-        }
-      }}
+            onProfileUpdate={(newRole) => {
+              if (newRole && user) {
+                console.log('🔄 Dashboard reload triggered for role:', newRole);
+                // Immediate reload for deterministic behavior
+                window.location.reload();
+              }
+            }}
     />
   );
 };

@@ -15,12 +15,11 @@ import { ProfileDialog } from './dialogs/ProfileDialog';
 import { ManageCareTeamDialog } from './dialogs/ManageCareTeamDialog';
 import { FamilySwitcher } from './FamilySwitcher';
 // Mobile tabs and action menu removed - using accordion for all screens
-import { Clock, CheckSquare, FileText, Pill, Calendar, Users, Utensils, Wallet } from 'lucide-react';
+import { Clock, CheckSquare, FileText, Pill, Calendar, Users, Utensils, Wallet, Info, CalendarClock, UserPlus } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus } from 'lucide-react';
 
 type AppRole = 'disabled_person' | 'family_admin' | 'family_viewer' | 'manager' | 'carer';
 
@@ -37,7 +36,8 @@ interface CarerDashboardProps {
 
 export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, careRecipientNameHint, profilePictureUrl = '', currentFamilyId, onProfileUpdate }: CarerDashboardProps) => {
   const [weeklyHours, setWeeklyHours] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [memberships, setMemberships] = useState<any[]>([]);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showFamilySwitcher, setShowFamilySwitcher] = useState(false);
@@ -138,7 +138,6 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             onSwitchFamily={() => setShowFamilySwitcher(true)}
             showJoinButton={!familyId}
             onProfileUpdate={onProfileUpdate}
-            isLoading={loading}
           />
           
           <HeroBanner 
@@ -158,74 +157,61 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             </Alert>
           )}
 
-          {familyId ? (
+      {familyId ? (
+        (() => {
+          const hasMembership = memberships.length > 0;
+          
+          // Unconnected non-admins: show join message
+          if (!hasMembership && userRole !== 'family_admin' && userRole !== 'disabled_person') {
+            return (
+              <Alert>
+                <UserPlus className="h-5 w-5" />
+                <AlertDescription>
+                  <p className="font-medium">Join a family to access care features</p>
+                  <p className="text-sm mt-1">Click "Join a Family" above to get started.</p>
+                </AlertDescription>
+              </Alert>
+            );
+          }
+          
+          // Connected or admin: show sections
+          return (
             <div className="space-y-4">
-              <ExpandableDashboardSection 
-                id="scheduling"
-                title="Scheduling & Time Tracking" 
-                defaultOpen={true}
-                icon={<Clock className="h-5 w-5" />}
-              >
-                <SchedulingSection familyId={familyId} userRole={userRole} careRecipientNameHint={careRecipientNameHint || familyName} />
+              <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
+                <SchedulingSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection 
-                id="tasks"
-                title="Tasks"
-                icon={<CheckSquare className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>
                 <TasksSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection 
-                id="notes"
-                title="Notes"
-                icon={<FileText className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="notes" title="Care Notes" icon={<FileText className="h-5 w-5" />}>
                 <NotesSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection 
-                id="diet"
-                title="Diet Tracking"
-                icon={<Utensils className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="diet" title="Diet & Nutrition" icon={<Utensils className="h-5 w-5" />}>
                 <DietSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection 
-                id="money"
-                title="Money Tracking"
-                icon={<Wallet className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="money" title="Money & Expenses" icon={<Wallet className="h-5 w-5" />}>
                 <MoneySection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection
-                id="key-information"
-                title="Key Information"
-                icon={<Users className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="key-info" title="Key Information" icon={<Info className="h-5 w-5" />}>
                 <KeyInformationSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection 
-                id="medications"
-                title="Medications"
-                icon={<Pill className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="medications" title="Medications" icon={<Pill className="h-5 w-5" />}>
                 <MedicationsSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
 
-              <ExpandableDashboardSection 
-                id="appointments"
-                title="Appointments"
-                icon={<Calendar className="h-5 w-5" />}
-              >
+              <ExpandableDashboardSection id="appointments" title="Appointments" icon={<CalendarClock className="h-5 w-5" />}>
                 <AppointmentsSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             </div>
-          ) : (
+          );
+        })()
+      ) : (
             <div className="text-center py-12 space-y-4">
               <p className="text-muted-foreground text-lg">
                 Once you join a family, you'll be able to access:

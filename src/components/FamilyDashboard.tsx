@@ -95,7 +95,7 @@ export const FamilyDashboard = ({
         familyId={familyId}
         showInviteButton={!!familyId && isAdminRole}
         showCreateButton={!familyId && isAdminRole}
-        showJoinButton={!familyId && (isViewerRole || userRole === 'carer')}
+        showJoinButton={!familyId && (userRole === 'family_viewer' || userRole === 'carer')}
         onProfileUpdate={() => {
           setLoading(true);
           if (onProfileUpdate) {

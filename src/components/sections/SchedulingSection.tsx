@@ -167,14 +167,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     };
 
     loadData();
-    
-    // Loading timeout protection
-    const timeout = setTimeout(() => {
-      if (loading && !cancelled) {
-        console.warn('Scheduling section loading timeout');
-        setLoading(false);
-      }
-    }, 5000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !cancelled) {
@@ -188,10 +180,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       cancelled = true;
       abortController.abort();
       setLoading(false);
-      clearTimeout(timeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [familyId, loading]);
+  }, [familyId]);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();

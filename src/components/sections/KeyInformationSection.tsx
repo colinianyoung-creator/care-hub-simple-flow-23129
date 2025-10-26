@@ -109,9 +109,12 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
   };
 
   useEffect(() => {
-    if (familyId) {
-      loadKeyInformation();
+    if (!familyId) {
+      setLoading(false);
+      return;
     }
+    
+    loadKeyInformation();
   }, [familyId]);
 
   if (!familyId) {

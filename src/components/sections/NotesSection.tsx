@@ -191,26 +191,30 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   };
 
   useEffect(() => {
+    if (!familyId) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const abortController = new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const loadData = async () => {
-      if (cancelled || !familyId) return;
-      
       setLoading(true);
-      let timeoutId: NodeJS.Timeout | null = null;
 
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
+            console.warn('NotesSection loading timeout');
             abortController.abort();
             toast({
               title: "Loading timeout",
-              description: "Taking longer than expected. Please try again.",
+              description: "Taking longer than expected. Please refresh.",
               variant: "destructive"
             });
           }
-        }, 10000);
+        }, 8000);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
@@ -220,13 +224,10 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
           await loadNotes(abortController.signal);
         }
       } catch (error: any) {
-        if (!cancelled && error.name !== 'AbortError') {
-          console.error('Error in loadData:', error);
-          toast({
-            title: "Error loading notes",
-            description: "Please try again.",
-            variant: "destructive"
-          });
+        if (error?.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error('Unexpected error:', error);
         }
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -239,7 +240,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId]);
 

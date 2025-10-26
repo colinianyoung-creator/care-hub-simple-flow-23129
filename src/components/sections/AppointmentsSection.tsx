@@ -143,26 +143,30 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   };
 
   useEffect(() => {
+    if (!familyId) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const abortController = new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const loadData = async () => {
-      if (cancelled || !familyId) return;
-      
       setLoading(true);
-      let timeoutId: NodeJS.Timeout | null = null;
 
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
+            console.warn('AppointmentsSection loading timeout');
             abortController.abort();
             toast({
               title: "Loading timeout",
-              description: "Taking longer than expected. Please try again.",
+              description: "Taking longer than expected. Please refresh.",
               variant: "destructive"
             });
           }
-        }, 10000);
+        }, 8000);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
@@ -172,13 +176,10 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
           await loadAppointments(abortController.signal);
         }
       } catch (error: any) {
-        if (!cancelled && error.name !== 'AbortError') {
-          console.error('Error loading appointments:', error);
-          toast({
-            title: "Error loading appointments",
-            description: "Please try again.",
-            variant: "destructive"
-          });
+        if (error?.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error('Unexpected error:', error);
         }
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -191,7 +192,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId]);
 

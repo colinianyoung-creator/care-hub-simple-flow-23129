@@ -229,29 +229,30 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   };
 
   useEffect(() => {
+    if (!familyId) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const abortController = new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const loadData = async () => {
-      if (cancelled || !familyId) {
-        setLoading(false);
-        return;
-      }
-      
       setLoading(true);
-      let timeoutId: NodeJS.Timeout | null = null;
-
+      
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
+            console.warn('MedicationsSection loading timeout');
             abortController.abort();
             toast({
               title: "Loading timeout",
-              description: "Taking longer than expected. Please try again.",
+              description: "Taking longer than expected. Please refresh.",
               variant: "destructive"
             });
           }
-        }, 10000);
+        }, 8000);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
@@ -264,14 +265,11 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         if (!cancelled) {
           await loadMedicationLogs();
         }
-      } catch (error: any) {
-        if (!cancelled && error.name !== 'AbortError') {
-          console.error('Error loading data:', error);
-          toast({
-            title: "Error loading medications",
-            description: "Please try again.",
-            variant: "destructive"
-          });
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error('Unexpected error:', err);
         }
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -280,22 +278,13 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     };
 
     loadData();
-    
-    // Loading timeout protection
-    const timeout = setTimeout(() => {
-      if (loading && !cancelled) {
-        console.warn('Medications section loading timeout');
-        setLoading(false);
-      }
-    }, 5000);
 
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false);
-      clearTimeout(timeout);
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [familyId, loading]);
+  }, [familyId]);
 
   const canManageMedications = userRole === 'family_admin' || userRole === 'disabled_person';
 

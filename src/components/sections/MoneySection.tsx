@@ -59,16 +59,45 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
   }, []);
 
   useEffect(() => {
+    if (!familyId || !currentUserId) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const abortController = new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
     
     const loadData = async () => {
-      if (cancelled || !familyId || !currentUserId) return;
-      
-      await Promise.all([
-        loadEntries(abortController.signal),
-        loadFamilyMembers(abortController.signal)
-      ]);
+      setLoading(true);
+
+      try {
+        timeoutId = setTimeout(() => {
+          if (!cancelled) {
+            console.warn('MoneySection loading timeout');
+            abortController.abort();
+            toast({
+              title: "Loading timeout",
+              description: "Taking longer than expected. Please refresh.",
+              variant: "destructive"
+            });
+          }
+        }, 8000);
+
+        await Promise.all([
+          loadEntries(abortController.signal),
+          loadFamilyMembers(abortController.signal)
+        ]);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error('Unexpected error:', err);
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
+      }
     };
 
     loadData();
@@ -76,7 +105,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId, currentUserId]);
 
@@ -116,20 +145,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
   const loadEntries = async (signal?: AbortSignal) => {
     if (!familyId) return;
 
-    setLoading(true);
-    let timeoutId: NodeJS.Timeout | null = null;
-
     try {
-      timeoutId = setTimeout(() => {
-        if (!signal?.aborted) {
-          toast({
-            title: "Loading timeout",
-            description: "Taking longer than expected. Please refresh the page.",
-            variant: "destructive"
-          });
-        }
-      }, 10000);
-
       const { data, error } = await supabase
         .from('money_records')
         .select('*')
@@ -149,9 +165,6 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
           variant: "destructive"
         });
       }
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-      if (!signal?.aborted) setLoading(false);
     }
   };
 

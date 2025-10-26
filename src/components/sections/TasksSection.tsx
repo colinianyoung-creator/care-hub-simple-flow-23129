@@ -107,10 +107,8 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false);
-      clearTimeout(timeout);
     };
-  }, [familyId, loading]);
+  }, [familyId]);
 
   const loadTasks = async (signal?: AbortSignal) => {
     try {
