@@ -324,16 +324,8 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   };
 
   const handleContinueToDashboard = () => {
-    // Close dialog FIRST to prevent state interference
-    onClose();
-    
-    // THEN trigger reload after dialog is fully closed
-    setTimeout(() => {
-      if (onProfileUpdate) {
-        console.log('🔄 Triggering profile update callback after dialog close...');
-        onProfileUpdate(requestedRole);
-      }
-    }, 150);
+    console.log('🔄 Reloading page to apply role change...');
+    window.location.reload();
   };
 
   const handleDeleteProfile = async () => {
