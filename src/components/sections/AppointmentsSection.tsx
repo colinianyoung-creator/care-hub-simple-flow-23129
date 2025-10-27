@@ -26,9 +26,10 @@ interface Appointment {
 interface AppointmentsSectionProps {
   familyId: string | undefined;
   userRole: string;
+  isConnectedToFamily: boolean;
 }
 
-export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionProps) => {
+export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }: AppointmentsSectionProps) => {
   console.log('[AppointmentsSection] render:', { familyId, userRole });
 
   if (!familyId) {

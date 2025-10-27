@@ -10,9 +10,10 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Image as ImageIcon, Receipt } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Receipt, AlertCircle } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { MoneyArchiveSection } from './MoneyArchiveSection';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MoneyEntry {
   id: string;
@@ -33,20 +34,39 @@ interface FamilyMember {
 interface MoneySectionProps {
   familyId?: string;
   userRole?: string;
+  isConnectedToFamily: boolean;
 }
 
-export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }) => {
+export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, isConnectedToFamily }) => {
   console.log('[MoneySection] render:', { familyId, userRole });
+  
+  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
+  const isCarer = userRole === 'carer';
+  
+  // Show message if carer is not connected to a family
+  if (!isConnectedToFamily && isCarer) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access this section.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (!familyId) {
     return (
-      <div className="p-4 border rounded-lg bg-muted/50">
-        <p className="text-sm text-muted-foreground">
-          Create your personal care space or join a family to start tracking finances.
-        </p>
-      </div>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Create your personal care space or join a family to track money and expenses.
+        </AlertDescription>
+      </Alert>
     );
   }
+  
+  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   const [entries, setEntries] = useState<MoneyEntry[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -282,8 +302,6 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
       </div>
     );
   }
-
-  const canEdit = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
 
   return (
     <div className="space-y-4">

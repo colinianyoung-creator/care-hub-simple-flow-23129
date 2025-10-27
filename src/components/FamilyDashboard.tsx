@@ -143,7 +143,7 @@ export const FamilyDashboard = ({
             defaultOpen={true}
             icon={<Clock className="h-5 w-5" />}
           >
-            <SchedulingSection familyId={familyId} userRole={userRole} />
+            <SchedulingSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection
@@ -151,7 +151,7 @@ export const FamilyDashboard = ({
             title="Tasks"
             icon={<CheckSquare className="h-5 w-5" />}
           >
-            <TasksSection familyId={familyId} userRole={userRole} />
+            <TasksSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection 
@@ -159,7 +159,7 @@ export const FamilyDashboard = ({
             title="Care Notes" 
             icon={<FileText className="h-5 w-5" />}
           >
-            <NotesSection familyId={familyId} userRole={userRole} />
+            <NotesSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection 
@@ -167,7 +167,7 @@ export const FamilyDashboard = ({
             title="Diet Tracking" 
             icon={<Utensils className="h-5 w-5" />}
           >
-            <DietSection familyId={familyId} userRole={userRole} />
+            <DietSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection 
@@ -175,7 +175,7 @@ export const FamilyDashboard = ({
             title="Money Tracking" 
             icon={<Wallet className="h-5 w-5" />}
           >
-            <MoneySection familyId={familyId} userRole={userRole} />
+            <MoneySection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection
@@ -183,7 +183,7 @@ export const FamilyDashboard = ({
             title="Key Information"
             icon={<Users className="h-5 w-5" />}
           >
-            <KeyInformationSection familyId={familyId} userRole={userRole} />
+            <KeyInformationSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection
@@ -191,7 +191,7 @@ export const FamilyDashboard = ({
             title="Medications"
             icon={<Pill className="h-5 w-5" />}
           >
-            <MedicationsSection familyId={familyId} userRole={userRole} />
+            <MedicationsSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection
@@ -199,7 +199,7 @@ export const FamilyDashboard = ({
             title="Appointments"
             icon={<Calendar className="h-5 w-5" />}
           >
-            <AppointmentsSection familyId={familyId} userRole={userRole} />
+            <AppointmentsSection familyId={familyId} userRole={userRole} isConnectedToFamily={true} />
           </ExpandableDashboardSection>
           </div>
         )}

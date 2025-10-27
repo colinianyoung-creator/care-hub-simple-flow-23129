@@ -17,12 +17,13 @@ import { ExportTimesheetDialog } from "../dialogs/ExportTimesheetDialog";
 import { ApprovedAbsencesArchive } from "../ApprovedAbsencesArchive";
 
 interface SchedulingSectionProps {
-  familyId: string;
+  familyId: string | undefined;
   userRole: string;
+  isConnectedToFamily: boolean;
   careRecipientNameHint?: string;
 }
 
-export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }: SchedulingSectionProps) => {
+export const SchedulingSection = ({ familyId, userRole, isConnectedToFamily, careRecipientNameHint }: SchedulingSectionProps) => {
   console.log('[SchedulingSection] render:', { familyId, userRole });
 
   if (!familyId) {

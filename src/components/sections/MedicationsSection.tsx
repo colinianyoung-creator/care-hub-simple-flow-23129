@@ -40,9 +40,10 @@ interface MedicationLog {
 interface MedicationsSectionProps {
   familyId: string;
   userRole: string;
+  isConnectedToFamily: boolean;
 }
 
-export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionProps) => {
+export const MedicationsSection = ({ familyId, userRole, isConnectedToFamily }: MedicationsSectionProps) => {
   console.log('[MedicationsSection] render:', { familyId, userRole });
 
   if (!familyId) {

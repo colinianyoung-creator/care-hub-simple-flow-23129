@@ -10,9 +10,10 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { DietArchiveSection } from './DietArchiveSection';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface DietEntry {
   id: string;
@@ -28,20 +29,39 @@ interface DietEntry {
 interface DietSectionProps {
   familyId?: string;
   userRole?: string;
+  isConnectedToFamily: boolean;
 }
 
-export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) => {
+export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, isConnectedToFamily }) => {
   console.log('[DietSection] render:', { familyId, userRole });
+  
+  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
+  const isCarer = userRole === 'carer';
+  
+  // Show message if carer is not connected to a family
+  if (!isConnectedToFamily && isCarer) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access this section.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (!familyId) {
     return (
-      <div className="p-4 border rounded-lg bg-muted/50">
-        <p className="text-sm text-muted-foreground">
-          Create your personal care space or join a family to start tracking diet.
-        </p>
-      </div>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Create your personal care space or join a family to track diet and nutrition.
+        </AlertDescription>
+      </Alert>
     );
   }
+  
+  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   const [entries, setEntries] = useState<DietEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,8 +254,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
       </div>
     );
   }
-
-  const canEdit = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
 
   return (
     <div className="space-y-4">

@@ -10,9 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive } from "lucide-react";
+import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle } from "lucide-react";
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sanitizeError } from "@/lib/errorHandler";
 
 interface CareNote {
@@ -39,20 +40,40 @@ interface CareNote {
 interface NotesSectionProps {
   familyId: string | undefined;
   userRole: string;
+  isConnectedToFamily: boolean;
 }
 
-export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
+export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesSectionProps) => {
   console.log('[NotesSection] render:', { familyId, userRole });
 
-  if (!familyId) {
+  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
+  const isCarer = userRole === 'carer';
+  
+  // Show message if carer is not connected to a family
+  if (!isConnectedToFamily && isCarer) {
     return (
-      <div className="p-4 border rounded-lg bg-muted/50">
-        <p className="text-sm text-muted-foreground">
-          Create your personal care space or join a family to start adding notes.
-        </p>
-      </div>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access this section.
+        </AlertDescription>
+      </Alert>
     );
   }
+  
+  // Show message if no family connected
+  if (!familyId) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Create your personal care space or join a family to start adding care notes.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   const { toast } = useToast();
   const [notes, setNotes] = useState<CareNote[]>([]);
@@ -297,8 +318,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   if (loading) {
     return <div className="text-center py-4">Loading notes...</div>;
   }
-
-  const canEdit = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
 
   return (
     <Tabs defaultValue="today" className="space-y-6">

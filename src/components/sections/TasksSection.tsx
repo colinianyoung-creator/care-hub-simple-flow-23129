@@ -1,22 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus, AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeError } from "@/lib/errorHandler";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 
 interface TasksSectionProps {
   familyId: string | undefined;
   userRole: string;
+  isConnectedToFamily: boolean;
 }
 
-export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
+export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksSectionProps) => {
   console.log('[TasksSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -45,7 +46,32 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
-  const canEdit = familyId && (isAdmin || isCarer);
+  
+  // Show message if carer is not connected to a family
+  if (!isConnectedToFamily && isCarer) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Please connect to a family to access this section.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  // Show message if no family connected  
+  if (!familyId) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Create your personal care space or join a family to start tracking tasks.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   useEffect(() => {
     let cancelled = false;

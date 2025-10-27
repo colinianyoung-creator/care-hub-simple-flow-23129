@@ -322,14 +322,16 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   };
 
   const handleContinueToDashboard = () => {
-    // Don't show toast - parent will handle loading message
-    onClose();
-    
-    // Trigger parent refresh
+    // Trigger parent refresh FIRST
     if (onProfileUpdate) {
       console.log('🔄 Triggering profile update callback...');
       onProfileUpdate(requestedRole);
     }
+    
+    // Close after a brief moment to ensure callback executes
+    setTimeout(() => {
+      onClose();
+    }, 100);
   };
 
   const handleDeleteProfile = async () => {
