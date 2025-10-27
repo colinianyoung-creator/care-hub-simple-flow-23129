@@ -283,28 +283,30 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         throw new Error(result.error || 'Failed to update role');
       }
 
-      console.log('✅ Role change successful:', result);
+        console.log('✅ Role change successful:', result);
 
-      // Store action for display
-      setRoleChangeAction(result.action || 'updated_role');
-      setRoleChangeSuccess(true);
-      
-      // Show success message based on action
-      const messages: Record<string, string> = {
-        created_family: "Personal care space created successfully",
-        updated_preference: "Dashboard preference updated",
-        updated_role: `Role updated to ${requestedRole.replace(/_/g, ' ')}`,
-        left_family: "You've left the family. You can join or be invited anytime."
-      };
+        // Store action for display
+        setRoleChangeAction(result.action || 'updated_role');
+        setRoleChangeSuccess(true);
+        console.log('✅ roleChangeSuccess set to true, action:', result.action);
 
-      toast({
-        title: "Role Updated",
-        description: messages[result.action || ''] || "Role updated successfully",
-      });
+        // Show success message based on action
+        const messages: Record<string, string> = {
+          created_family: "Personal care space created successfully",
+          updated_preference: "Dashboard preference updated",
+          updated_role: `Role updated to ${requestedRole.replace(/_/g, ' ')}`,
+          left_family: "You've left the family. You can join or be invited anytime."
+        };
 
-      // Close the confirmation dialog but keep main dialog open
-      setShowRoleChangeForm(false);
-      setShowRoleChangeConfirm(false);
+        toast({
+          title: "Role Updated",
+          description: messages[result.action || ''] || "Role updated successfully",
+        });
+
+        // Close the confirmation dialog but keep main dialog open
+        setShowRoleChangeForm(false);
+        setShowRoleChangeConfirm(false);
+        console.log('✅ Dialogs closed, success banner should now be visible');
 
     } catch (error: any) {
       console.error('❌ Error updating role:', error);
@@ -322,16 +324,16 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   };
 
   const handleContinueToDashboard = () => {
-    // Trigger parent refresh FIRST
-    if (onProfileUpdate) {
-      console.log('🔄 Triggering profile update callback...');
-      onProfileUpdate(requestedRole);
-    }
+    // Close dialog FIRST to prevent state interference
+    onClose();
     
-    // Close after a brief moment to ensure callback executes
+    // THEN trigger reload after dialog is fully closed
     setTimeout(() => {
-      onClose();
-    }, 100);
+      if (onProfileUpdate) {
+        console.log('🔄 Triggering profile update callback after dialog close...');
+        onProfileUpdate(requestedRole);
+      }
+    }, 150);
   };
 
   const handleDeleteProfile = async () => {
