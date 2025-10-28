@@ -40,28 +40,11 @@ interface CareNote {
 interface NotesSectionProps {
   familyId: string | undefined;
   userRole: string;
-  isConnectedToFamily: boolean;
 }
 
-export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesSectionProps) => {
+export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   console.log('[NotesSection] render:', { familyId, userRole });
 
-  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
-  const isCarer = userRole === 'carer';
-  
-  // Show message if carer is not connected to a family
-  if (!isConnectedToFamily && isCarer) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Please connect to a family to access this section.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  // Show message if no family connected
   if (!familyId) {
     return (
       <Alert>
@@ -72,8 +55,6 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
       </Alert>
     );
   }
-  
-  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   const { toast } = useToast();
   const [notes, setNotes] = useState<CareNote[]>([]);
@@ -292,11 +273,7 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
   }, [loading]);
 
   const canDeleteNote = (note: CareNote) => {
-    return note.author_id === currentUserId || userRole === 'family_admin' || userRole === 'disabled_person';
-  };
-
-  const canEditNote = (note: CareNote) => {
-    return userRole === 'carer' && note.author_id === currentUserId;
+    return familyId && currentUserId;
   };
 
   const getMoodIcon = (mood: string) => {
@@ -355,19 +332,13 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
 
   if (!loading && notes.length === 0 && familyId) {
     return (
-      <Alert className="mt-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="flex items-center gap-2">
-          No notes available. This may be syncing or restricted by permissions.
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => window.location.reload()}
-          >
-            Force Refresh
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <Card className="p-6 text-center">
+        <p className="text-muted-foreground mb-4">No notes yet today</p>
+        <Button onClick={() => setShowAddForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Your First Note
+        </Button>
+      </Card>
     );
   }
 
@@ -383,7 +354,7 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
 
       <TabsContent value="today" className="space-y-6">
         {/* Add Note Form */}
-        {canEdit && showAddForm ? (
+        {familyId && showAddForm ? (
         <Card>
           <CardHeader>
             <CardTitle>Add Daily Note</CardTitle>
@@ -551,7 +522,7 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
             </div>
           </CardContent>
         </Card>
-      ) : canEdit ? (
+      ) : familyId ? (
         <Button 
           onClick={() => setShowAddForm(true)} 
           className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"

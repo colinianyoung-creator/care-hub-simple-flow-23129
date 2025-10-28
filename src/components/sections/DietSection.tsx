@@ -29,26 +29,10 @@ interface DietEntry {
 interface DietSectionProps {
   familyId?: string;
   userRole?: string;
-  isConnectedToFamily: boolean;
 }
 
-export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, isConnectedToFamily }) => {
+export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) => {
   console.log('[DietSection] render:', { familyId, userRole });
-  
-  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
-  const isCarer = userRole === 'carer';
-  
-  // Show message if carer is not connected to a family
-  if (!isConnectedToFamily && isCarer) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Please connect to a family to access this section.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   if (!familyId) {
     return (
@@ -60,8 +44,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, is
       </Alert>
     );
   }
-  
-  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   const [entries, setEntries] = useState<DietEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,9 +234,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, is
   };
 
   const canDelete = (entry: DietEntry) => {
-    return entry.user_id === currentUserId ||
-           userRole === 'family_admin' ||
-           userRole === 'disabled_person';
+    return familyId && currentUserId;
   };
 
   if (!familyId) {
@@ -285,14 +265,14 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, is
 
         {['breakfast', 'lunch', 'dinner', 'snacks', 'drinks'].map(mealType => (
           <TabsContent key={mealType} value={mealType} className="space-y-4">
-            {canEdit && !showForm && (
+            {familyId && !showForm && (
               <Button onClick={() => setShowForm(true)} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
                 Add {mealType.charAt(0).toUpperCase() + mealType.slice(1)} Entry
               </Button>
             )}
 
-            {canEdit && showForm && (
+            {familyId && showForm && (
               <Card>
                 <CardContent className="pt-6">
                   <form onSubmit={handleSubmit} className="space-y-4">

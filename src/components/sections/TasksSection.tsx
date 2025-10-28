@@ -14,10 +14,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface TasksSectionProps {
   familyId: string | undefined;
   userRole: string;
-  isConnectedToFamily: boolean;
 }
 
-export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksSectionProps) => {
+export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   console.log('[TasksSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -44,35 +43,6 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [showRefresh, setShowRefresh] = useState(false);
   const { toast } = useToast();
-
-  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
-  const isCarer = userRole === 'carer';
-  
-  // Show message if carer is not connected to a family
-  if (!isConnectedToFamily && isCarer) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Please connect to a family to access this section.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  // Show message if no family connected  
-  if (!familyId) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Create your personal care space or join a family to start tracking tasks.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   useEffect(() => {
     let cancelled = false;
@@ -403,26 +373,20 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
 
   if (!loading && tasks.length === 0 && familyId) {
     return (
-      <Alert className="mt-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="flex items-center gap-2">
-          No tasks available. This may be syncing or restricted by permissions.
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => window.location.reload()}
-          >
-            Force Refresh
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <Card className="p-6 text-center">
+        <p className="text-muted-foreground mb-4">No tasks yet</p>
+        <Button onClick={() => setShowAddForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Your First Task
+        </Button>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Add Task Form */}
-      {showAddForm && canEdit && (
+      {showAddForm && familyId && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add New Task</CardTitle>
@@ -486,7 +450,7 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
 
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Tasks</h3>
-        {canEdit && (
+        {familyId && (
           <Button 
             onClick={() => setShowAddForm(true)}
             className="h-10 px-4 text-sm min-h-[44px] md:min-h-[40px]"
@@ -499,19 +463,17 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
 
       {!showAddForm && (
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="active" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
               <Clock className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Active</span>
               <span>({activeTasks.length})</span>
             </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="review" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
-                <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Review</span>
-                <span>({awaitingReviewTasks.length})</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="review" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
+              <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Review</span>
+              <span>({awaitingReviewTasks.length})</span>
+            </TabsTrigger>
             <TabsTrigger value="completed" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
               <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Done</span>
@@ -548,7 +510,7 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap mt-2">
-                      {(isCarer || isAdmin) && (
+                      {familyId && (
                         <Button 
                           size="sm" 
                           onClick={() => markTaskComplete(task.id)}
@@ -558,7 +520,7 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
                           Mark Done
                         </Button>
                       )}
-                      {isAdmin && (
+                      {familyId && (
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -581,8 +543,7 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
           </Card>
         </TabsContent>
 
-        {isAdmin && (
-          <TabsContent value="review" className="space-y-4">
+        <TabsContent value="review" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Tasks Awaiting Review</CardTitle>
@@ -636,7 +597,6 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
               </CardContent>
             </Card>
           </TabsContent>
-        )}
 
         <TabsContent value="completed" className="space-y-4">
           <Card>

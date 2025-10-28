@@ -178,35 +178,35 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
 
           <div className="space-y-4">
             <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
-              <SchedulingSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <SchedulingSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>
-              <TasksSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <TasksSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="notes" title="Care Notes" icon={<FileText className="h-5 w-5" />}>
-              <NotesSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <NotesSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="diet" title="Diet & Nutrition" icon={<Utensils className="h-5 w-5" />}>
-              <DietSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <DietSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="money" title="Money & Expenses" icon={<Wallet className="h-5 w-5" />}>
-              <MoneySection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <MoneySection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="key-info" title="Key Information" icon={<Info className="h-5 w-5" />}>
-              <KeyInformationSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <KeyInformationSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="medications" title="Medications" icon={<Pill className="h-5 w-5" />}>
-              <MedicationsSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <MedicationsSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="appointments" title="Appointments" icon={<CalendarClock className="h-5 w-5" />}>
-              <AppointmentsSection familyId={familyId} userRole={userRole} isConnectedToFamily={isConnectedToFamily} />
+              <AppointmentsSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
           </div>
         </>

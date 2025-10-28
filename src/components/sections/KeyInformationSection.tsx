@@ -18,10 +18,9 @@ interface EmergencyContact {
 interface KeyInformationSectionProps {
   familyId: string;
   userRole: string;
-  isConnectedToFamily: boolean;
 }
 
-export const KeyInformationSection = ({ familyId, userRole, isConnectedToFamily }: KeyInformationSectionProps) => {
+export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSectionProps) => {
   console.log('[KeyInformationSection] render:', { familyId, userRole });
 
   if (!familyId) {

@@ -34,26 +34,10 @@ interface FamilyMember {
 interface MoneySectionProps {
   familyId?: string;
   userRole?: string;
-  isConnectedToFamily: boolean;
 }
 
-export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, isConnectedToFamily }) => {
+export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }) => {
   console.log('[MoneySection] render:', { familyId, userRole });
-  
-  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
-  const isCarer = userRole === 'carer';
-  
-  // Show message if carer is not connected to a family
-  if (!isConnectedToFamily && isCarer) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Please connect to a family to access this section.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   if (!familyId) {
     return (
@@ -65,8 +49,6 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
       </Alert>
     );
   }
-  
-  const canEdit = familyId && (isAdmin || (isCarer && isConnectedToFamily));
 
   const [entries, setEntries] = useState<MoneyEntry[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -294,9 +276,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
   };
 
   const canDelete = (entry: MoneyEntry) => {
-    return entry.user_id === currentUserId ||
-           userRole === 'family_admin' ||
-           userRole === 'disabled_person';
+    return familyId && currentUserId;
   };
 
   const getMemberName = (userId: string) => {
@@ -336,14 +316,14 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
             </CardHeader>
           </Card>
 
-      {canEdit && !showForm && (
+      {familyId && !showForm && (
         <Button onClick={() => setShowForm(true)} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
           Add Expense
         </Button>
       )}
 
-      {canEdit && showForm && (
+      {familyId && showForm && (
         <Card>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
