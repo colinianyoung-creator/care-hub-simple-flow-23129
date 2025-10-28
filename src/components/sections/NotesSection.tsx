@@ -61,7 +61,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [showRefresh, setShowRefresh] = useState(false);
+  
   
   // New note form state
   const [newNote, setNewNote] = useState({
@@ -259,18 +259,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     };
   }, [familyId]);
 
-  // Show refresh button after 5 seconds of loading
-  useEffect(() => {
-    let refreshTimer: NodeJS.Timeout;
-    if (loading) {
-      refreshTimer = setTimeout(() => {
-        setShowRefresh(true);
-      }, 5000);
-    } else {
-      setShowRefresh(false);
-    }
-    return () => clearTimeout(refreshTimer);
-  }, [loading]);
 
   const canDeleteNote = (note: CareNote) => {
     return familyId && currentUserId;
@@ -315,15 +303,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
               <Loader2 className="animate-spin w-4 h-4" />
               Loading notes…
             </div>
-            {showRefresh && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.reload()}
-              >
-                Force Refresh
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>

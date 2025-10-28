@@ -47,7 +47,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [showRefresh, setShowRefresh] = useState(false);
+  
   const [newAppointment, setNewAppointment] = useState({
     title: '',
     description: '',
@@ -210,15 +210,6 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     };
   }, [familyId]);
 
-  useEffect(() => {
-    let refreshTimer: NodeJS.Timeout;
-    if (loading) {
-      refreshTimer = setTimeout(() => setShowRefresh(true), 5000);
-    } else {
-      setShowRefresh(false);
-    }
-    return () => clearTimeout(refreshTimer);
-  }, [loading]);
 
   const getAppointmentStatus = (appointment: Appointment) => {
     const appointmentDate = new Date(appointment.appointment_date);
@@ -274,15 +265,6 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
               <Loader2 className="animate-spin w-4 h-4" />
               Loading appointments…
             </div>
-            {showRefresh && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.reload()}
-              >
-                Force Refresh
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>

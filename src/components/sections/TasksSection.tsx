@@ -41,7 +41,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [showRefresh, setShowRefresh] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -108,18 +108,6 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     };
   }, [familyId]);
 
-  // Show refresh button after 5 seconds of loading
-  useEffect(() => {
-    let refreshTimer: NodeJS.Timeout;
-    if (loading) {
-      refreshTimer = setTimeout(() => {
-        setShowRefresh(true);
-      }, 5000);
-    } else {
-      setShowRefresh(false);
-    }
-    return () => clearTimeout(refreshTimer);
-  }, [loading]);
 
   const loadTasks = async (signal?: AbortSignal) => {
     try {
@@ -356,15 +344,6 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               <Loader2 className="animate-spin w-4 h-4" />
               Loading tasks…
             </div>
-            {showRefresh && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.reload()}
-              >
-                Force Refresh
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>

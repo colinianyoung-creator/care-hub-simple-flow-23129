@@ -311,14 +311,11 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
             <div className="space-y-6">
               {/* Profile Picture Section */}
               <div className="flex flex-col items-center gap-4 py-4">
-                <Avatar className="h-24 w-24">
-                  {profile.profile_picture_url ? (
-                    <AvatarImage src={profile.profile_picture_url} alt={profile.full_name || 'User'} />
-                  ) : null}
-                  <AvatarFallback>
-                    <User className="h-12 w-12" />
-                  </AvatarFallback>
-                </Avatar>
+                <ProfileAvatar 
+                  profilePicturePath={profile.profile_picture_url}
+                  fallbackIcon={<User className="h-12 w-12" />}
+                  className="h-24 w-24"
+                />
                 <div className="flex gap-2">
                   <ImageUpload
                     onUpload={handleImageUpload}
