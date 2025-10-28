@@ -220,39 +220,6 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
     }
     return () => clearTimeout(refreshTimer);
   }, [loading]);
-              description: "Taking longer than expected. Please refresh.",
-              variant: "destructive"
-            });
-          }
-        }, 8000);
-
-        const { data: { user } } = await supabase.auth.getUser();
-        if (cancelled) return;
-        setCurrentUserId(user?.id || null);
-
-        if (!cancelled) {
-          await loadAppointments(abortController.signal);
-        }
-      } catch (error: any) {
-        if (error?.name === 'AbortError') {
-          console.log('Fetch aborted');
-        } else {
-          console.error('Unexpected error:', error);
-        }
-      } finally {
-        if (timeoutId) clearTimeout(timeoutId);
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    loadData();
-
-    return () => {
-      cancelled = true;
-      abortController.abort();
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [familyId]);
 
   const getAppointmentStatus = (appointment: Appointment) => {
     const appointmentDate = new Date(appointment.appointment_date);
@@ -282,16 +249,46 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
   const pastAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'past');
   const canManageAppointments = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
 
-  if (!familyId) {
+  if (!loading && (!appointments || appointments.length === 0) && familyId) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Please join or create a family to manage appointments.
-      </div>
+      <Alert className="mt-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="flex items-center gap-2">
+          No appointments available. This may be syncing or restricted by permissions.
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => window.location.reload()}
+          >
+            Force Refresh
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 
   if (loading) {
-    return <div className="text-center py-4">Loading appointments...</div>;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Loading appointments…
+            </div>
+            {showRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+              >
+                Force Refresh
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
