@@ -342,12 +342,9 @@ const Dashboard = () => {
       userName={userName}
       profilePictureUrl={profilePictureUrl}
       currentFamilyId={currentFamilyId}
-      onProfileUpdate={(newRole) => {
-        if (newRole && user) {
-          console.log('🔄 Dashboard reload triggered for role:', newRole);
-          // Immediate reload - DB transaction has already committed
-          window.location.reload();
-        }
+      onProfileUpdate={() => {
+        // Role change reload is now handled in ProfileDialog
+        console.log('ℹ️ onProfileUpdate called (no-op)');
       }}
     />
   );

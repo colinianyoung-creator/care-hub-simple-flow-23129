@@ -324,53 +324,26 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   };
 
   const handleContinueToDashboard = async () => {
-    console.log('🔄 Verifying role change before reload...');
+    console.log("🔄 Waiting for Supabase auth state to settle...");
     
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ No user found');
-        window.location.reload();
-        return;
-      }
-
-      // Poll database to confirm the change is visible
-      let attempts = 0;
-      const maxAttempts = 10;
+    // Wait for session to be stable
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.warn("⚠️ No active session — retrying in 1s...");
+      await new Promise(r => setTimeout(r, 1000));
       
-      while (attempts < maxAttempts) {
-        const { data: memberships } = await supabase
-          .from('user_memberships')
-          .select('role')
-          .eq('user_id', user.id)
-          .limit(1);
-        
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('ui_preference')
-          .eq('id', user.id)
-          .single();
-        
-        console.log(`Attempt ${attempts + 1}: membership role =`, memberships?.[0]?.role, 'profile ui_preference =', profile?.ui_preference);
-        
-        // Check if EITHER the membership OR profile reflects the new role
-        if (memberships?.[0]?.role === requestedRole || profile?.ui_preference === requestedRole) {
-          console.log('✅ Role change confirmed in database, reloading...');
-          window.location.reload();
-          return;
-        }
-        
-        attempts++;
-        await new Promise(resolve => setTimeout(resolve, 300));
+      // Retry once
+      const { data: { session: retrySession } } = await supabase.auth.getSession();
+      if (!retrySession) {
+        console.error("❌ Still no session, forcing reload anyway");
       }
-      
-      // If we get here, the change didn't appear but let's reload anyway
-      console.warn('⚠️ Could not confirm role change after 10 attempts, reloading anyway...');
-      window.location.reload();
-    } catch (error) {
-      console.error('❌ Error during role change verification:', error);
-      window.location.reload();
     }
+    
+    console.log("✅ Auth state ready, performing clean reload...");
+    
+    // Full clean reload to dashboard
+    window.location.href = window.location.origin + '/dashboard';
   };
 
   const handleDeleteProfile = async () => {
