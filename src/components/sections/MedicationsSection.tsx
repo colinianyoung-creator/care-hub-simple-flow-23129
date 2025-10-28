@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Check, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Check, AlertCircle, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -63,6 +63,7 @@ export const MedicationsSection = ({ familyId, userRole, isConnectedToFamily }: 
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false);
   const [newMedication, setNewMedication] = useState({
     name: '',
     dosage: '',
@@ -87,6 +88,11 @@ export const MedicationsSection = ({ familyId, userRole, isConnectedToFamily }: 
         .abortSignal(signal) as any;
 
       if (error) throw error;
+      
+      if (!error && data?.length === 0) {
+        console.warn("⚠️ [MedicationsSection] Empty result - likely RLS restriction or sync delay");
+      }
+      
       setMedications((data as any) || []);
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -255,17 +261,13 @@ export const MedicationsSection = ({ familyId, userRole, isConnectedToFamily }: 
 
     const loadData = async () => {
       setLoading(true);
-      
+
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.warn('MedicationsSection loading timeout');
             abortController.abort();
-            toast({
-              title: "Loading timeout",
-              description: "Taking longer than expected. Please refresh.",
-              variant: "destructive"
-            });
+            setLoading(false);
+            console.warn("⏱️ [MedicationsSection] load timeout after 8s");
           }
         }, 8000);
 
@@ -275,16 +277,11 @@ export const MedicationsSection = ({ familyId, userRole, isConnectedToFamily }: 
 
         if (!cancelled) {
           await loadMedications(abortController.signal);
-        }
-
-        if (!cancelled) {
           await loadMedicationLogs();
         }
-      } catch (err: any) {
-        if (err?.name === 'AbortError') {
-          console.log('Fetch aborted');
-        } else {
-          console.error('Unexpected error:', err);
+      } catch (error: any) {
+        if (error?.name !== 'AbortError' && !cancelled) {
+          console.error('Unexpected error:', error);
         }
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -300,6 +297,16 @@ export const MedicationsSection = ({ familyId, userRole, isConnectedToFamily }: 
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId]);
+
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => setShowRefresh(true), 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   const canManageMedications = userRole === 'family_admin' || userRole === 'disabled_person';
 

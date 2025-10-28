@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Image as ImageIcon, Receipt, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Receipt, AlertCircle, Loader2 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { MoneyArchiveSection } from './MoneyArchiveSection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -74,6 +74,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
   const [showForm, setShowForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false);
   
   const [formData, setFormData] = useState({
     description: '',
@@ -106,13 +107,9 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.warn('MoneySection loading timeout');
             abortController.abort();
-            toast({
-              title: "Loading timeout",
-              description: "Taking longer than expected. Please refresh.",
-              variant: "destructive"
-            });
+            setLoading(false);
+            console.warn("⏱️ [MoneySection] load timeout after 8s");
           }
         }, 8000);
 
@@ -140,6 +137,19 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId, currentUserId]);
+
+  // Show refresh button after 5 seconds of loading
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => {
+        setShowRefresh(true);
+      }, 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -187,6 +197,11 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
         .abortSignal(signal) as any;
 
       if (error) throw error;
+      
+      if (!error && data?.length === 0) {
+        console.warn("⚠️ [MoneySection] Empty result - likely RLS restriction or sync delay");
+      }
+      
       setEntries((data || []) as any);
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -406,7 +421,25 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole, 
 
       <div className="space-y-3">
         {loading ? (
-          <p className="text-center text-muted-foreground py-4">Loading...</p>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  Loading money entries…
+                </div>
+                {showRefresh && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.location.reload()}
+                  >
+                    Force Refresh
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         ) : entries.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">
             No expenses recorded yet

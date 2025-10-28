@@ -16,6 +16,7 @@ import { ProfileDialog } from './dialogs/ProfileDialog';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { logUserContext } from '@/lib/logContext';
 
 interface FamilyDashboardProps {
   onBack?: () => void;
@@ -70,6 +71,9 @@ export const FamilyDashboard = ({
           if (profileData && profileData.length > 0) {
             setUserName(profileData[0].full_name || '');
           }
+          
+          // Log context after data loads
+          logUserContext(user, familyId, userRole);
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
@@ -77,7 +81,7 @@ export const FamilyDashboard = ({
     };
 
     loadData();
-  }, [familyId]);
+  }, [familyId, userRole]);
 
   const isAdminRole = userRole === 'family_admin' || userRole === 'disabled_person';
   const isViewerRole = userRole === 'family_viewer';

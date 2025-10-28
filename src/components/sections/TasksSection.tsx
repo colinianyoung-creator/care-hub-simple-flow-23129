@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeError } from "@/lib/errorHandler";
@@ -42,6 +42,7 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [showRefresh, setShowRefresh] = useState(false);
   const { toast } = useToast();
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
@@ -90,13 +91,10 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
         timeoutId = setTimeout(() => {
           if (!cancelled) {
             abortController.abort();
-            toast({
-              title: "Loading timeout",
-              description: "Taking longer than expected. Please try again.",
-              variant: "destructive"
-            });
+            setLoading(false);
+            console.warn("⏱️ [TasksSection] load timeout after 8s");
           }
-        }, 10000);
+        }, 8000);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
@@ -133,20 +131,25 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
     };
 
     loadData();
-    
-    // Loading timeout protection
-    const timeout = setTimeout(() => {
-      if (loading && !cancelled) {
-        console.warn('Tasks section loading timeout');
-        setLoading(false);
-      }
-    }, 5000);
 
     return () => {
       cancelled = true;
       abortController.abort();
     };
   }, [familyId]);
+
+  // Show refresh button after 5 seconds of loading
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => {
+        setShowRefresh(true);
+      }, 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   const loadTasks = async (signal?: AbortSignal) => {
     try {
@@ -163,6 +166,10 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
         .abortSignal(signal);
 
       if (error) throw error;
+
+      if (!error && data?.length === 0) {
+        console.warn("⚠️ [TasksSection] Empty result - likely RLS restriction or sync delay");
+      }
 
       // Get profile names for users using safe profile lookup
       const tasksWithProfiles = await Promise.all(
@@ -374,11 +381,41 @@ export const TasksSection = ({ familyId, userRole, isConnectedToFamily }: TasksS
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-sm text-muted-foreground">Loading tasks...</div>
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Loading tasks…
+            </div>
+            {showRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+              >
+                Force Refresh
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (!loading && tasks.length === 0 && familyId) {
+    return (
+      <Alert className="mt-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="flex items-center gap-2">
+          No tasks available. This may be syncing or restricted by permissions.
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => window.location.reload()}
+          >
+            Force Refresh
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 

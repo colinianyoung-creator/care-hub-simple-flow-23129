@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Save, X, AlertCircle } from "lucide-react";
+import { Plus, Edit, Save, X, AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EmergencyContact {
@@ -46,6 +46,7 @@ export const KeyInformationSection = ({ familyId, userRole, isConnectedToFamily 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showRefresh, setShowRefresh] = useState(false);
 
   const canEdit = userRole === 'family_admin' || userRole === 'disabled_person';
 
@@ -129,8 +130,38 @@ export const KeyInformationSection = ({ familyId, userRole, isConnectedToFamily 
       return;
     }
     
-    loadKeyInformation();
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setLoading(false);
+        console.warn("⏱️ [KeyInformationSection] load timeout after 8s");
+      }
+    }, 8000);
+
+    loadKeyInformation()
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+        clearTimeout(timeout);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [familyId]);
+
+  // Show refresh button after 5 seconds of loading
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => {
+        setShowRefresh(true);
+      }, 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   if (!familyId) {
     return (
@@ -141,7 +172,27 @@ export const KeyInformationSection = ({ familyId, userRole, isConnectedToFamily 
   }
 
   if (loading) {
-    return <div className="text-center py-4">Loading key information...</div>;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Loading key information…
+            </div>
+            {showRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+              >
+                Force Refresh
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

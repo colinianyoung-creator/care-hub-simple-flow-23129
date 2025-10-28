@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle, Loader2 } from "lucide-react";
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -80,6 +80,7 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false);
   
   // New note form state
   const [newNote, setNewNote] = useState({
@@ -118,6 +119,10 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
         .abortSignal(signal);
 
       if (error) throw error;
+
+      if (!error && data?.length === 0) {
+        console.warn("⚠️ [NotesSection] Empty result - likely RLS restriction or sync delay");
+      }
 
       // Get profile names for authors using safe profile lookup
       const notesWithProfiles = await Promise.all(
@@ -239,13 +244,9 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.warn('NotesSection loading timeout');
             abortController.abort();
-            toast({
-              title: "Loading timeout",
-              description: "Taking longer than expected. Please refresh.",
-              variant: "destructive"
-            });
+            setLoading(false);
+            console.warn("⏱️ [NotesSection] load timeout after 8s");
           }
         }, 8000);
 
@@ -276,6 +277,19 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId]);
+
+  // Show refresh button after 5 seconds of loading
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => {
+        setShowRefresh(true);
+      }, 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   const canDeleteNote = (note: CareNote) => {
     return note.author_id === currentUserId || userRole === 'family_admin' || userRole === 'disabled_person';
@@ -316,7 +330,45 @@ export const NotesSection = ({ familyId, userRole, isConnectedToFamily }: NotesS
   }
 
   if (loading) {
-    return <div className="text-center py-4">Loading notes...</div>;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Loading notes…
+            </div>
+            {showRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+              >
+                Force Refresh
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!loading && notes.length === 0 && familyId) {
+    return (
+      <Alert className="mt-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="flex items-center gap-2">
+          No notes available. This may be syncing or restricted by permissions.
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => window.location.reload()}
+          >
+            Force Refresh
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   return (

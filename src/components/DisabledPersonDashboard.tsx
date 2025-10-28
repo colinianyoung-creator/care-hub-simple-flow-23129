@@ -22,6 +22,7 @@ import { AppointmentsSection } from "./sections/AppointmentsSection";
 import { DashboardHeader } from './DashboardHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileDialog } from './dialogs/ProfileDialog';
+import { logUserContext } from '@/lib/logContext';
 // ActionMenu removed - using accordion sections instead
 
 interface DisabledPersonDashboardProps {
@@ -60,11 +61,21 @@ export const DisabledPersonDashboard = ({
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (familyId) {
-      loadDashboardData();
-    }
-    loadUserName();
-  }, [familyId]);
+    const loadData = async () => {
+      if (familyId) {
+        await loadDashboardData();
+      }
+      await loadUserName();
+      
+      // Log context after data loads
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        logUserContext(user, familyId, userRole);
+      }
+    };
+    
+    loadData();
+  }, [familyId, userRole]);
 
   const loadUserName = async () => {
     try {

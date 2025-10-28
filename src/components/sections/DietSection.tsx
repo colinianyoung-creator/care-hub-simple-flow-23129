@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DietArchiveSection } from './DietArchiveSection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -69,6 +69,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, is
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedMealType, setSelectedMealType] = useState<string>('breakfast');
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false);
   
   const [formData, setFormData] = useState({
     description: '',
@@ -100,13 +101,9 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, is
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.warn('DietSection loading timeout');
             abortController.abort();
-            toast({
-              title: "Loading timeout",
-              description: "Taking longer than expected. Please refresh.",
-              variant: "destructive"
-            });
+            setLoading(false);
+            console.warn("⏱️ [DietSection] load timeout after 8s");
           }
         }, 8000);
 
@@ -131,6 +128,19 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole, is
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [familyId, selectedMealType, currentUserId]);
+
+  // Show refresh button after 5 seconds of loading
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => {
+        setShowRefresh(true);
+      }, 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();

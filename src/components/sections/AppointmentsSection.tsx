@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calendar, Clock, MapPin, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Calendar, Clock, MapPin, AlertCircle, Loader2 } from "lucide-react";
 import { format, isPast, isToday, isFuture } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -48,6 +48,7 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false);
   const [newAppointment, setNewAppointment] = useState({
     title: '',
     description: '',
@@ -73,6 +74,11 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
         .abortSignal(signal);
 
       if (error) throw error;
+      
+      if (!error && data?.length === 0) {
+        console.warn("⚠️ [AppointmentsSection] Empty result - likely RLS restriction or sync delay");
+      }
+      
       setAppointments(data as any || []);
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -173,10 +179,47 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
       try {
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.warn('AppointmentsSection loading timeout');
             abortController.abort();
-            toast({
-              title: "Loading timeout",
+            setLoading(false);
+            console.warn("⏱️ [AppointmentsSection] load timeout after 8s");
+          }
+        }, 8000);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setCurrentUserId(user?.id || null);
+
+        if (!cancelled) {
+          await loadAppointments(abortController.signal);
+        }
+      } catch (error: any) {
+        if (error?.name !== 'AbortError' && !cancelled) {
+          console.error('Unexpected error:', error);
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [familyId]);
+
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => setShowRefresh(true), 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
               description: "Taking longer than expected. Please refresh.",
               variant: "destructive"
             });

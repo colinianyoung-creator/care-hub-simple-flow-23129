@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download } from 'lucide-react';
+import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ShiftAssignmentForm } from "../forms/ShiftAssignmentForm";
@@ -52,6 +53,7 @@ export const SchedulingSection = ({ familyId, userRole, isConnectedToFamily, car
   const [showEditShift, setShowEditShift] = useState(false);
   const [editingShift, setEditingShift] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false);
   const { toast } = useToast();
 
   console.log('showListView state:', showListView);
@@ -177,6 +179,15 @@ export const SchedulingSection = ({ familyId, userRole, isConnectedToFamily, car
       }
     };
 
+    // 8-second timeout
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        abortController.abort();
+        setLoading(false);
+        console.warn("⏱️ [SchedulingSection] load timeout after 8s");
+      }
+    }, 8000);
+
     loadData();
 
     const handleVisibilityChange = () => {
@@ -190,10 +201,24 @@ export const SchedulingSection = ({ familyId, userRole, isConnectedToFamily, car
     return () => {
       cancelled = true;
       abortController.abort();
+      clearTimeout(timeout);
       setLoading(false);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [familyId]);
+
+  // Show refresh button after 5 seconds of loading
+  useEffect(() => {
+    let refreshTimer: NodeJS.Timeout;
+    if (loading) {
+      refreshTimer = setTimeout(() => {
+        setShowRefresh(true);
+      }, 5000);
+    } else {
+      setShowRefresh(false);
+    }
+    return () => clearTimeout(refreshTimer);
+  }, [loading]);
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -493,8 +518,20 @@ export const SchedulingSection = ({ familyId, userRole, isConnectedToFamily, car
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-sm text-muted-foreground">Loading scheduling data...</div>
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin w-4 h-4" />
+              Loading scheduling data…
+            </div>
+            {showRefresh && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+              >
+                Force Refresh
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

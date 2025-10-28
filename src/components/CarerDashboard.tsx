@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { logUserContext } from '@/lib/logContext';
 
 type AppRole = 'disabled_person' | 'family_admin' | 'family_viewer' | 'manager' | 'carer';
 
@@ -65,6 +66,11 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
       
       // Show join button if user has exactly one membership (their personal space)
       setShowJoinButton(membershipCount === 1);
+      
+      // Log context after data loads
+      if (user) {
+        logUserContext(user, familyId, userRole);
+      }
     };
     
     loadMemberships();
@@ -75,7 +81,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
       setLoading(false);
     }
     loadUserName();
-  }, [familyId]);
+  }, [familyId, userRole]);
 
   const loadUserName = async () => {
     const { data: user } = await supabase.auth.getUser();
