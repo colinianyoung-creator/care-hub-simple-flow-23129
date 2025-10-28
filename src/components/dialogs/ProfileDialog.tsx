@@ -325,11 +325,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
 
   const handleContinueToDashboard = () => {
     console.log('🔄 Reloading page to apply role change...');
-    
-    // Small delay to ensure database changes are fully committed
-    setTimeout(() => {
-      window.location.href = window.location.href;
-    }, 500);
+    window.location.reload();
   };
 
   const handleDeleteProfile = async () => {
