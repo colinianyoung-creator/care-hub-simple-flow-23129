@@ -144,25 +144,50 @@ const Dashboard = () => {
       // Auto-create family for first-time admin users
       await handleFirstTimeUser(userId, profileData);
 
-      // Load user's family memberships with better error handling
+      // Load user's family memberships with retry logic for replication lag
       console.log('🔍 Loading family memberships...');
-      const { data: memberships, error: membershipError } = await supabase
-        .from('user_memberships')
-        .select(`
-          id,
-          family_id,
-          role,
-          families (
+
+      let memberships = null;
+      let membershipError = null;
+      let membershipAttempt = 0;
+      const MAX_MEMBERSHIP_RETRIES = 5;
+
+      while (membershipAttempt < MAX_MEMBERSHIP_RETRIES) {
+        const result = await supabase
+          .from('user_memberships')
+          .select(`
             id,
-            name
-          )
-        `)
-        .eq('user_id', userId) as any;
+            family_id,
+            role,
+            families (
+              id,
+              name
+            )
+          `)
+          .eq('user_id', userId) as any;
+          
+        memberships = result.data;
+        membershipError = result.error;
+        
+        // If we got memberships or a real error (not just empty), break
+        if (membershipError || (memberships && memberships.length > 0)) {
+          console.log(`✅ Found ${memberships?.length || 0} membership(s) on attempt ${membershipAttempt + 1}`);
+          break;
+        }
+        
+        // Empty result but no error - might be replication lag
+        membershipAttempt++;
+        if (membershipAttempt < MAX_MEMBERSHIP_RETRIES) {
+          console.log(`⏳ No memberships found yet, retrying in 800ms... (${membershipAttempt}/${MAX_MEMBERSHIP_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      }
 
       console.log('📊 Memberships query result:', { 
         memberships, 
         error: membershipError,
-        count: memberships?.length || 0 
+        count: memberships?.length || 0,
+        attempts: membershipAttempt + 1
       });
 
       if (membershipError) {
