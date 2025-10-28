@@ -162,7 +162,7 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
   }, [familyId, selectedDate]);
 
   const canDeleteNote = (note: CareNote) => {
-    return note.author_id === currentUserId || userRole === 'family_admin' || userRole === 'disabled_person';
+    return !!familyId;
   };
 
   const getMoodIcon = (mood: string) => {

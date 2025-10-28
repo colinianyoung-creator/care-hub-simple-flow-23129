@@ -247,7 +247,6 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
 
   const upcomingAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'upcoming' || getAppointmentStatus(apt) === 'today');
   const pastAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'past');
-  const canManageAppointments = familyId && (userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'carer');
 
   if (!loading && (!appointments || appointments.length === 0) && familyId) {
     return (
@@ -374,7 +373,7 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
             </div>
           </CardContent>
         </Card>
-      ) : canManageAppointments ? (
+      ) : familyId ? (
         <Button 
           onClick={() => setShowAddForm(true)} 
           className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
@@ -429,7 +428,7 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
                     )}
                   </div>
                   
-                  {canManageAppointments && (
+                  {familyId && (
                     <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0">
                       <Button
                         variant="ghost"
@@ -477,7 +476,7 @@ export const AppointmentsSection = ({ familyId, userRole, isConnectedToFamily }:
                       </div>
                     </div>
                     
-                    {canManageAppointments && (
+                    {familyId && (
                       <Button
                         variant="ghost"
                         size="sm"

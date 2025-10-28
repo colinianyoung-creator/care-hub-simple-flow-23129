@@ -83,10 +83,7 @@ export const FamilyDashboard = ({
     loadData();
   }, [familyId, userRole]);
 
-  const isAdminRole = userRole === 'family_admin' || userRole === 'disabled_person';
-  const isViewerRole = userRole === 'family_viewer';
-  const canEditWithoutFamily = isAdminRole; // Admin roles can edit sections even without family
-  const showJoinMessage = !familyId && isViewerRole; // Viewers need to join a family first
+  const showJoinMessage = !familyId && userRole === 'family_viewer';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-care-background to-care-background-alt">
@@ -97,9 +94,9 @@ export const FamilyDashboard = ({
         canGoBack={canGoBack}
         onBack={onBack}
         familyId={familyId}
-        showInviteButton={!!familyId && isAdminRole}
-        showCreateButton={!familyId && isAdminRole}
-        showJoinButton={!familyId && (userRole === 'family_viewer' || userRole === 'carer')}
+        showInviteButton={!!familyId}
+        showCreateButton={!familyId}
+        showJoinButton={!familyId}
         onProfileUpdate={() => {
           setLoading(true);
           if (onProfileUpdate) {
@@ -113,7 +110,7 @@ export const FamilyDashboard = ({
       <div className="container mx-auto px-4 py-8 space-y-8">
         <HeroBanner 
           title={`Welcome back, ${userName?.split(' ')[0] || 'there'}`}
-          subtitle={familyId ? "Manage your family's care with ease" : canEditWithoutFamily ? "Create a family to start coordinating care" : "Join a family to access care features"}
+          subtitle={familyId ? "Manage your family's care with ease" : "Create or join a family to access care features"}
           careRecipientName={familyId && userRole !== 'disabled_person' ? careRecipientName : undefined}
           profilePictureUrl={profilePictureUrl}
           onProfileClick={() => setShowProfileDialog(true)}
@@ -129,17 +126,17 @@ export const FamilyDashboard = ({
           </Alert>
         )}
 
-        {!familyId && isAdminRole && (
+        {!familyId && !showJoinMessage && (
           <Alert>
             <UserPlus className="h-5 w-5" />
             <AlertDescription>
-              <p className="font-medium">Create your family to get started</p>
-              <p className="text-sm mt-1">Click "Create Family" above to begin coordinating care.</p>
+              <p className="font-medium">Create or join a family to get started</p>
+              <p className="text-sm mt-1">Use the buttons above to create or join a family.</p>
             </AlertDescription>
           </Alert>
         )}
 
-        {(familyId || canEditWithoutFamily) && !showJoinMessage && (
+        {familyId && (
           <div className="space-y-4">
           <ExpandableDashboardSection
             id="scheduling"

@@ -125,11 +125,7 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
   };
 
   const canDeleteEntry = (entry: DietEntry) => {
-    return (
-      userRole === 'family_admin' ||
-      userRole === 'disabled_person' ||
-      entry.user_id === currentUserId
-    );
+    return !!familyId;
   };
 
   const goToPreviousDay = () => {
