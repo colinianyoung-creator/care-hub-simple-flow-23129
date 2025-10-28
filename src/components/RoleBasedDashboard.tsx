@@ -17,7 +17,7 @@ interface RoleBasedDashboardProps {
 
 export const RoleBasedDashboard = ({ user, currentFamily, onSignOut, userRole: propUserRole, userName, profilePictureUrl, currentFamilyId, onProfileUpdate }: RoleBasedDashboardProps) => {
   // If no family, use role from props (from profile), otherwise from membership
-  const userRole = currentFamily?.role || propUserRole || 'carer';
+  const userRole = currentFamily?.role || propUserRole || 'disabled_person';
   const familyName = currentFamily?.families?.name || currentFamily?.families?.id || userName || 'Your Dashboard';
   const familyId = currentFamily?.family_id;
 
