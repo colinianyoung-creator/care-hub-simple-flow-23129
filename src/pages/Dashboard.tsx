@@ -279,59 +279,10 @@ const Dashboard = () => {
         });
       }
     }
-
-    // Auto-create family for existing admin users who don't have one
-    const userRole = profileData?.ui_preference;
-    const { data: existingMemberships } = await supabase
-      .from('user_memberships')
-      .select('id')
-      .eq('user_id', userId)
-      .limit(1);
     
-    const hasMemberships = existingMemberships && existingMemberships.length > 0;
-    
-    if (!hasMemberships && (userRole === 'family_admin' || userRole === 'disabled_person')) {
-      try {
-        console.log('🏠 Creating personal family for existing admin user...');
-        
-        // Extract first name
-        const fullName = profileData?.full_name || 'User';
-        const firstName = fullName.split(' ')[0];
-        
-        // Create family
-        const { data: newFamily, error: familyError } = await supabase
-          .from('families')
-          .insert({
-            name: `${firstName}'s Care Space`,
-            created_by: userId
-          })
-          .select()
-          .single();
-        
-        if (familyError) throw familyError;
-        
-        // Add membership
-        const { error: membershipError } = await supabase
-          .from('user_memberships')
-          .insert({
-            user_id: userId,
-            family_id: newFamily.id,
-            role: userRole
-          });
-        
-        if (membershipError) throw membershipError;
-        
-        console.log('✅ Personal family created successfully');
-        
-        toast({
-          title: "Welcome!",
-          description: "Your personal care space has been created.",
-        });
-      } catch (error) {
-        console.error('Error creating personal family:', error);
-        // Don't show error toast - may have been created by trigger
-      }
-    }
+    // NOTE: No longer auto-creating families here
+    // The change_user_role RPC handles family creation
+    // Main membership loading (with retry logic) happens after this
   };
 
   const handleFamilyCreated = () => {
