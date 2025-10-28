@@ -57,7 +57,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         setError('Request timed out. Please try again.');
         setLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 5000); // 5 second timeout
     
     try {
       if (abortController?.signal.aborted) return;
@@ -117,6 +117,11 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       // Merge shifts and leave requests
       const allShifts = [...(monthShiftsWithNames || []), ...convertedLeaves];
       setShifts(allShifts);
+
+      // If no shifts, clear error so we show empty state instead
+      if (allShifts.length === 0) {
+        setError(null);
+      }
 
       // Care recipient name removed from schema
     } catch (error: any) {
@@ -260,6 +265,10 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
             <Button onClick={() => loadMonthShifts()} variant="outline" size="sm">
               Try Again
             </Button>
+          </div>
+        ) : shifts.length === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-muted-foreground">No shifts scheduled this month</div>
           </div>
         ) : (
           <div className="grid grid-cols-7 gap-0.5 sm:gap-1">

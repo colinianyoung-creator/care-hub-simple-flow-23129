@@ -242,6 +242,9 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         description: "Profile picture updated successfully",
       });
 
+      // Reload profile to refresh signed URL
+      await loadProfile();
+
       if (onProfileUpdate) {
         onProfileUpdate();
       }

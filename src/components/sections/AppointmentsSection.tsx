@@ -182,7 +182,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
             setLoading(false);
             console.warn("⏱️ [AppointmentsSection] load timeout after 8s");
           }
-        }, 8000);
+        }, 5000);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
@@ -238,23 +238,6 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   const upcomingAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'upcoming' || getAppointmentStatus(apt) === 'today');
   const pastAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'past');
 
-  if (!loading && (!appointments || appointments.length === 0) && familyId) {
-    return (
-      <Alert className="mt-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="flex items-center gap-2">
-          No appointments available. This may be syncing or restricted by permissions.
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => window.location.reload()}
-          >
-            Force Refresh
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   if (loading) {
     return (

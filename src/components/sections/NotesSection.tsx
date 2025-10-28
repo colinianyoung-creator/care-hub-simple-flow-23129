@@ -229,7 +229,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
             setLoading(false);
             console.warn("⏱️ [NotesSection] load timeout after 8s");
           }
-        }, 8000);
+        }, 5000);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (cancelled) return;
@@ -309,17 +309,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     );
   }
 
-  if (!loading && notes.length === 0 && familyId) {
-    return (
-      <Card className="p-6 text-center">
-        <p className="text-muted-foreground mb-4">No notes yet today</p>
-        <Button onClick={() => setShowAddForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Your First Note
-        </Button>
-      </Card>
-    );
-  }
 
   return (
     <Tabs defaultValue="today" className="space-y-6">
