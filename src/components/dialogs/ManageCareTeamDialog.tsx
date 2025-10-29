@@ -419,9 +419,9 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                     {invites.map((invite) => (
                       <div key={invite.id} className="flex items-center justify-between p-3 border rounded-lg">
                        <div className="flex-1">
-                         <div className="font-medium font-mono">{invite.invite_code}</div>
+                         <div className="font-medium font-mono">{invite.code}</div>
                          <div className="text-sm text-muted-foreground">
-                           Role: {invite.invited_role ? (invite.invited_role as string).replace('_', ' ') : 'Unknown Role'} • 
+                           Role: {invite.role ? (invite.role as string).replace('_', ' ') : 'Unknown Role'} • 
                            Created: {new Date(invite.created_at).toLocaleDateString()} •
                            Expires: {new Date(invite.expires_at).toLocaleDateString()}
                          </div>
@@ -430,7 +430,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                          <Button
                            size="sm"
                            variant="outline"
-                           onClick={() => copyToClipboard(invite.invite_code)}
+                           onClick={() => copyToClipboard(invite.code)}
                          >
                            <Copy className="h-4 w-4" />
                          </Button>
