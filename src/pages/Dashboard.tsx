@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [currentFamilyId, setCurrentFamilyId] = useState<string | undefined>(undefined);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { toast } = useToast();
+  const isLoadingDataRef = useRef(false);
 
   // Add timeout for loading state
   useEffect(() => {
@@ -75,13 +76,18 @@ const Dashboard = () => {
       }
     };
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Listen for auth state changes (CRITICAL: NOT async to prevent deadlock)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         navigate('/');
       } else if (session?.user && isSubscribed) {
         setUser(session.user);
-        await loadUserData(session.user.id);
+        // Use setTimeout to defer async work and prevent deadlock
+        setTimeout(() => {
+          if (isSubscribed) {
+            loadUserData(session.user.id);
+          }
+        }, 0);
       }
     });
 
@@ -102,6 +108,14 @@ const Dashboard = () => {
   }, [families]);
 
   const loadUserData = async (userId: string, retryCount = 0) => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingDataRef.current) {
+      console.log('⏭️ Skipping loadUserData - already loading');
+      return;
+    }
+    
+    isLoadingDataRef.current = true;
+    
     try {
       console.log('🔍 Loading user data for:', userId);
       setLoadingMessage("Loading your profile...");
@@ -228,6 +242,7 @@ const Dashboard = () => {
       setDataLoaded(true);
     } finally {
       setLoading(false);
+      isLoadingDataRef.current = false;
     }
   };
 
@@ -342,9 +357,16 @@ const Dashboard = () => {
       userName={userName}
       profilePictureUrl={profilePictureUrl}
       currentFamilyId={currentFamilyId}
-      onProfileUpdate={() => {
-        if (user) {
-          loadUserData(user.id);
+      onProfileUpdate={async () => {
+        // Only refresh profile picture URL, not all data
+        try {
+          const { data: profile } = await supabase.rpc('get_profile_safe') as any;
+          const profileData = profile?.[0];
+          if (profileData?.profile_picture_url) {
+            setProfilePictureUrl(profileData.profile_picture_url);
+          }
+        } catch (error) {
+          console.error('Error refreshing profile picture:', error);
         }
       }}
     />

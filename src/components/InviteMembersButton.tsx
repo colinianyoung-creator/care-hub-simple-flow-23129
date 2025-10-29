@@ -22,25 +22,62 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
   const { toast } = useToast();
 
   const generateInviteCode = async () => {
+    // Validate familyId exists
+    if (!familyId) {
+      console.error('❌ No familyId provided to InviteMembersButton');
+      toast({
+        title: "Error",
+        description: "Cannot generate invite - no family selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
+    console.log('🎟️ Generating invite code for family:', familyId, 'role:', selectedRole);
+    
     try {
       const { data, error } = await supabase.rpc('generate_invite', {
         _family_id: familyId,
         _role: selectedRole as 'carer' | 'disabled_person' | 'family_admin' | 'family_viewer' | 'manager'
       });
 
-      if (error) throw error;
+      console.log('📤 RPC generate_invite response:', { data, error });
 
+      if (error) {
+        console.error('❌ RPC error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+
+      if (!data) {
+        console.error('❌ No data returned from generate_invite');
+        throw new Error('No invite code generated');
+      }
+
+      console.log('✅ Invite code generated:', data);
       setGeneratedCode(data);
       toast({
         title: "Invite code generated!",
         description: "Share this code with your team member.",
       });
     } catch (error: any) {
-      console.error('Error generating invite:', error);
+      console.error('❌ Error generating invite:', error);
+      
+      let errorMessage = "Failed to generate invite code";
+      if (error.message?.includes('Only family admins')) {
+        errorMessage = "You must be a family admin to generate invites";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to generate invite code",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
