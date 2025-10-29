@@ -69,8 +69,8 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
       console.error('❌ Error generating invite:', error);
       
       let errorMessage = "Failed to generate invite code";
-      if (error.message?.includes('Only family admins')) {
-        errorMessage = "You must be a family admin to generate invites";
+      if (error.message?.includes('Only family admins') || error.message?.includes('care recipients')) {
+        errorMessage = "You must be a family admin or care recipient to generate invites";
       } else if (error.message) {
         errorMessage = error.message;
       }

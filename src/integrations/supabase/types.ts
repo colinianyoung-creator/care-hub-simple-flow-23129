@@ -918,9 +918,9 @@ export type Database = {
         Args: { _created_by: string; _user_id: string }
         Returns: boolean
       }
-      change_user_role: {
-        Args: { _new_role: Database["public"]["Enums"]["app_role"] }
-        Returns: Json
+      can_manage_family: {
+        Args: { _family_id: string; _user_id: string }
+        Returns: boolean
       }
       ensure_user_profile: { Args: never; Returns: string }
       generate_invite: {
