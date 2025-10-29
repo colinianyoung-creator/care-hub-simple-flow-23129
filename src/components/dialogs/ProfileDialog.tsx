@@ -75,7 +75,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
           variant: "destructive"
         });
       }
-    }, 10000);
+    }, 5000);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -242,9 +242,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         description: "Profile picture updated successfully",
       });
 
-      // Reload profile to refresh signed URL
-      await loadProfile();
-
+      // Notify parent to refresh
       if (onProfileUpdate) {
         onProfileUpdate();
       }

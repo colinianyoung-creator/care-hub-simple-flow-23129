@@ -343,8 +343,9 @@ const Dashboard = () => {
       profilePictureUrl={profilePictureUrl}
       currentFamilyId={currentFamilyId}
       onProfileUpdate={() => {
-        // Role change reload is now handled in ProfileDialog
-        console.log('ℹ️ onProfileUpdate called (no-op)');
+        if (user) {
+          loadUserData(user.id);
+        }
       }}
     />
   );

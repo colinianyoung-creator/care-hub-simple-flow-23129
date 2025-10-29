@@ -64,8 +64,8 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
       const membershipCount = (data || []).length;
       setIsConnectedToFamily(membershipCount > 1);
       
-      // Show join button if user has exactly one membership (their personal space)
-      setShowJoinButton(membershipCount === 1);
+      // Show join button if user has one or no memberships (their personal space or none)
+      setShowJoinButton(membershipCount <= 1);
       
       // Log context after data loads
       if (user) {
