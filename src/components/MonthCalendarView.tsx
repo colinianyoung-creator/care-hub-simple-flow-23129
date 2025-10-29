@@ -82,8 +82,8 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         .select('*')
         .eq('family_id', familyId)
         .eq('status', 'approved')
-        .gte('date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('date', format(monthEnd, 'yyyy-MM-dd'));
+        .gte('start_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('end_date', format(monthEnd, 'yyyy-MM-dd'));
 
       if (leaveError) throw leaveError;
 
