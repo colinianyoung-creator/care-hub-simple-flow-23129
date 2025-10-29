@@ -283,7 +283,17 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   };
 
   const handleAddTask = async () => {
-    if (!newTask.title.trim() || !currentUserId) return;
+    if (!newTask.title.trim()) return;
+
+    // Verify user is authenticated before attempting save
+    if (!currentUserId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please wait for authentication to complete",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -399,7 +409,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
             <div className="flex gap-2">
               <Button 
                 onClick={handleAddTask} 
-                disabled={!newTask.title.trim()}
+                disabled={!newTask.title.trim() || !currentUserId}
                 className="h-12 md:h-10 px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
               >
                 Create Task

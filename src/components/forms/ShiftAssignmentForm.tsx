@@ -240,28 +240,30 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         });
         setShowEditRecurrenceDialog(false);
       } else {
-        // Create direct time entries for each selected carer - Admin basic shifts
+        // Create direct time entries for each selected carer
         for (const carerId of selectedCarerIds) {
-          // Create time entry for each day of the week for the next 4 weeks
           if (isRecurring && formData.days_of_week.length > 0) {
+            // Generate shifts starting from TODAY for the next 4 weeks
             const startDate = new Date();
-            const endDate = new Date();
-            endDate.setDate(startDate.getDate() + 28);
+            startDate.setHours(0, 0, 0, 0); // Reset to start of day
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 28); // Next 4 weeks
 
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
               const dayOfWeek = d.getDay();
               if (formData.days_of_week.includes(dayOfWeek)) {
+                const shiftDate = d.toISOString().split('T')[0]; // Get YYYY-MM-DD
                 const shiftStart = new Date(d);
-                shiftStart.setHours(parseInt(formData.start_time.split(':')[0]), parseInt(formData.start_time.split(':')[1]));
+                shiftStart.setHours(parseInt(formData.start_time.split(':')[0]), parseInt(formData.start_time.split(':')[1]), 0, 0);
                 const shiftEnd = new Date(d);
-                shiftEnd.setHours(parseInt(formData.end_time.split(':')[0]), parseInt(formData.end_time.split(':')[1]));
+                shiftEnd.setHours(parseInt(formData.end_time.split(':')[0]), parseInt(formData.end_time.split(':')[1]), 0, 0);
 
                 await supabase.from('time_entries').insert({
                   family_id: familyId,
                   user_id: carerId,
                   clock_in: shiftStart.toISOString(),
                   clock_out: shiftEnd.toISOString(),
-                  notes: formData.title || 'Basic Shift'
+                  notes: formData.title || 'Basic'
                 });
               }
             }
@@ -269,16 +271,16 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
             // One-time shift - create single entry for today
             const today = new Date();
             const shiftStart = new Date(today);
-            shiftStart.setHours(parseInt(formData.start_time.split(':')[0]), parseInt(formData.start_time.split(':')[1]));
+            shiftStart.setHours(parseInt(formData.start_time.split(':')[0]), parseInt(formData.start_time.split(':')[1]), 0, 0);
             const shiftEnd = new Date(today);
-            shiftEnd.setHours(parseInt(formData.end_time.split(':')[0]), parseInt(formData.end_time.split(':')[1]));
+            shiftEnd.setHours(parseInt(formData.end_time.split(':')[0]), parseInt(formData.end_time.split(':')[1]), 0, 0);
 
             await supabase.from('time_entries').insert({
               family_id: familyId,
               user_id: carerId,
               clock_in: shiftStart.toISOString(),
               clock_out: shiftEnd.toISOString(),
-              notes: formData.title || 'Basic Shift'
+              notes: formData.title || 'Basic'
             });
           }
         }

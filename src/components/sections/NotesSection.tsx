@@ -142,6 +142,16 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   const handleAddNote = async () => {
     if (!newNote.activity_support.trim()) return;
 
+    // Verify user is authenticated before attempting save
+    if (!currentUserId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please wait for authentication to complete",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('care_notes')
@@ -481,7 +491,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddNote} disabled={!newNote.activity_support.trim()}>
+              <Button onClick={handleAddNote} disabled={!newNote.activity_support.trim() || !currentUserId}>
                 Add Note
               </Button>
               <Button variant="outline" onClick={() => setShowAddForm(false)}>
