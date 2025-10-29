@@ -170,7 +170,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
         .from('diet_entries')
           .insert([{
             family_id: familyId,
-          user_id: currentUserId,
+          created_by: currentUserId,
           meal_type: selectedMealType,
           description: formData.description,
           portion_left: formData.portion_left,

@@ -119,6 +119,22 @@ useEffect(() => {
 
         setWeekInstances(transformedInstances);
 
+        // Fetch care recipient name for carers
+        if (userRole === 'carer' && !careRecipientName) {
+          const { data: adminMembership } = await supabase
+            .from('user_memberships')
+            .select('profiles(full_name, care_recipient_name)')
+            .eq('family_id', familyId)
+            .in('role', ['family_admin', 'disabled_person'])
+            .limit(1)
+            .single();
+          
+          if (adminMembership?.profiles) {
+            const profile = adminMembership.profiles as any;
+            setCareRecipientName(profile.care_recipient_name || profile.full_name || 'Care Recipient');
+          }
+        }
+
         // Load approved leave requests for this week
         const { data: leaveData, error: leaveError } = await supabase
           .from('leave_requests')

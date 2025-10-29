@@ -7,6 +7,7 @@ import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus,
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format, addDays } from 'date-fns';
 import { ShiftAssignmentForm } from "../forms/ShiftAssignmentForm";
 import { ShiftRequestForm } from "../forms/ShiftRequestForm";
 import { ShiftAbsenceForm } from "../forms/ShiftAbsenceForm";
@@ -616,51 +617,38 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
                 <Card>
                 <CardHeader>
-                  <CardTitle>Active Shift Assignments</CardTitle>
-                  <CardDescription>Recurring shift schedules for the family</CardDescription>
+                  <CardTitle>Upcoming Shifts</CardTitle>
+                  <CardDescription>Next 7 days of scheduled shifts</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {assignments.map((assignment) => (
-                      <div key={assignment.id} className="flex flex-col p-3 border rounded-lg space-y-3">
-                        <div className="flex-1">
-                          <div className="font-medium">{assignment.title || 'Regular Shift'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {assignment.start_time?.slice(0,5)} - {assignment.end_time?.slice(0,5)} • 
-                            {assignment.days_of_week?.map((day: number) => 
-                              ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]
-                            ).join(', ')}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Assigned to: {carers[assignment.carer_id] || 'Unassigned'}
+                  {instances.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No shifts scheduled for the next 7 days
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {instances.slice(0, 5).map((shift) => (
+                        <div key={shift.id} className="flex flex-col p-3 border rounded-lg space-y-2">
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {format(new Date(shift.scheduled_date), 'EEE, MMM d')}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {shift.notes || 'Basic'} • {carers[shift.carer_id] || 'Unassigned'}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2 w-full">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => {
-                              setEditingAssignment(assignment);
-                              setShowAssignmentForm(true);
-                            }}
-                            className="w-auto px-3"
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            <span className="hidden sm:inline">Edit</span>
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleDeleteAssignment(assignment.id)}
-                            className="w-auto px-3"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            <span className="hidden sm:inline">Delete</span>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                      {instances.length > 5 && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          +{instances.length - 5} more shifts
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

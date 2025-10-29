@@ -64,17 +64,50 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
       
-      // Use the new secure RPC to get shift instances with names
-      const { data: monthShiftsWithNames, error } = await supabase.rpc(
-        'get_shift_instances_with_names',
-        {
-          _family_id: familyId,
-          _start_date: format(monthStart, 'yyyy-MM-dd'),
-          _end_date: format(monthEnd, 'yyyy-MM-dd')
-        }
-      );
+      // Query time_entries directly instead of using empty shift_instances table
+      const monthStartStr = format(monthStart, 'yyyy-MM-dd');
+      const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
+      
+      const { data: timeEntries, error: entriesError } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('family_id', familyId)
+        .gte('clock_in', `${monthStartStr}T00:00:00`)
+        .lte('clock_in', `${monthEndStr}T23:59:59`);
 
-      if (error) throw error;
+      if (entriesError) throw entriesError;
+
+      // Get unique carer IDs from time entries
+      const carerIds = [...new Set(timeEntries?.map(entry => entry.user_id).filter(Boolean))] as string[];
+      
+      // Load carer profiles
+      const { data: carerProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', carerIds);
+
+      // Build carer map
+      const newCarers: Record<string, string> = {};
+      carerProfiles?.forEach(profile => {
+        newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
+      });
+      setCarers(newCarers);
+
+      // Transform time_entries to shift instances format
+      const transformedShifts = timeEntries?.map(entry => ({
+        id: entry.id,
+        shift_assignment_id: entry.shift_instance_id,
+        scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+        start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
+        carer_id: entry.user_id,
+        carer_name: newCarers[entry.user_id] || 'Unknown',
+        status: 'scheduled',
+        notes: entry.notes,
+        family_id: entry.family_id,
+        created_at: entry.created_at,
+        updated_at: entry.updated_at
+      })) || [];
 
       // Get approved leave requests for the same period
       const { data: leaveRequests, error: leaveError } = await supabase
@@ -82,21 +115,26 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         .select('*')
         .eq('family_id', familyId)
         .eq('status', 'approved')
-        .gte('start_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('end_date', format(monthEnd, 'yyyy-MM-dd'));
+        .gte('start_date', monthStartStr)
+        .lte('end_date', monthEndStr);
 
       if (leaveError) throw leaveError;
 
-      // Extract carer names from shift instances first
-      const newCarers: Record<string, string> = {};
-      monthShiftsWithNames?.forEach(shift => {
-        if (shift.carer_id && shift.carer_name) {
-          newCarers[shift.carer_id] = shift.carer_name;
-        }
-      });
-      setCarers(newCarers);
+      // Load carer profiles for leave requests
+      const leaveCarerIds = leaveRequests?.map(leave => leave.user_id).filter(Boolean) || [];
+      if (leaveCarerIds.length > 0) {
+        const { data: leaveCarerProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', leaveCarerIds);
 
-      // Convert leave requests to shift format for display (after we have carer names)
+        // Merge into carers map
+        leaveCarerProfiles?.forEach(profile => {
+          newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
+        });
+      }
+
+      // Convert leave requests to shift format for display
       const convertedLeaves = (leaveRequests || []).map(leave => ({
         id: leave.id,
         shift_assignment_id: null,
@@ -114,16 +152,30 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         is_leave_request: true
       }));
 
+      // Fetch care recipient name for carers
+      if (userRole === 'carer') {
+        const { data: adminMembership } = await supabase
+          .from('user_memberships')
+          .select('profiles(full_name, care_recipient_name)')
+          .eq('family_id', familyId)
+          .in('role', ['family_admin', 'disabled_person'])
+          .limit(1)
+          .single();
+        
+        if (adminMembership?.profiles) {
+          const profile = adminMembership.profiles as any;
+          setCareRecipientName(profile.care_recipient_name || profile.full_name || 'Care Recipient');
+        }
+      }
+
       // Merge shifts and leave requests
-      const allShifts = [...(monthShiftsWithNames || []), ...convertedLeaves];
+      const allShifts = [...transformedShifts, ...convertedLeaves];
       setShifts(allShifts);
 
       // If no shifts, clear error so we show empty state instead
       if (allShifts.length === 0) {
         setError(null);
       }
-
-      // Care recipient name removed from schema
     } catch (error: any) {
       if (error.name === 'AbortError' || abortController?.signal.aborted) {
         console.log('Request was cancelled');
