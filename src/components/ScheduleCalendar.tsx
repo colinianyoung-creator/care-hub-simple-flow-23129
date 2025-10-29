@@ -75,29 +75,49 @@ useEffect(() => {
   useEffect(() => {
     const loadWeekData = async () => {
       try {
-        // Use the new secure RPC to get shift instances with names
-        const { data: weekInstancesWithNames, error: instanceError } = await supabase.rpc(
-          'get_shift_instances_with_names',
-          {
-            _family_id: familyId,
-            _start_date: format(weekStart, 'yyyy-MM-dd'),
-            _end_date: format(weekEnd, 'yyyy-MM-dd')
-          }
-        );
+        // Load time_entries directly (this is where shifts are actually stored)
+        const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+        const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
+        
+        const { data: timeEntries, error: entriesError } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('family_id', familyId)
+          .gte('clock_in', `${weekStartStr}T00:00:00`)
+          .lte('clock_in', `${weekEndStr}T23:59:59`);
 
-        if (instanceError) throw instanceError;
-        setWeekInstances(weekInstancesWithNames || []);
+        if (entriesError) throw entriesError;
 
-        // Extract carer names from the RPC result
+        // Get unique carer IDs from time entries
+        const carerIds = [...new Set(timeEntries?.map(entry => entry.user_id).filter(Boolean))] as string[];
+        
+        // Load carer profiles
+        const { data: carerProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', carerIds);
+
+        // Build carer map
         const newCarers: Record<string, string> = {};
-        weekInstancesWithNames?.forEach(instance => {
-          if (instance.carer_id && instance.carer_name) {
-            newCarers[instance.carer_id] = instance.carer_name;
-          }
+        carerProfiles?.forEach(profile => {
+          newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
         });
         setCarers(newCarers);
 
-        // Care recipient name removed from schema
+        // Transform time_entries to shift instances format
+        const transformedInstances = timeEntries?.map(entry => ({
+          id: entry.id,
+          shift_assignment_id: entry.shift_instance_id, // Use shift_instance_id for editing
+          scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+          start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+          end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
+          carer_id: entry.user_id,
+          carer_name: newCarers[entry.user_id] || 'Unknown',
+          status: 'scheduled',
+          notes: entry.notes
+        })) || [];
+
+        setWeekInstances(transformedInstances);
 
         // Load approved leave requests for this week
         const { data: leaveData, error: leaveError } = await supabase
@@ -105,24 +125,24 @@ useEffect(() => {
           .select('*')
           .eq('family_id', familyId)
           .eq('status', 'approved')
-          .or(`and(start_date.lte.${format(weekEnd, 'yyyy-MM-dd')},end_date.gte.${format(weekStart, 'yyyy-MM-dd')})`);
+          .or(`and(start_date.lte.${weekEndStr},end_date.gte.${weekStartStr})`);
 
         if (leaveError) {
           console.error('Error loading leave requests:', leaveError);
         }
 
         // Load carer profiles for leave requests
-        const carerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
-        if (carerIds.length > 0) {
-          const { data: carerProfiles } = await supabase
+        const leaveCarerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
+        if (leaveCarerIds.length > 0) {
+          const { data: leaveCarerProfiles } = await supabase
             .from('profiles')
             .select('id, full_name')
-            .in('id', carerIds);
+            .in('id', leaveCarerIds);
 
           // Merge carer names into leave requests
           const leavesWithCarers = leaveData?.map(leave => ({
             ...leave,
-            carer_name: carerProfiles?.find(p => p.id === leave.user_id)?.full_name || newCarers[leave.user_id] || 'Unknown'
+            carer_name: leaveCarerProfiles?.find(p => p.id === leave.user_id)?.full_name || newCarers[leave.user_id] || 'Unknown'
           })) || [];
 
           setLeaveRequests(leavesWithCarers);

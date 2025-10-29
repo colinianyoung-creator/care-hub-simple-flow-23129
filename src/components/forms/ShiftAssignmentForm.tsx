@@ -112,33 +112,25 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           return;
         }
 
-        // Get profile names for each carer using safe profile lookup
-        const carersWithProfiles = await Promise.all(
-          carerMemberships.map(async (membership) => {
-          const { data: profile } = await supabase
-            .rpc('get_profile_safe');
-            
-            console.log('Profile data for user', membership.user_id, ':', profile);
-            
-            // Include all carers (remove disabled_person_id filter)
-            if (profile && profile.length > 0) {
-              return {
-                user_id: membership.user_id,
-                profiles: {
-                  full_name: profile[0].full_name || 'Unnamed Carer'
-                }
-              };
+        // Get profile names for all carers in one query
+        const carerUserIds = carerMemberships.map(m => m.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', carerUserIds);
+        
+        console.log('Profile data for carers:', profiles);
+        
+        // Map profiles to carers
+        const carersWithProfiles = carerMemberships.map((membership) => {
+          const profile = profiles?.find(p => p.id === membership.user_id);
+          return {
+            user_id: membership.user_id,
+            profiles: {
+              full_name: profile?.full_name || 'Unnamed Carer'
             }
-            
-            // Fallback for carers without profile data
-            return {
-              user_id: membership.user_id,
-              profiles: {
-                full_name: 'Unnamed Carer'
-              }
-            };
-          })
-        );
+          };
+        });
 
         console.log('Carers with profiles:', carersWithProfiles);
         setCarers(carersWithProfiles);

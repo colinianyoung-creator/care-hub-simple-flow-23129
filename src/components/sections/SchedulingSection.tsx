@@ -283,18 +283,18 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         if (!carersError && carerMemberships) {
           const carerMap: Record<string, string> = {};
           
-          await Promise.all(
-            carerMemberships.map(async (membership) => {
-              const { data: profile } = await supabase
-                .rpc('get_profile_safe');
-              
-              if (profile && profile.length > 0) {
-                carerMap[membership.user_id] = profile[0].full_name || 'Unnamed Carer';
-              } else {
-                carerMap[membership.user_id] = 'Unnamed Carer';
-              }
-            })
-          );
+          // Fetch all carer profiles in one query
+          const carerUserIds = carerMemberships.map(m => m.user_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', carerUserIds);
+          
+          // Map profiles to carer IDs
+          carerMemberships.forEach((membership) => {
+            const profile = profiles?.find(p => p.id === membership.user_id);
+            carerMap[membership.user_id] = profile?.full_name || 'Unnamed Carer';
+          });
           
           setCarers(carerMap);
         }
