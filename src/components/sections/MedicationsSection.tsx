@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Check, AlertCircle, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -61,6 +61,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showRefresh, setShowRefresh] = useState(false);
+  const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
   const [newMedication, setNewMedication] = useState({
     name: '',
     dosage: '',
@@ -69,6 +70,32 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     start_date: format(new Date(), 'yyyy-MM-dd'),
     end_date: ''
   });
+
+  const handleEditMedication = (medication: Medication) => {
+    setEditingMedication(medication);
+    setNewMedication({
+      name: medication.name,
+      dosage: medication.dosage || '',
+      frequency: medication.frequency || '',
+      instructions: medication.instructions || '',
+      start_date: medication.start_date,
+      end_date: medication.end_date || ''
+    });
+    setShowAddForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMedication(null);
+    setNewMedication({
+      name: '',
+      dosage: '',
+      frequency: '',
+      instructions: '',
+      start_date: format(new Date(), 'yyyy-MM-dd'),
+      end_date: ''
+    });
+    setShowAddForm(false);
+  };
 
   const loadMedications = async (signal?: AbortSignal) => {
     if (!familyId) return;
@@ -125,41 +152,56 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     }
 
     try {
-      const { error } = await supabase
-        .from('medications')
-        .insert([{
-          family_id: familyId,
-          name: newMedication.name,
-          dosage: newMedication.dosage || null,
-          frequency: newMedication.frequency || null,
-          instructions: newMedication.instructions || null,
-          start_date: newMedication.start_date || null,
-          end_date: newMedication.end_date || null,
-          care_recipient_id: null
-        }] as any);
+      if (editingMedication) {
+        // Update existing medication
+        const { error } = await supabase
+          .from('medications')
+          .update({
+            name: newMedication.name,
+            dosage: newMedication.dosage || null,
+            frequency: newMedication.frequency || null,
+            instructions: newMedication.instructions || null,
+            start_date: newMedication.start_date || null,
+            end_date: newMedication.end_date || null
+          })
+          .eq('id', editingMedication.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setNewMedication({
-        name: '',
-        dosage: '',
-        frequency: '',
-        instructions: '',
-        start_date: format(new Date(), 'yyyy-MM-dd'),
-        end_date: ''
-      });
-      setShowAddForm(false);
+        toast({
+          title: "Medication updated",
+          description: "The medication has been updated successfully.",
+        });
+      } else {
+        // Insert new medication
+        const { error } = await supabase
+          .from('medications')
+          .insert([{
+            family_id: familyId,
+            name: newMedication.name,
+            dosage: newMedication.dosage || null,
+            frequency: newMedication.frequency || null,
+            instructions: newMedication.instructions || null,
+            start_date: newMedication.start_date || null,
+            end_date: newMedication.end_date || null,
+            care_recipient_id: null
+          }] as any);
+
+        if (error) throw error;
+
+        toast({
+          title: "Medication added",
+          description: "The medication has been added successfully.",
+        });
+      }
+
+      handleCancelEdit();
       loadMedications();
-      
-      toast({
-        title: "Medication added",
-        description: "The medication has been added successfully.",
-      });
     } catch (error) {
-      console.error('Error adding medication:', error);
+      console.error('Error saving medication:', error);
       toast({
-        title: "Error adding medication",
-        description: "There was an error adding the medication.",
+        title: "Error",
+        description: "There was an error saving the medication.",
         variant: "destructive",
       });
     }
@@ -268,7 +310,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
       {showAddForm ? (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Medication</CardTitle>
+            <CardTitle>{editingMedication ? 'Edit Medication' : 'Add New Medication'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -317,9 +359,9 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
 
             <div className="flex gap-2">
               <Button onClick={handleAddMedication} disabled={!newMedication.name.trim() || !newMedication.dosage.trim()}>
-                Add Medication
+                {editingMedication ? 'Update Medication' : 'Add Medication'}
               </Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>
+              <Button variant="outline" onClick={handleCancelEdit}>
                 Cancel
               </Button>
             </div>
@@ -354,7 +396,15 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
                   </p>
                 </div>
                 {canManageMedications && (
-                  <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0">
+                  <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditMedication(medication)}
+                      className="mobile-section-button md:w-auto"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"

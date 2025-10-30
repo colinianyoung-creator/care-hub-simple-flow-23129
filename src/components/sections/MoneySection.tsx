@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Image as ImageIcon, Receipt, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, Camera, AlertCircle, Receipt } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { MoneyArchiveSection } from './MoneyArchiveSection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,11 +19,10 @@ interface MoneyEntry {
   id: string;
   description: string;
   amount: number;
-  paid_by: string;
+  created_by: string;
   notes: string | null;
-  photo_url: string | null;
+  receipt_url: string | null;
   created_at: string;
-  user_id: string;
 }
 
 interface FamilyMember {
@@ -54,17 +53,39 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [viewerImage, setViewerImage] = useState<string | null>(null);
   const [showRefresh, setShowRefresh] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [editingEntry, setEditingEntry] = useState<MoneyEntry | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    paid_by: '',
     notes: '',
-    photo_url: ''
+    receipt_url: ''
   });
+
+  const handleEditEntry = (entry: MoneyEntry) => {
+    setEditingEntry(entry);
+    setFormData({
+      description: entry.description,
+      amount: entry.amount.toString(),
+      notes: entry.notes || '',
+      receipt_url: entry.receipt_url || ''
+    });
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+    setFormData({
+      description: '',
+      amount: '',
+      notes: '',
+      receipt_url: ''
+    });
+    setShowForm(false);
+  };
 
   const { toast } = useToast();
   const { upload, uploading } = useFileUpload('money_receipts');
@@ -199,42 +220,67 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!familyId || !currentUserId) return;
+    
+    if (!formData.description.trim() || !formData.amount) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in description and amount.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
-      const { error } = await supabase
-        .from('money_records')
-        .insert({
-          family_id: familyId,
-          created_by: currentUserId,
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          type: 'expense',
-          category: 'general',
-          receipt_url: formData.photo_url || null
-        }) as any;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-      if (error) throw error;
+      if (editingEntry) {
+        // Update existing entry
+        const { error } = await supabase
+          .from('money_records')
+          .update({
+            description: formData.description,
+            amount: parseFloat(formData.amount),
+            notes: formData.notes || null,
+            receipt_url: formData.receipt_url || null
+          })
+          .eq('id', editingEntry.id);
 
-      toast({
-        title: "Success",
-        description: "Money entry added successfully"
-      });
+        if (error) throw error;
 
-      setFormData({
-        description: '',
-        amount: '',
-        paid_by: currentUserId,
-        notes: '',
-        photo_url: ''
-      });
-      setShowForm(false);
+        toast({
+          title: "Expense updated",
+          description: "Expense has been updated successfully"
+        });
+      } else {
+        // Insert new entry
+        const { error } = await supabase
+          .from('money_records')
+          .insert([{
+            family_id: familyId,
+            description: formData.description,
+            amount: parseFloat(formData.amount),
+            type: 'expense',
+            notes: formData.notes || null,
+            receipt_url: formData.receipt_url || null,
+            created_by: user.id
+          }] as any);
+
+        if (error) throw error;
+
+        toast({
+          title: "Expense added",
+          description: "Expense has been recorded successfully"
+        });
+      }
+
+      handleCancelEdit();
       loadEntries();
     } catch (error) {
-      console.error('Error adding money entry:', error);
+      console.error('Error saving expense:', error);
       toast({
         title: "Error",
-        description: "Failed to add money entry",
+        description: "Failed to save expense",
         variant: "destructive"
       });
     }
@@ -351,26 +397,6 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
               </div>
 
               <div>
-                <label className="text-sm font-medium">Paid By</label>
-                <Select
-                  value={formData.paid_by}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, paid_by: value }))}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select who paid" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {familyMembers.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
                 <label className="text-sm font-medium">Notes</label>
                 <Textarea
                   value={formData.notes}
@@ -382,15 +408,15 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
               <ImageUpload
                 onUpload={handlePhotoUpload}
-                onRemove={() => setFormData(prev => ({ ...prev, photo_url: '' }))}
-                currentImageUrl={formData.photo_url}
+                onRemove={() => setFormData(prev => ({ ...prev, receipt_url: '' }))}
+                currentImageUrl={formData.receipt_url}
                 uploading={uploading}
                 label="Receipt Photo (optional)"
               />
 
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1">Save Entry</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="submit" className="flex-1">{editingEntry ? 'Update' : 'Save Entry'}</Button>
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>
                   Cancel
                 </Button>
               </div>
@@ -433,12 +459,12 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                     <div className="flex items-center gap-2">
                       <Receipt className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{entry.description}</span>
-                      {entry.photo_url && (
+                      {entry.receipt_url && (
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
-                          onClick={() => setViewerImage(entry.photo_url)}
+                          onClick={() => setSelectedImage(entry.receipt_url)}
                         >
                           <ImageIcon className="h-4 w-4" />
                         </Button>
@@ -447,9 +473,9 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                     <p className="text-lg font-semibold text-primary">
                       £{Number(entry.amount).toFixed(2)}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      Paid by: {getMemberName(entry.paid_by)}
-                    </p>
+                      <p className="text-sm text-muted-foreground">
+                        Paid by: {getMemberName(entry.created_by)}
+                      </p>
                     {entry.notes && (
                       <p className="text-sm">{entry.notes}</p>
                     )}
@@ -458,13 +484,24 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                     </p>
                   </div>
                   {canDelete(entry) && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(entry.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditEntry(entry)}
+                        className="mobile-section-button md:w-auto"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(entry.id)}
+                        className="mobile-section-button md:w-auto"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -474,9 +511,9 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
       </div>
 
           <ImageViewer
-            imageUrl={viewerImage}
-            isOpen={!!viewerImage}
-            onClose={() => setViewerImage(null)}
+            imageUrl={selectedImage}
+            isOpen={!!selectedImage}
+            onClose={() => setSelectedImage(null)}
             alt="Receipt photo"
           />
         </TabsContent>

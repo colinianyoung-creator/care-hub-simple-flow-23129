@@ -337,6 +337,60 @@ export type Database = {
           },
         ]
       }
+      key_information: {
+        Row: {
+          additional_info: string | null
+          car_policies: string | null
+          created_at: string | null
+          emergency_contacts: Json | null
+          family_id: string
+          house_details: string | null
+          id: string
+          last_updated_by: string | null
+          medical_history: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          additional_info?: string | null
+          car_policies?: string | null
+          created_at?: string | null
+          emergency_contacts?: Json | null
+          family_id: string
+          house_details?: string | null
+          id?: string
+          last_updated_by?: string | null
+          medical_history?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          additional_info?: string | null
+          car_policies?: string | null
+          created_at?: string | null
+          emergency_contacts?: Json | null
+          family_id?: string
+          house_details?: string | null
+          id?: string
+          last_updated_by?: string | null
+          medical_history?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_information_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: true
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_information_last_updated_by_fkey"
+            columns: ["last_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
@@ -694,6 +748,80 @@ export type Database = {
           },
         ]
       }
+      shift_change_requests: {
+        Row: {
+          created_at: string | null
+          family_id: string
+          id: string
+          new_end_time: string
+          new_start_time: string
+          reason: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          time_entry_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          family_id: string
+          id?: string
+          new_end_time: string
+          new_start_time: string
+          reason?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          time_entry_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          new_end_time?: string
+          new_start_time?: string
+          reason?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          time_entry_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_change_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_instances: {
         Row: {
           actual_end_time: string | null
@@ -748,6 +876,7 @@ export type Database = {
           due_date: string | null
           family_id: string
           id: string
+          is_archived: boolean | null
           priority: string | null
           title: string
           updated_at: string
@@ -761,6 +890,7 @@ export type Database = {
           due_date?: string | null
           family_id: string
           id?: string
+          is_archived?: boolean | null
           priority?: string | null
           title: string
           updated_at?: string
@@ -774,6 +904,7 @@ export type Database = {
           due_date?: string | null
           family_id?: string
           id?: string
+          is_archived?: boolean | null
           priority?: string | null
           title?: string
           updated_at?: string

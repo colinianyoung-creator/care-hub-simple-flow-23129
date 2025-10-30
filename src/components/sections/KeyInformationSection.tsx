@@ -50,21 +50,43 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
   const canEdit = userRole === 'family_admin' || userRole === 'disabled_person';
 
   const loadKeyInformation = async () => {
+    if (!familyId) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Key information table doesn't exist yet
-      setKeyInfo({
-        medical_history: '',
-        house_details: '',
-        car_policies: '',
-        additional_info: '',
-        emergency_contacts: []
-      });
+      const { data, error } = await supabase
+        .from('key_information')
+        .select('*')
+        .eq('family_id', familyId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setKeyInfo({
+          medical_history: data.medical_history || '',
+          house_details: data.house_details || '',
+          car_policies: data.car_policies || '',
+          additional_info: data.additional_info || '',
+          emergency_contacts: (data.emergency_contacts as EmergencyContact[]) || []
+        });
+      } else {
+        setKeyInfo({
+          medical_history: '',
+          house_details: '',
+          car_policies: '',
+          additional_info: '',
+          emergency_contacts: []
+        });
+      }
     } catch (error) {
       console.error('Error loading key information:', error);
       toast({
-        title: "Error loading information",
-        description: "There was an error loading the key information.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to load key information",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -72,28 +94,41 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
   };
 
   const handleSave = async () => {
+    if (!familyId) return;
+    
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) throw new Error('Not authenticated');
 
-      // Key information table doesn't exist yet
-      const error = null;
+      const { error } = await supabase
+        .from('key_information')
+        .upsert({
+          family_id: familyId,
+          medical_history: keyInfo.medical_history,
+          house_details: keyInfo.house_details,
+          car_policies: keyInfo.car_policies,
+          additional_info: keyInfo.additional_info,
+          emergency_contacts: keyInfo.emergency_contacts as any,
+          last_updated_by: user.id,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'family_id'
+        });
 
       if (error) throw error;
-
+      
       toast({
-        title: "Information saved",
-        description: "Key information has been updated successfully.",
+        title: "Saved",
+        description: "Key information has been saved successfully"
       });
-
       setEditing(false);
     } catch (error) {
       console.error('Error saving key information:', error);
       toast({
-        title: "Error saving information",
-        description: "There was an error saving the key information.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to save key information",
+        variant: "destructive"
       });
     } finally {
       setSaving(false);

@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calendar, Clock, MapPin, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Calendar, Clock, MapPin, AlertCircle, Loader2 } from "lucide-react";
 import { format, isPast, isToday, isFuture } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -47,6 +47,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   
   const [newAppointment, setNewAppointment] = useState({
     title: '',
@@ -55,6 +56,31 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     appointment_time: '09:00',
     location: ''
   });
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    const appointmentDate = new Date(appointment.appointment_date);
+    setNewAppointment({
+      title: appointment.title,
+      description: appointment.description || '',
+      appointment_date: format(appointmentDate, 'yyyy-MM-dd'),
+      appointment_time: format(appointmentDate, 'HH:mm'),
+      location: appointment.location || ''
+    });
+    setShowAddForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAppointment(null);
+    setNewAppointment({
+      title: '',
+      description: '',
+      appointment_date: '',
+      appointment_time: '09:00',
+      location: ''
+    });
+    setShowAddForm(false);
+  };
 
   const loadAppointments = async (signal?: AbortSignal) => {
     try {
@@ -104,38 +130,52 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     try {
       const appointmentDateTime = new Date(`${newAppointment.appointment_date}T${newAppointment.appointment_time}`);
       
-      const { error } = await supabase
-        .from('appointments')
-        .insert([{
-          family_id: familyId,
-          title: newAppointment.title,
-          description: newAppointment.description || null,
-          appointment_date: appointmentDateTime.toISOString(),
-          location: newAppointment.location || null,
-          created_by: currentUserId
-        }]);
+      if (editingAppointment) {
+        // Update existing appointment
+        const { error } = await supabase
+          .from('appointments')
+          .update({
+            title: newAppointment.title,
+            description: newAppointment.description || null,
+            appointment_date: appointmentDateTime.toISOString(),
+            location: newAppointment.location || null
+          })
+          .eq('id', editingAppointment.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setNewAppointment({
-        title: '',
-        description: '',
-        appointment_date: '',
-        appointment_time: '09:00',
-        location: ''
-      });
-      setShowAddForm(false);
+        toast({
+          title: "Appointment updated",
+          description: "The appointment has been updated successfully.",
+        });
+      } else {
+        // Insert new appointment
+        const { error } = await supabase
+          .from('appointments')
+          .insert([{
+            family_id: familyId,
+            title: newAppointment.title,
+            description: newAppointment.description || null,
+            appointment_date: appointmentDateTime.toISOString(),
+            location: newAppointment.location || null,
+            created_by: currentUserId
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Appointment added",
+          description: "The appointment has been added successfully.",
+        });
+      }
+
+      handleCancelEdit();
       loadAppointments();
-      
-      toast({
-        title: "Appointment added",
-        description: "The appointment has been added successfully.",
-      });
     } catch (error) {
-      console.error('Error adding appointment:', error);
+      console.error('Error saving appointment:', error);
       toast({
-        title: "Error adding appointment",
-        description: "There was an error adding the appointment.",
+        title: "Error",
+        description: "There was an error saving the appointment.",
         variant: "destructive",
       });
     }
@@ -263,7 +303,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
       {showAddForm ? (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Appointment</CardTitle>
+            <CardTitle>{editingAppointment ? 'Edit Appointment' : 'Add New Appointment'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
@@ -312,11 +352,11 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
                 disabled={!newAppointment.title.trim() || !newAppointment.appointment_date || !currentUserId}
                 className="h-12 md:h-10 px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
               >
-                Add Appointment
+                {editingAppointment ? 'Update Appointment' : 'Add Appointment'}
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setShowAddForm(false)}
+                onClick={handleCancelEdit}
                 className="h-12 md:h-10 px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
               >
                 Cancel
@@ -380,7 +420,15 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
                   </div>
                   
                   {familyId && (
-                    <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0">
+                    <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditAppointment(appointment)}
+                        className="mobile-section-button md:w-auto"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

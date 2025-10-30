@@ -120,6 +120,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         .from('tasks')
         .select('*')
         .eq('family_id', familyId)
+        .eq('is_archived', false)
         .order('created_at', { ascending: false })
         .abortSignal(signal);
 
@@ -180,27 +181,29 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const markTaskComplete = async (taskId: string) => {
     try {
+      const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
+      
       const { error } = await supabase
         .from('tasks')
         .update({ 
-          completed: true
+          completed: true,
+          is_archived: isAdmin
         })
         .eq('id', taskId);
 
       if (error) throw error;
+      await loadTasks();
 
       toast({
-        title: "Task Marked Complete",
-        description: "Task marked as done and awaiting admin review",
+        title: "Task completed",
+        description: isAdmin ? "Task archived successfully" : "Task marked for review"
       });
-
-      loadTasks();
     } catch (error) {
-      console.error('Error completing task:', error);
+      console.error('Error marking task complete:', error);
       toast({
         title: "Error",
-        description: "Failed to complete task",
-        variant: "destructive",
+        description: "Failed to mark task as complete",
+        variant: "destructive"
       });
     }
   };
@@ -209,23 +212,22 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     try {
       const { error } = await supabase
         .from('tasks')
-        .delete()
+        .update({ is_archived: true })
         .eq('id', taskId);
 
       if (error) throw error;
+      await loadTasks();
 
       toast({
-        title: "Task Approved",
-        description: "Task approved and removed from list",
+        title: "Task approved",
+        description: "Task has been approved and archived"
       });
-
-      loadTasks();
     } catch (error) {
       console.error('Error approving task:', error);
       toast({
         title: "Error",
         description: "Failed to approve task",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };

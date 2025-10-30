@@ -63,6 +63,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
   // Handle edit shift/leave request click from calendar
   const onEditShift = (shift: any) => {
+    // Check if carer trying to edit - create change request instead
+    if (isCarer && !shift.is_leave_request) {
+      toast({
+        title: "Request Edit",
+        description: "Carers must submit change requests for admin approval",
+      });
+      // TODO: Open shift change request form
+      return;
+    }
+
     // Handle leave requests
     if (shift.is_leave_request || shift.id?.toString().startsWith('leave-')) {
       // Permission check for leave requests
