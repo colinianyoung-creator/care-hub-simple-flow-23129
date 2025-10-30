@@ -209,36 +209,66 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
       const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
       if (editingAssignment) {
-        // For admin shifts, go directly to time_entries - no approval needed
-        // Update existing time entries for this assignment based on recurrence option
-        let updateQuery: any = supabase
-          .from('time_entries')
-          .update({
-            clock_in: `2024-01-01T${formData.start_time}:00`,
-            clock_out: `2024-01-01T${formData.end_time}:00`,
-            notes: formData.shift_type || 'basic'
+        // Check if this is editing a time_entry directly
+        if (editingAssignment.time_entry_id) {
+          // New data model: Update time_entry directly
+          const shiftDate = new Date(editingAssignment.start_date);
+          const clockIn = new Date(shiftDate);
+          const clockOut = new Date(shiftDate);
+          
+          const [startHours, startMinutes] = formData.start_time.split(':');
+          const [endHours, endMinutes] = formData.end_time.split(':');
+          
+          clockIn.setHours(parseInt(startHours), parseInt(startMinutes), 0, 0);
+          clockOut.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
+
+          const { error: updateError } = await supabase
+            .from('time_entries')
+            .update({
+              clock_in: clockIn.toISOString(),
+              clock_out: clockOut.toISOString(),
+              notes: formData.shift_type || 'basic',
+              user_id: selectedCarerIds[0]
+            })
+            .eq('id', editingAssignment.time_entry_id);
+
+          if (updateError) throw updateError;
+
+          toast({
+            title: "Success",
+            description: "Shift updated successfully",
           });
-
-        if (editRecurrenceOption === 'single') {
-          updateQuery = updateQuery.eq('id', editingAssignment.id);
-        } else if (editRecurrenceOption === 'future') {
-          updateQuery = updateQuery
-            .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
-            .gte('clock_in', new Date().toISOString());
         } else {
-          updateQuery = updateQuery
-            .eq('shift_assignment_id', editingAssignment.shift_assignment_id);
+          // Old data model: Update shift_assignments
+          let updateQuery: any = supabase
+            .from('time_entries')
+            .update({
+              clock_in: `2024-01-01T${formData.start_time}:00`,
+              clock_out: `2024-01-01T${formData.end_time}:00`,
+              notes: formData.shift_type || 'basic'
+            });
+
+          if (editRecurrenceOption === 'single') {
+            updateQuery = updateQuery.eq('id', editingAssignment.id);
+          } else if (editRecurrenceOption === 'future') {
+            updateQuery = updateQuery
+              .eq('shift_assignment_id', editingAssignment.shift_assignment_id)
+              .gte('clock_in', new Date().toISOString());
+          } else {
+            updateQuery = updateQuery
+              .eq('shift_assignment_id', editingAssignment.shift_assignment_id);
+          }
+
+          const { error: updateError } = await updateQuery;
+
+          if (updateError) throw updateError;
+
+          toast({
+            title: "Success",
+            description: `Shift${editRecurrenceOption !== 'single' ? 's' : ''} updated successfully`,
+          });
+          setShowEditRecurrenceDialog(false);
         }
-
-        const { error: updateError } = await updateQuery;
-
-        if (updateError) throw updateError;
-
-        toast({
-          title: "Success",
-          description: `Shift${editRecurrenceOption !== 'single' ? 's' : ''} updated successfully`,
-        });
-        setShowEditRecurrenceDialog(false);
       } else {
         // Create direct time entries for each selected carer
         for (const carerId of selectedCarerIds) {

@@ -110,7 +110,34 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       return;
     }
 
-    // Handle regular shifts
+    // Handle regular shifts (support both old and new data models)
+    const isNewDataModel = !shift.shift_assignment_id && shift.clock_in;
+
+    if (isNewDataModel) {
+      // New data model: time_entries - shifts are stored directly with timestamps
+      const clockInDate = new Date(shift.clock_in);
+      const clockOutDate = new Date(shift.clock_out);
+      
+      const editData = {
+        id: shift.id,
+        time_entry_id: shift.id,
+        carer_id: shift.user_id,
+        request_type: 'basic',
+        start_date: format(clockInDate, 'yyyy-MM-dd'),
+        start_time: format(clockInDate, 'HH:mm'),
+        end_time: format(clockOutDate, 'HH:mm'),
+        hours: Math.round(((clockOutDate.getTime() - clockInDate.getTime()) / (1000 * 60 * 60)) * 100) / 100,
+        reason: shift.notes || '',
+        shift_type: shift.notes || 'basic',
+        shift_category: 'basic'
+      };
+      
+      setEditingShift(editData);
+      setShowEditShift(true);
+      return;
+    }
+
+    // Old data model: shift_assignments
     if (!shift.shift_assignment_id) {
       console.warn('Cannot edit shift without assignment ID');
       return;

@@ -53,9 +53,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
     description: '',
     appointment_date: '',
     appointment_time: '09:00',
-    duration_minutes: 60,
-    location: '',
-    notes: ''
+    location: ''
   });
 
   const loadAppointments = async (signal?: AbortSignal) => {
@@ -113,9 +111,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
           title: newAppointment.title,
           description: newAppointment.description || null,
           appointment_date: appointmentDateTime.toISOString(),
-          duration_minutes: newAppointment.duration_minutes,
           location: newAppointment.location || null,
-          notes: newAppointment.notes || null,
           created_by: currentUserId
         }]);
 
@@ -126,9 +122,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
         description: '',
         appointment_date: '',
         appointment_time: '09:00',
-        duration_minutes: 60,
-        location: '',
-        notes: ''
+        location: ''
       });
       setShowAddForm(false);
       loadAppointments();
@@ -303,30 +297,14 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Duration (minutes):</label>
-                <Input
-                  type="number"
-                  value={newAppointment.duration_minutes}
-                  onChange={(e) => setNewAppointment(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || 60 }))}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Location:</label>
-                <Input
-                  placeholder="Location (optional)"
-                  value={newAppointment.location}
-                  onChange={(e) => setNewAppointment(prev => ({ ...prev, location: e.target.value }))}
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium">Location:</label>
+              <Input
+                placeholder="Location (optional)"
+                value={newAppointment.location}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, location: e.target.value }))}
+              />
             </div>
-
-            <Textarea
-              placeholder="Notes (optional)"
-              value={newAppointment.notes}
-              onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
-            />
 
             <div className="flex gap-2">
               <Button 

@@ -16,12 +16,10 @@ interface Medication {
   name: string;
   dosage: string;
   frequency: string;
-  times_per_day: number;
-  time_slots: string[];
   instructions: string | null;
   start_date: string;
   end_date: string | null;
-  active: boolean;
+  is_archived: boolean;
   created_at: string;
   care_recipients?: {
     name: string;
@@ -67,8 +65,6 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     name: '',
     dosage: '',
     frequency: '',
-    times_per_day: 1,
-    time_slots: ['09:00'],
     instructions: '',
     start_date: format(new Date(), 'yyyy-MM-dd'),
     end_date: ''
@@ -148,8 +144,6 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         name: '',
         dosage: '',
         frequency: '',
-        times_per_day: 1,
-        time_slots: ['09:00'],
         instructions: '',
         start_date: format(new Date(), 'yyyy-MM-dd'),
         end_date: ''
@@ -166,28 +160,6 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
       toast({
         title: "Error adding medication",
         description: "There was an error adding the medication.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleMarkAsGiven = async (medicationId: string, scheduledTime: string) => {
-    try {
-      // Medication logs table doesn't exist yet
-      const error = null;
-
-      if (error) throw error;
-      
-      loadMedicationLogs();
-      toast({
-        title: "Medication logged",
-        description: "The medication has been marked as given.",
-      });
-    } catch (error) {
-      console.error('Error logging medication:', error);
-      toast({
-        title: "Error logging medication",
-        description: "There was an error logging the medication.",
         variant: "destructive",
       });
     }
@@ -215,37 +187,6 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         variant: "destructive",
       });
     }
-  };
-
-  const isMedicationGiven = (medicationId: string, scheduledTime: string) => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    return medicationLogs.some(log => 
-      log.medication_id === medicationId && 
-      log.scheduled_time === scheduledTime &&
-      format(new Date(log.given_at), 'yyyy-MM-dd') === today
-    );
-  };
-
-  const updateTimeSlots = (index: number, value: string) => {
-    const newTimeSlots = [...newMedication.time_slots];
-    newTimeSlots[index] = value;
-    setNewMedication(prev => ({ ...prev, time_slots: newTimeSlots }));
-  };
-
-  const addTimeSlot = () => {
-    setNewMedication(prev => ({
-      ...prev,
-      times_per_day: prev.times_per_day + 1,
-      time_slots: [...prev.time_slots, '09:00']
-    }));
-  };
-
-  const removeTimeSlot = (index: number) => {
-    setNewMedication(prev => ({
-      ...prev,
-      times_per_day: prev.times_per_day - 1,
-      time_slots: prev.time_slots.filter((_, i) => i !== index)
-    }));
   };
 
   useEffect(() => {
@@ -344,35 +285,10 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
             </div>
             
             <Input
-              placeholder="Frequency (e.g., Daily, Twice daily)"
+              placeholder="Frequency (e.g., Daily, Twice daily, 3 times a day)"
               value={newMedication.frequency}
               onChange={(e) => setNewMedication(prev => ({ ...prev, frequency: e.target.value }))}
             />
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Times per day:</label>
-              {newMedication.time_slots.map((time, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <Input
-                    type="time"
-                    value={time}
-                    onChange={(e) => updateTimeSlots(index, e.target.value)}
-                  />
-                  {newMedication.time_slots.length > 1 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => removeTimeSlot(index)}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={addTimeSlot}>
-                Add Time
-              </Button>
-            </div>
 
             <Textarea
               placeholder="Special instructions (optional)"
@@ -455,46 +371,18 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
                   <p className="text-sm text-muted-foreground">{medication.instructions}</p>
                 )}
                 
-                <div className="space-y-2">
-                  <h4 className="font-medium">Today's Schedule:</h4>
-                  <div className="grid gap-2">
-                    {medication.time_slots.map((time, index) => {
-                      const isGiven = isMedicationGiven(medication.id, time);
-                      return (
-                        <div key={index} className="p-2 border rounded">
-                          <div className="medication-content">
-                            <div className="flex items-center gap-3">
-                              <Badge variant={isGiven ? "default" : "outline"}>
-                                {time}
-                              </Badge>
-                              <span className="flex-1 text-sm">
-                                {medication.dosage}
-                              </span>
-                              {isGiven && (
-                                <Badge variant="secondary" className="text-xs">
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Given
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          {!isGiven && (
-                            <div className="mobile-button-stack">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMarkAsGiven(medication.id, time)}
-                                className="mobile-section-button"
-                              >
-                                Mark as Given
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="text-sm">
+                  <span className="font-medium">Frequency:</span> {medication.frequency || 'As needed'}
                 </div>
+
+                {medication.start_date && (
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">Start:</span> {format(new Date(medication.start_date), 'MMM d, yyyy')}
+                    {medication.end_date && (
+                      <> • <span className="font-medium">End:</span> {format(new Date(medication.end_date), 'MMM d, yyyy')}</>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
