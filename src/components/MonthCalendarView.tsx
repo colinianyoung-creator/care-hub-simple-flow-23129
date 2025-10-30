@@ -257,26 +257,20 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       switch (shiftType) {
         case 'holiday':
         case 'annual_leave':
-          return 'bg-yellow-100 text-yellow-800';
+          return 'bg-yellow-500 text-white';
         case 'sickness':
         case 'sick_leave':
-          return 'bg-red-100 text-red-800';
+          return 'bg-red-500 text-white';
         case 'public_holiday':
-          return 'bg-purple-100 text-purple-800';
+          return 'bg-purple-500 text-white';
         case 'cover':
-          return 'bg-green-100 text-green-800';
+          return 'bg-green-500 text-white';
         default:
-          return 'bg-gray-100 text-gray-800';
+          return 'bg-orange-500 text-white';
       }
     }
     
-    return 'bg-blue-100 text-blue-800'; // Basic shifts
-  };
-
-  const getCarerColor = (carerId: string) => {
-    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500'];
-    const index = carerId ? carerId.charCodeAt(0) % colors.length : 0;
-    return colors[index];
+    return 'bg-blue-500 text-white'; // Basic shifts
   };
 
   const previousMonth = () => {
@@ -356,7 +350,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                         className={`text-xs w-full justify-start cursor-pointer hover:opacity-80 min-h-[24px] sm:min-h-[32px] md:min-h-[40px] p-1 sm:p-2 ${
                           shift.is_leave_request 
                             ? getShiftTypeColor(shift.shift_type, true)
-                            : `text-white ${getCarerColor(shift.carer_id)}`
+                            : getShiftTypeColor('basic', false)
                         }`}
                         onClick={() => onShiftClick?.(shift)}
                       >

@@ -615,42 +615,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                   </div>
 
 
-                <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Shifts</CardTitle>
-                  <CardDescription>Next 7 days of scheduled shifts</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {instances.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No shifts scheduled for the next 7 days
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {instances.slice(0, 5).map((shift) => (
-                        <div key={shift.id} className="flex flex-col p-3 border rounded-lg space-y-2">
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {format(new Date(shift.scheduled_date), 'EEE, MMM d')}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {shift.notes || 'Basic'} • {carers[shift.carer_id] || 'Unassigned'}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {instances.length > 5 && (
-                        <p className="text-sm text-muted-foreground text-center">
-                          +{instances.length - 5} more shifts
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
 
               <Card 
                 className="cursor-pointer hover:shadow-md transition-shadow"

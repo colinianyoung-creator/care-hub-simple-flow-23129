@@ -21,7 +21,7 @@ interface ShiftAssignmentFormProps {
 
 export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssignment }: ShiftAssignmentFormProps) => {
   const [formData, setFormData] = useState({
-    title: editingAssignment?.title || '',
+    shift_type: editingAssignment?.notes || 'basic',
     start_time: editingAssignment?.start_time || '',
     end_time: editingAssignment?.end_time || '',
     days_of_week: editingAssignment?.days_of_week || [] as number[],
@@ -216,7 +216,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           .update({
             clock_in: `2024-01-01T${formData.start_time}:00`,
             clock_out: `2024-01-01T${formData.end_time}:00`,
-            notes: formData.title || 'Shift'
+            notes: formData.shift_type || 'basic'
           });
 
         if (editRecurrenceOption === 'single') {
@@ -263,7 +263,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
                   user_id: carerId,
                   clock_in: shiftStart.toISOString(),
                   clock_out: shiftEnd.toISOString(),
-                  notes: formData.title || 'Basic'
+                  notes: formData.shift_type || 'basic'
                 });
               }
             }
@@ -280,7 +280,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
               user_id: carerId,
               clock_in: shiftStart.toISOString(),
               clock_out: shiftEnd.toISOString(),
-              notes: formData.title || 'Basic'
+              notes: formData.shift_type || 'basic'
             });
           }
         }
@@ -348,13 +348,23 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           </div>
 
           <div>
-            <Label htmlFor="title">Shift Title (optional)</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="e.g., Morning Care Shift"
-            />
+            <Label htmlFor="shift_type">Shift Type</Label>
+            <Select
+              value={formData.shift_type}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, shift_type: value }))}
+            >
+              <SelectTrigger id="shift_type">
+                <SelectValue placeholder="Select shift type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="basic">Basic Shift</SelectItem>
+                <SelectItem value="annual_leave">Holiday/Annual Leave</SelectItem>
+                <SelectItem value="sickness">Sickness</SelectItem>
+                <SelectItem value="public_holiday">Public Holiday</SelectItem>
+                <SelectItem value="cover">Cover</SelectItem>
+                <SelectItem value="shift_swap">Shift Swap</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center space-x-2">

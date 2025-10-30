@@ -56,8 +56,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   const [formData, setFormData] = useState({
     description: '',
     portion_left: 'none',
-    notes: '',
-    photo_url: ''
+    notes: ''
   });
 
   const { toast } = useToast();
@@ -174,8 +173,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
           meal_type: selectedMealType,
           description: formData.description,
           portion_left: formData.portion_left,
-          notes: formData.notes,
-          photo_url: formData.photo_url || null
+          notes: formData.notes
         }] as any);
 
       if (error) throw error;
@@ -185,7 +183,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
         description: "Diet entry added successfully"
       });
 
-      setFormData({ description: '', portion_left: 'none', notes: '', photo_url: '' });
+      setFormData({ description: '', portion_left: 'none', notes: '' });
       setShowForm(false);
       loadEntries(selectedMealType);
     } catch (error) {
@@ -314,13 +312,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
                       />
                     </div>
 
-                    <ImageUpload
-                      onUpload={handlePhotoUpload}
-                      onRemove={() => setFormData(prev => ({ ...prev, photo_url: '' }))}
-                      currentImageUrl={formData.photo_url}
-                      uploading={uploading}
-                      label="Photo (optional)"
-                    />
 
                     <div className="flex gap-2">
                       <Button type="submit" className="flex-1">Save Entry</Button>

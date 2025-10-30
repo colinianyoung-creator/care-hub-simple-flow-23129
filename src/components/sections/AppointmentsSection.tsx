@@ -94,6 +94,15 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   const handleAddAppointment = async () => {
     if (!newAppointment.title.trim() || !newAppointment.appointment_date) return;
 
+    if (!currentUserId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please wait for authentication to complete",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const appointmentDateTime = new Date(`${newAppointment.appointment_date}T${newAppointment.appointment_time}`);
       
@@ -322,7 +331,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
             <div className="flex gap-2">
               <Button 
                 onClick={handleAddAppointment} 
-                disabled={!newAppointment.title.trim() || !newAppointment.appointment_date}
+                disabled={!newAppointment.title.trim() || !newAppointment.appointment_date || !currentUserId}
                 className="h-12 md:h-10 px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
               >
                 Add Appointment

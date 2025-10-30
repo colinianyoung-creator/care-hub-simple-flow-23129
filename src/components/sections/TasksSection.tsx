@@ -304,8 +304,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
           description: newTask.description || null,
           due_date: newTask.due_date || null,
           assigned_to: newTask.assigned_to || null,
-          created_by: currentUserId,
-          status: 'active'
+          created_by: currentUserId
         }]);
 
       if (error) throw error;
