@@ -186,10 +186,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     
     // Admins can edit shifts directly
     if (isAdmin) {
-      console.log('👑 Admin mode: Opening direct edit form');
+      console.log('👑 Admin mode: Opening direct edit form', shift);
       
-      // Handle new data model (time_entries with timestamps)
-      const isNewDataModel = !shift.shift_assignment_id && shift.clock_in;
+      // CASE 1: New data model - time_entries with full timestamps
+      const isNewDataModel = shift.clock_in && shift.clock_out;
       
       if (isNewDataModel) {
         const clockInDate = new Date(shift.clock_in);
@@ -215,9 +215,45 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         return;
       }
       
-      // Old data model: shift_assignments
+      // CASE 2: Transformed time_entry - has start_time/end_time but no clock_in/clock_out
+      // This happens when time_entries are transformed for display in the calendar
+      const isTransformedTimeEntry = !shift.shift_assignment_id && shift.start_time && shift.end_time && shift.scheduled_date;
+      
+      if (isTransformedTimeEntry) {
+        console.log('🔄 Handling transformed time_entry');
+        
+        // Reconstruct timestamps from date + time components
+        const clockIn = `${shift.scheduled_date}T${shift.start_time}`;
+        const clockOut = `${shift.scheduled_date}T${shift.end_time}`;
+        
+        const editData = {
+          id: shift.id,
+          time_entry_id: shift.id,
+          carer_id: shift.carer_id,
+          request_type: 'basic',
+          start_date: shift.scheduled_date,
+          start_time: shift.start_time.slice(0, 5), // HH:mm format
+          end_time: shift.end_time.slice(0, 5),
+          hours: Math.round(((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / (1000 * 60 * 60)) * 100) / 100,
+          reason: shift.notes || '',
+          shift_type: shift.shift_type || 'basic',
+          shift_category: 'basic'
+        };
+        
+        console.log('✅ Opening ShiftRequestForm (transformed) with:', editData);
+        setEditingShift(editData);
+        setShowEditShift(true);
+        return;
+      }
+      
+      // CASE 3: Old data model - shift_assignments with shift_instances
       if (!shift.shift_assignment_id) {
-        console.warn('⚠️ Cannot edit shift without assignment ID');
+        console.warn('⚠️ Cannot edit shift: no shift_assignment_id and not a time_entry');
+        toast({
+          title: "Cannot Edit Shift",
+          description: "This shift cannot be edited (missing required data)",
+          variant: "destructive"
+        });
         return;
       }
       
@@ -225,6 +261,11 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       const assignment = assignments.find(a => a.id === shift.shift_assignment_id);
       if (!assignment) {
         console.warn('⚠️ Assignment not found for shift');
+        toast({
+          title: "Cannot Edit Shift",
+          description: "Shift assignment not found",
+          variant: "destructive"
+        });
         return;
       }
 
