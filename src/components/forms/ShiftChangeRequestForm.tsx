@@ -25,9 +25,14 @@ export const ShiftChangeRequestForm = ({ timeEntry, open, onOpenChange, onSucces
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
+  // Don't render if not actually opening or no valid data
+  if (!open || !timeEntry?.id) {
+    return null;
+  }
+  
   const [formData, setFormData] = useState({
-    new_start_time: timeEntry.clock_in ? format(new Date(timeEntry.clock_in), "yyyy-MM-dd'T'HH:mm") : '',
-    new_end_time: timeEntry.clock_out ? format(new Date(timeEntry.clock_out), "yyyy-MM-dd'T'HH:mm") : '',
+    new_start_time: timeEntry.clock_in && timeEntry.id ? format(new Date(timeEntry.clock_in), "yyyy-MM-dd'T'HH:mm") : '',
+    new_end_time: timeEntry.clock_out && timeEntry.id ? format(new Date(timeEntry.clock_out), "yyyy-MM-dd'T'HH:mm") : '',
     reason: ''
   });
 

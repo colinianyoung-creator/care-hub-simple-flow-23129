@@ -61,6 +61,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
   console.log('showListView state:', showListView);
 
+  // Debug: Log modal states whenever they change
+  useEffect(() => {
+    console.log('🔍 Modal render states:', {
+      showChangeRequestForm,
+      hasSelectedTimeEntry: !!selectedTimeEntry,
+      showEditShift,
+      hasEditingShift: !!editingShift
+    });
+  }, [showChangeRequestForm, selectedTimeEntry, showEditShift, editingShift]);
+
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
 
@@ -1015,7 +1025,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           familyId={familyId}
           editShiftData={editingShift}
           isAdminEdit={true}
-          open={showEditShift}
+          open={showEditShift && Boolean(editingShift)}
           onOpenChange={(open) => {
             setShowEditShift(open);
             if (!open) setEditingShift(null);
@@ -1031,25 +1041,24 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           }}
         />
 
-        {selectedTimeEntry && (
-          <ShiftChangeRequestForm
-            timeEntry={selectedTimeEntry}
-            open={showChangeRequestForm}
-            onOpenChange={(open) => {
-              setShowChangeRequestForm(open);
-              if (!open) setSelectedTimeEntry(null);
-            }}
-            onSuccess={() => {
-              setShowChangeRequestForm(false);
-              setSelectedTimeEntry(null);
-              loadSchedulingData();
-            }}
-            onCancel={() => {
-              setShowChangeRequestForm(false);
-              setSelectedTimeEntry(null);
-            }}
-          />
-        )}
+        <ShiftChangeRequestForm
+          timeEntry={selectedTimeEntry || { id: '', clock_in: '', clock_out: '', family_id: familyId }}
+          open={showChangeRequestForm && Boolean(selectedTimeEntry)}
+          onOpenChange={(open) => {
+            console.log('🔍 Modal onOpenChange:', open);
+            setShowChangeRequestForm(open);
+            if (!open) setSelectedTimeEntry(null);
+          }}
+          onSuccess={() => {
+            setShowChangeRequestForm(false);
+            setSelectedTimeEntry(null);
+            loadSchedulingData();
+          }}
+          onCancel={() => {
+            setShowChangeRequestForm(false);
+            setSelectedTimeEntry(null);
+          }}
+        />
 
     </div>
   );
