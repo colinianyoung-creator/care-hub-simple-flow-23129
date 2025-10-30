@@ -70,7 +70,7 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
           house_details: data.house_details || '',
           car_policies: data.car_policies || '',
           additional_info: data.additional_info || '',
-          emergency_contacts: (data.emergency_contacts as EmergencyContact[]) || []
+          emergency_contacts: (data.emergency_contacts as unknown as EmergencyContact[]) || []
         });
       } else {
         setKeyInfo({
