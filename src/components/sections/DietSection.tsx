@@ -55,7 +55,9 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   
   const [formData, setFormData] = useState({
     description: '',
-    notes: ''
+    portion_left: 'none',
+    notes: '',
+    photo_url: ''
   });
 
   const { toast } = useToast();
@@ -171,7 +173,9 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
           created_by: currentUserId,
           meal_type: selectedMealType,
           description: formData.description,
-          notes: formData.notes
+          portion_left: formData.portion_left,
+          notes: formData.notes,
+          photo_url: formData.photo_url || null
         }] as any);
 
       if (error) throw error;
@@ -181,7 +185,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
         description: "Diet entry added successfully"
       });
 
-      setFormData({ description: '', notes: '' });
+      setFormData({ description: '', portion_left: 'none', notes: '', photo_url: '' });
       setShowForm(false);
       loadEntries(selectedMealType);
     } catch (error) {
@@ -283,6 +287,24 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
                     </div>
 
                     <div>
+                      <label className="text-sm font-medium">Portion left uneaten</label>
+                      <Select
+                        value={formData.portion_left}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, portion_left: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None - All eaten</SelectItem>
+                          <SelectItem value="some">Some left</SelectItem>
+                          <SelectItem value="most">Most left</SelectItem>
+                          <SelectItem value="all">All left - Nothing eaten</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
                       <label className="text-sm font-medium">Notes</label>
                       <Textarea
                         value={formData.notes}
@@ -292,6 +314,16 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
                       />
                     </div>
 
+                    <div>
+                      <label className="text-sm font-medium">Photo (optional)</label>
+                      <ImageUpload
+                        onUpload={handlePhotoUpload}
+                        onRemove={() => setFormData(prev => ({ ...prev, photo_url: '' }))}
+                        currentImageUrl={formData.photo_url}
+                        uploading={uploading}
+                        className="mt-2"
+                      />
+                    </div>
 
                     <div className="flex gap-2">
                       <Button type="submit" className="flex-1">Save Entry</Button>

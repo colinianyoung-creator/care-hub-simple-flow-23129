@@ -189,6 +189,8 @@ export type Database = {
           is_archived: boolean | null
           meal_type: string | null
           notes: string | null
+          photo_url: string | null
+          portion_left: string | null
           updated_at: string
         }
         Insert: {
@@ -202,6 +204,8 @@ export type Database = {
           is_archived?: boolean | null
           meal_type?: string | null
           notes?: string | null
+          photo_url?: string | null
+          portion_left?: string | null
           updated_at?: string
         }
         Update: {
@@ -215,6 +219,8 @@ export type Database = {
           is_archived?: boolean | null
           meal_type?: string | null
           notes?: string | null
+          photo_url?: string | null
+          portion_left?: string | null
           updated_at?: string
         }
         Relationships: [
