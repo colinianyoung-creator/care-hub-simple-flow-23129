@@ -506,26 +506,24 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                       {format(new Date(entry.created_at), 'PPp')}
                     </p>
                   </div>
-                   {canDelete(entry) && (
-                     <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         onClick={() => handleEditEntry(entry)}
-                         className="mobile-section-button md:w-auto"
-                       >
-                         <Edit className="h-4 w-4" />
-                       </Button>
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         onClick={() => handleDelete(entry.id)}
-                         className="mobile-section-button md:w-auto"
-                       >
-                         <Trash2 className="h-4 w-4" />
-                       </Button>
-                     </div>
-                   )}
+                  <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditEntry(entry)}
+                      className="mobile-section-button md:w-auto"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(entry.id)}
+                      className="mobile-section-button md:w-auto"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

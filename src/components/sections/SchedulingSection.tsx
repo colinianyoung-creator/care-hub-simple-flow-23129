@@ -68,7 +68,14 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const onEditShift = (shift: any) => {
     // Check if carer trying to edit - create change request instead
     if (isCarer && !shift.is_leave_request) {
-      setSelectedTimeEntry(shift);
+      // Transform shift data to match ShiftChangeRequestForm expectations
+      const transformedEntry = {
+        id: shift.id,
+        clock_in: shift.clock_in || `${shift.start_date || shift.scheduled_date}T${shift.start_time}`,
+        clock_out: shift.clock_out || `${shift.start_date || shift.scheduled_date}T${shift.end_time}`,
+        family_id: familyId
+      };
+      setSelectedTimeEntry(transformedEntry);
       setShowChangeRequestForm(true);
       return;
     }
