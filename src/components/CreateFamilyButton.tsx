@@ -123,7 +123,12 @@ export const CreateFamilyButton = ({
 
   return (
     <>
-      <Button variant={variant} className={className} onClick={() => setShowDialog(true)}>
+      <Button 
+        variant={variant} 
+        className={className} 
+        onClick={() => setShowDialog(true)}
+        data-create-button
+      >
         <Users className="h-4 w-4 mr-2" />
         Create Family
       </Button>
