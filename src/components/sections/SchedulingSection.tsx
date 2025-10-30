@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
@@ -923,6 +922,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         {showRequestForm && (
           <ShiftRequestForm
             familyId={familyId}
+            open={showRequestForm}
+            onOpenChange={(open) => setShowRequestForm(open)}
             onSuccess={() => {
               setShowRequestForm(false);
               loadSchedulingData();
@@ -957,53 +958,45 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           userRole={userRole}
         />
 
-        <Dialog open={showEditShift} onOpenChange={(open) => {
-          if (!open) {
+        <ShiftRequestForm
+          familyId={familyId}
+          editShiftData={editingShift}
+          isAdminEdit={true}
+          open={showEditShift}
+          onOpenChange={(open) => {
+            setShowEditShift(open);
+            if (!open) setEditingShift(null);
+          }}
+          onSuccess={() => {
             setShowEditShift(false);
             setEditingShift(null);
-          }
-        }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <ShiftRequestForm
-              familyId={familyId}
-              editShiftData={editingShift}
-              isAdminEdit={true}
-              onSuccess={() => {
-                setShowEditShift(false);
-                setEditingShift(null);
-                loadSchedulingData();
-              }}
-              onCancel={() => {
-                setShowEditShift(false);
-                setEditingShift(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+            loadSchedulingData();
+          }}
+          onCancel={() => {
+            setShowEditShift(false);
+            setEditingShift(null);
+          }}
+        />
 
-        <Dialog open={showChangeRequestForm} onOpenChange={(open) => {
-          if (!open) {
-            setShowChangeRequestForm(false);
-            setSelectedTimeEntry(null);
-          }
-        }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            {selectedTimeEntry && (
-              <ShiftChangeRequestForm
-                timeEntry={selectedTimeEntry}
-                onSuccess={() => {
-                  setShowChangeRequestForm(false);
-                  setSelectedTimeEntry(null);
-                  loadSchedulingData();
-                }}
-                onCancel={() => {
-                  setShowChangeRequestForm(false);
-                  setSelectedTimeEntry(null);
-                }}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        {selectedTimeEntry && (
+          <ShiftChangeRequestForm
+            timeEntry={selectedTimeEntry}
+            open={showChangeRequestForm}
+            onOpenChange={(open) => {
+              setShowChangeRequestForm(open);
+              if (!open) setSelectedTimeEntry(null);
+            }}
+            onSuccess={() => {
+              setShowChangeRequestForm(false);
+              setSelectedTimeEntry(null);
+              loadSchedulingData();
+            }}
+            onCancel={() => {
+              setShowChangeRequestForm(false);
+              setSelectedTimeEntry(null);
+            }}
+          />
+        )}
 
     </div>
   );

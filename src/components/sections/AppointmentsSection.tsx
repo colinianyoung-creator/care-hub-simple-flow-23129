@@ -420,12 +420,12 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
                   </div>
                   
                   {familyId && (
-                    <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                    <div className="flex gap-2 mt-3 pt-3 border-t md:mt-0 md:pt-0 md:border-t-0 md:ml-auto">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditAppointment(appointment)}
-                        className="mobile-section-button md:w-auto"
+                        className="flex-1 md:flex-initial"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -433,7 +433,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteAppointment(appointment.id)}
-                        className="mobile-section-button md:w-auto"
+                        className="flex-1 md:flex-initial"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -476,13 +476,15 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
                     </div>
                     
                     {familyId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteAppointment(appointment.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>

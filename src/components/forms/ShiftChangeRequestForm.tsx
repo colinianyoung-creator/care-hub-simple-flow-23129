@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
@@ -15,11 +15,13 @@ interface ShiftChangeRequestFormProps {
     clock_out: string | null;
     family_id: string;
   };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const ShiftChangeRequestForm = ({ timeEntry, onSuccess, onCancel }: ShiftChangeRequestFormProps) => {
+export const ShiftChangeRequestForm = ({ timeEntry, open, onOpenChange, onSuccess, onCancel }: ShiftChangeRequestFormProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -70,15 +72,15 @@ export const ShiftChangeRequestForm = ({ timeEntry, onSuccess, onCancel }: Shift
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Request Shift Change</CardTitle>
-        <CardDescription>
-          Submit a request to modify your shift times. An admin will review and approve or deny your request.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Request Shift Change</DialogTitle>
+          <DialogDescription>
+            Submit a request to modify your shift times. An admin will review and approve or deny your request.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="new_start_time">New Start Time</Label>
             <Input
@@ -121,7 +123,7 @@ export const ShiftChangeRequestForm = ({ timeEntry, onSuccess, onCancel }: Shift
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };

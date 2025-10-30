@@ -14,17 +14,13 @@ interface ShiftRequestFormProps {
   familyId: string;
   onSuccess: () => void;
   onCancel: () => void;
-}
-
-interface ShiftRequestFormProps {
-  familyId: string;
-  onSuccess: () => void;
-  onCancel: () => void;
-  editShiftData?: any; // For admin edit shift functionality
+  editShiftData?: any;
   isAdminEdit?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData, isAdminEdit }: ShiftRequestFormProps) => {
+export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData, isAdminEdit, open, onOpenChange }: ShiftRequestFormProps) => {
   const [formData, setFormData] = useState({
     request_type: editShiftData?.request_type || '',
     start_date: editShiftData?.start_date || '',
@@ -268,7 +264,7 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
   };
 
   return (
-    <Dialog open onOpenChange={onCancel}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{isAdminEdit ? (editShiftData ? 'Edit Shift' : 'Create Shift') : 'New Shift Request'}</DialogTitle>

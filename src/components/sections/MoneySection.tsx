@@ -506,12 +506,12 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                       {format(new Date(entry.created_at), 'PPp')}
                     </p>
                   </div>
-                  <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                  <div className="flex gap-2 mt-3 pt-3 border-t md:mt-0 md:pt-0 md:border-t-0 md:ml-auto">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEditEntry(entry)}
-                      className="mobile-section-button md:w-auto"
+                      className="flex-1 md:flex-initial"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -519,7 +519,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(entry.id)}
-                      className="mobile-section-button md:w-auto"
+                      className="flex-1 md:flex-initial"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
