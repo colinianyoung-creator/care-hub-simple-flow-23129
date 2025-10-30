@@ -62,7 +62,8 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
     description: '',
     amount: '',
     notes: '',
-    receipt_url: ''
+    receipt_url: '',
+    paid_by: ''
   });
 
   const handleEditEntry = (entry: MoneyEntry) => {
@@ -71,7 +72,8 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
       description: entry.description,
       amount: entry.amount.toString(),
       notes: entry.notes || '',
-      receipt_url: entry.receipt_url || ''
+      receipt_url: entry.receipt_url || '',
+      paid_by: entry.created_by
     });
     setShowForm(true);
   };
@@ -82,7 +84,8 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
       description: '',
       amount: '',
       notes: '',
-      receipt_url: ''
+      receipt_url: '',
+      paid_by: currentUserId || ''
     });
     setShowForm(false);
   };
@@ -242,7 +245,8 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
             description: formData.description,
             amount: parseFloat(formData.amount),
             notes: formData.notes || null,
-            receipt_url: formData.receipt_url || null
+            receipt_url: formData.receipt_url || null,
+            created_by: formData.paid_by || user.id
           })
           .eq('id', editingEntry.id);
 
@@ -263,7 +267,7 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
             type: 'expense',
             notes: formData.notes || null,
             receipt_url: formData.receipt_url || null,
-            created_by: user.id
+            created_by: formData.paid_by || user.id
           }] as any);
 
         if (error) throw error;
@@ -397,6 +401,25 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
               </div>
 
               <div>
+                <label className="text-sm font-medium">Paid By</label>
+                <Select
+                  value={formData.paid_by}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, paid_by: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select who paid" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {familyMembers.map(member => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <label className="text-sm font-medium">Notes</label>
                 <Textarea
                   value={formData.notes}
@@ -483,26 +506,26 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                       {format(new Date(entry.created_at), 'PPp')}
                     </p>
                   </div>
-                  {canDelete(entry) && (
-                    <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditEntry(entry)}
-                        className="mobile-section-button md:w-auto"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(entry.id)}
-                        className="mobile-section-button md:w-auto"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                   {canDelete(entry) && (
+                     <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleEditEntry(entry)}
+                         className="mobile-section-button md:w-auto"
+                       >
+                         <Edit className="h-4 w-4" />
+                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleDelete(entry.id)}
+                         className="mobile-section-button md:w-auto"
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
+                     </div>
+                   )}
                 </div>
               </CardContent>
             </Card>

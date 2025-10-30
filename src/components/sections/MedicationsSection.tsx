@@ -394,28 +394,26 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
                     {medication.dosage} • {medication.frequency}
                     {medication.care_recipients && ` • For: ${medication.care_recipients.name}`}
                   </p>
-                </div>
-                {canManageMedications && (
-                  <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditMedication(medication)}
-                      className="mobile-section-button md:w-auto"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteMedication(medication.id)}
-                      className="mobile-section-button md:w-auto"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </CardHeader>
+                 </div>
+                 <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0 flex gap-2">
+                   <Button
+                     variant="ghost"
+                     size="sm"
+                     onClick={() => handleEditMedication(medication)}
+                     className="mobile-section-button md:w-auto"
+                   >
+                     <Edit className="h-4 w-4" />
+                   </Button>
+                   <Button
+                     variant="ghost"
+                     size="sm"
+                     onClick={() => handleDeleteMedication(medication.id)}
+                     className="mobile-section-button md:w-auto"
+                   >
+                     <Trash2 className="h-4 w-4" />
+                   </Button>
+                 </div>
+               </CardHeader>
               <CardContent className="space-y-4">
                 {medication.instructions && (
                   <p className="text-sm text-muted-foreground">{medication.instructions}</p>

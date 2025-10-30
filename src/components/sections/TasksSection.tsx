@@ -334,9 +334,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     }
   };
 
-  const activeTasks = tasks.filter(task => task.status === 'active' || (!task.status && !task.completed_at));
-  const awaitingReviewTasks = tasks.filter(task => task.status === 'awaiting_review');
-  const completedTasks = tasks.filter(task => task.completed_at && task.status !== 'awaiting_review');
+  const activeTasks = tasks.filter(task => !task.completed);
+  const awaitingReviewTasks = tasks.filter(task => task.completed && !task.is_archived);
+  const completedTasks = tasks.filter(task => task.is_archived);
 
   if (!familyId) {
     return (

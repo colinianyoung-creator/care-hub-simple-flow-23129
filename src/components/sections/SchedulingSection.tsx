@@ -11,6 +11,7 @@ import { format, addDays } from 'date-fns';
 import { ShiftAssignmentForm } from "../forms/ShiftAssignmentForm";
 import { ShiftRequestForm } from "../forms/ShiftRequestForm";
 import { ShiftAbsenceForm } from "../forms/ShiftAbsenceForm";
+import { ShiftChangeRequestForm } from "../forms/ShiftChangeRequestForm";
 import { ScheduleCalendar } from "../ScheduleCalendar";
 import { ClockInOut } from "../ClockInOut";
 import { MonthCalendarView } from "../MonthCalendarView";
@@ -53,6 +54,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [showEditShift, setShowEditShift] = useState(false);
   const [editingShift, setEditingShift] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showChangeRequestForm, setShowChangeRequestForm] = useState(false);
+  const [selectedTimeEntry, setSelectedTimeEntry] = useState<any>(null);
   const [showRefresh, setShowRefresh] = useState(false);
   const { toast } = useToast();
 
@@ -65,11 +68,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const onEditShift = (shift: any) => {
     // Check if carer trying to edit - create change request instead
     if (isCarer && !shift.is_leave_request) {
-      toast({
-        title: "Request Edit",
-        description: "Carers must submit change requests for admin approval",
-      });
-      // TODO: Open shift change request form
+      setSelectedTimeEntry(shift);
+      setShowChangeRequestForm(true);
       return;
     }
 
@@ -962,6 +962,21 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             onCancel={() => {
               setShowEditShift(false);
               setEditingShift(null);
+            }}
+          />
+        )}
+
+        {showChangeRequestForm && selectedTimeEntry && (
+          <ShiftChangeRequestForm
+            timeEntry={selectedTimeEntry}
+            onSuccess={() => {
+              setShowChangeRequestForm(false);
+              setSelectedTimeEntry(null);
+              loadSchedulingData();
+            }}
+            onCancel={() => {
+              setShowChangeRequestForm(false);
+              setSelectedTimeEntry(null);
             }}
           />
         )}
