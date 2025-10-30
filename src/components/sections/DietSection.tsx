@@ -55,7 +55,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   
   const [formData, setFormData] = useState({
     description: '',
-    portion_left: 'none',
     notes: ''
   });
 
@@ -172,7 +171,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
           created_by: currentUserId,
           meal_type: selectedMealType,
           description: formData.description,
-          portion_left: formData.portion_left,
           notes: formData.notes
         }] as any);
 
@@ -183,7 +181,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
         description: "Diet entry added successfully"
       });
 
-      setFormData({ description: '', portion_left: 'none', notes: '' });
+      setFormData({ description: '', notes: '' });
       setShowForm(false);
       loadEntries(selectedMealType);
     } catch (error) {
@@ -282,24 +280,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
                         placeholder="Describe the meal..."
                         required
                       />
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Portion left uneaten</label>
-                      <Select
-                        value={formData.portion_left}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, portion_left: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None - All eaten</SelectItem>
-                          <SelectItem value="some">Some left</SelectItem>
-                          <SelectItem value="most">Most left</SelectItem>
-                          <SelectItem value="all">All left - Nothing eaten</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
 
                     <div>

@@ -920,55 +920,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             familyId={familyId}
             userRole={userRole}
             careRecipientNameHint={careRecipientNameHint}
-            onShiftClick={(shift) => {
-              // Check if this is a leave request
-              const isLeaveRequest = shift.is_leave_request || shift.id?.toString().startsWith('leave-');
-              
-              if (isLeaveRequest) {
-                // Handle leave request clicks
-                if (shift.status === 'denied') {
-                  toast({
-                    title: "Request Denied",
-                    description: "This leave request has been denied and cannot be edited.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                
-                if (isAdmin) {
-                  // Admin can edit/cancel approved leave requests
-                  setEditingShift(shift);
-                  setShowEditShift(true);
-                } else if (isCarer && shift.carer_id === currentUserId) {
-                  // Carer can view/cancel their own requests
-                  if (shift.status === 'pending') {
-                    setEditingShift(shift);
-                    setShowEditShift(true);
-                  } else {
-                    toast({
-                      title: "View Only",
-                      description: "You can only view approved leave requests. Contact admin to make changes.",
-                    });
-                  }
-                } else {
-                  toast({
-                    title: "No Permission",
-                    description: "You don't have permission to edit this leave request.",
-                  });
-                }
-              } else {
-                // Handle regular shift clicks
-                if (isCarer) {
-                  setShowRequestForm(true);
-                } else {
-                  const assignment = assignments.find(a => a.id === shift.shift_assignment_id);
-                  if (assignment) {
-                    setEditingAssignment(assignment);
-                    setShowAssignmentForm(true);
-                  }
-                }
-              }
-            }}
+            onShiftClick={onEditShift}
             carersMap={carers}
           />
         )}
