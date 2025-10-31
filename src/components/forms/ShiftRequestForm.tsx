@@ -62,21 +62,25 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
 
           if (error) throw error;
 
-          const carersWithProfiles = await Promise.all(
-            (carerMemberships || []).map(async (membership) => {
-          const { data: profile } = await supabase
-            .rpc('get_profile_safe');
-              
-              return {
-                user_id: membership.user_id,
-                profiles: {
-                  full_name: profile?.[0]?.full_name || 'Unnamed Carer'
-                }
-              };
-            })
-          );
+          const carerIds = (carerMemberships || []).map(m => m.user_id);
+          
+          if (carerIds.length > 0) {
+            const { data: profiles, error: profileError } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', carerIds);
 
-          setCarers(carersWithProfiles);
+            if (profileError) throw profileError;
+
+            const carersWithProfiles = (profiles || []).map(profile => ({
+              user_id: profile.id,
+              profiles: {
+                full_name: profile.full_name || 'Unnamed Carer'
+              }
+            }));
+
+            setCarers(carersWithProfiles);
+          }
         } catch (error) {
           console.error('Error loading carers:', error);
         }
@@ -111,22 +115,33 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
         } else {
           // Admin creating/editing a basic or cover shift - goes directly to time_entries
           if (editShiftData?.id && !isEditingLeaveRequest) {
-            // Update existing time entry
-            const startHour = 9;
-            const hours = parseInt(formData.hours) || 8;
-            const endHour = startHour + hours;
+            // Update existing time entry - only update fields if provided
+            const updateData: any = {};
             
-            const { error } = await supabase
-              .from('time_entries')
-              .update({
-                user_id: formData.carer_id,
-                clock_in: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
-                clock_out: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
-                notes: formData.reason || null
-              })
-              .eq('id', editShiftData.id);
+            if (formData.carer_id) {
+              updateData.user_id = formData.carer_id;
+            }
+            
+            if (formData.start_date && formData.hours) {
+              const startHour = 9;
+              const hours = parseInt(formData.hours);
+              const endHour = startHour + hours;
+              updateData.clock_in = `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`;
+              updateData.clock_out = `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`;
+            }
+            
+            if (formData.reason) {
+              updateData.notes = formData.reason;
+            }
+            
+            if (Object.keys(updateData).length > 0) {
+              const { error } = await supabase
+                .from('time_entries')
+                .update(updateData)
+                .eq('id', editShiftData.id);
 
-            if (error) throw error;
+              if (error) throw error;
+            }
           } else if (!isEditingLeaveRequest) {
             // Create new time entry
             const startHour = 9;
@@ -277,14 +292,20 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           <div className="p-4 bg-muted rounded-lg border">
             <h4 className="font-medium mb-2">{isAdminEdit ? 'Editing Shift:' : 'Editing Request:'}</h4>
             <div className="text-sm space-y-1">
+              {isAdminEdit && (
+                <div>
+                  <span className="font-medium">Assigned to:</span>{' '}
+                  {editShiftData.carer_id ? 
+                    (carers.find(c => c.user_id === editShiftData.carer_id)?.profiles.full_name || 'Unknown Carer') : 
+                    'Unassigned'
+                  }
+                </div>
+              )}
               {editShiftData.start_date && (
                 <div><span className="font-medium">Date:</span> {new Date(editShiftData.start_date).toLocaleDateString()}</div>
               )}
               {editShiftData.request_type && (
                 <div><span className="font-medium">Type:</span> {editShiftData.request_type.replace(/_/g, ' ')}</div>
-              )}
-              {editShiftData.carer_name && (
-                <div><span className="font-medium">Carer:</span> {editShiftData.carer_name}</div>
               )}
               {editShiftData.hours && (
                 <div><span className="font-medium">Hours:</span> {editShiftData.hours}</div>
@@ -296,13 +317,13 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
         <form onSubmit={handleSubmit} className="space-y-4">
           {isAdminEdit && (
             <div>
-              <Label htmlFor="carer_id">Assign to Carer</Label>
+              <Label htmlFor="carer_id">Change carer (optional)</Label>
               <Select 
                 value={formData.carer_id} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, carer_id: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select carer" />
+                  <SelectValue placeholder="Keep current assignment" />
                 </SelectTrigger>
                 <SelectContent>
                   {carers.map((carer) => (
@@ -335,19 +356,19 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           </div>
 
           <div>
-            <Label htmlFor="start_date">{isAdminEdit ? 'Date' : 'Start Date'}</Label>
+            <Label htmlFor="start_date">{isAdminEdit ? 'Date (optional)' : 'Start Date'}</Label>
             <Input
               id="start_date"
               type="date"
               value={formData.start_date}
               onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-              required
+              required={!isAdminEdit}
             />
           </div>
 
           {isAdminEdit || ['sickness', 'annual_leave', 'public_holiday'].includes(formData.request_type) ? (
             <div>
-              <Label htmlFor="hours">Hours</Label>
+              <Label htmlFor="hours">Hours {isAdminEdit && '(optional)'}</Label>
               <Input
                 id="hours"
                 type="number"
@@ -357,7 +378,7 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
                 value={formData.hours}
                 onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
                 placeholder="e.g. 8"
-                required={isAdminEdit}
+                required={!isAdminEdit}
               />
             </div>
           ) : (
@@ -397,7 +418,7 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || (isAdminEdit && !formData.carer_id)}>
+            <Button type="submit" disabled={loading}>
               {loading ? (isAdminEdit ? 'Saving...' : 'Submitting...') : (isAdminEdit ? (editShiftData ? 'Update Shift' : 'Create Shift') : 'Submit Request')}
             </Button>
           </div>

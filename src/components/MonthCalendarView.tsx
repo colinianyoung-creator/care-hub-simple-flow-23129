@@ -23,6 +23,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
   const [carers, setCarers] = useState<Record<string, string>>({});
   const [careRecipientName, setCareRecipientName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [expandedDay, setExpandedDay] = useState<Date | null>(null);
 
   useEffect(() => {
     // Sync carers from parent if provided
@@ -282,6 +283,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -368,9 +370,14 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                       </Badge>
                     ))}
                     {dayShifts.length > (window.innerWidth < 640 ? 1 : 3) && (
-                      <div className="text-xs text-muted-foreground">
-                        +{dayShifts.length - (window.innerWidth < 640 ? 1 : 3)} more
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground w-full h-auto py-1 px-2 hover:bg-primary/10"
+                        onClick={() => setExpandedDay(day)}
+                      >
+                        View all {dayShifts.length} shifts
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -380,5 +387,56 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Expanded Day Dialog */}
+    {expandedDay && (
+      <Dialog open={!!expandedDay} onOpenChange={() => setExpandedDay(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              Shifts for {format(expandedDay, 'MMMM d, yyyy')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {getShiftsForDay(expandedDay).map((shift, index) => (
+              <Badge 
+                key={index} 
+                variant="secondary" 
+                className={`text-sm w-full justify-start cursor-pointer hover:opacity-80 p-3 ${
+                  shift.is_leave_request 
+                    ? getShiftTypeColor(shift.shift_type, true)
+                    : getShiftTypeColor('basic', false)
+                }`}
+                onClick={() => {
+                  onShiftClick?.(shift);
+                  setExpandedDay(null);
+                }}
+              >
+                <div className="flex flex-col w-full gap-1">
+                  <span className="text-sm font-medium">
+                    {shift.start_time && shift.end_time 
+                      ? `${shift.start_time.slice(0, 5)} - ${shift.end_time.slice(0, 5)}`
+                      : 'All day'
+                    }
+                  </span>
+                  <span className="text-sm opacity-90">
+                    {getShiftDisplayName(shift)}
+                  </span>
+                  {shift.notes && (
+                    <span className="text-xs opacity-75 mt-1">
+                      {shift.notes}
+                    </span>
+                  )}
+                </div>
+              </Badge>
+            ))}
+          </div>
+          <Button onClick={() => setExpandedDay(null)} className="w-full">
+            Back to Month View
+          </Button>
+        </DialogContent>
+      </Dialog>
+    )}
+  </>
   );
 };

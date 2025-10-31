@@ -32,6 +32,19 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
   userRole,
   currentUserId
 }) => {
+  // Early return if no family ID
+  if (!familyId) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            No family selected. Please join or create a family first.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const [entries, setEntries] = useState<DietEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());

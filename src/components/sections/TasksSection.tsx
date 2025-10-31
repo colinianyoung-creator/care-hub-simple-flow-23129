@@ -181,13 +181,11 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const markTaskComplete = async (taskId: string) => {
     try {
-      const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
-      
       const { error } = await supabase
         .from('tasks')
         .update({ 
           completed: true,
-          is_archived: isAdmin
+          is_archived: false
         })
         .eq('id', taskId);
 
@@ -196,7 +194,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       toast({
         title: "Task completed",
-        description: isAdmin ? "Task archived successfully" : "Task marked for review"
+        description: "Task moved to Done tab"
       });
     } catch (error) {
       console.error('Error marking task complete:', error);
@@ -336,7 +334,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const activeTasks = tasks.filter(task => !task.completed);
   const awaitingReviewTasks = tasks.filter(task => task.completed && !task.is_archived);
-  const completedTasks = tasks.filter(task => task.is_archived);
+  const completedTasks = tasks.filter(task => task.completed);
 
   if (!familyId) {
     return (

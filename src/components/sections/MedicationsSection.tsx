@@ -388,32 +388,32 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
           medications.map((medication) => (
             <Card key={medication.id}>
               <CardHeader>
-                <div className="medication-content">
-                  <CardTitle className="text-lg">{medication.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {medication.dosage} • {medication.frequency}
-                    {medication.care_recipients && ` • For: ${medication.care_recipients.name}`}
-                  </p>
-                 </div>
-                 <div className="flex gap-2 mt-3 pt-3 border-t md:mt-0 md:pt-0 md:border-t-0 md:ml-auto">
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={() => handleEditMedication(medication)}
-                     className="flex-1 md:flex-initial"
-                   >
-                     <Edit className="h-4 w-4" />
-                   </Button>
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={() => handleDeleteMedication(medication.id)}
-                     className="flex-1 md:flex-initial"
-                   >
-                     <Trash2 className="h-4 w-4" />
-                   </Button>
-                 </div>
-               </CardHeader>
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1 space-y-1">
+                    <CardTitle className="text-lg">{medication.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {medication.dosage} • {medication.frequency}
+                      {medication.care_recipients && ` • For: ${medication.care_recipients.name}`}
+                    </p>
+                  </div>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditMedication(medication)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteMedication(medication.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
                 {medication.instructions && (
                   <p className="text-sm text-muted-foreground">{medication.instructions}</p>

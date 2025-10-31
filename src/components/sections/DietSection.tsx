@@ -52,6 +52,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   const [selectedMealType, setSelectedMealType] = useState<string>('breakfast');
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const [showRefresh, setShowRefresh] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const [formData, setFormData] = useState({
     description: '',
@@ -65,6 +66,14 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
 
   useEffect(() => {
     getCurrentUser();
+  }, []);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -255,13 +264,28 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
 
         <TabsContent value="today" className="space-y-4 mt-4">
           <Tabs value={selectedMealType} onValueChange={setSelectedMealType}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="breakfast">Breakfast</TabsTrigger>
-              <TabsTrigger value="lunch">Lunch</TabsTrigger>
-              <TabsTrigger value="dinner">Dinner</TabsTrigger>
-              <TabsTrigger value="snacks">Snacks</TabsTrigger>
-              <TabsTrigger value="drinks">Drinks</TabsTrigger>
-            </TabsList>
+            {isMobile ? (
+              <Select value={selectedMealType} onValueChange={setSelectedMealType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="breakfast">Breakfast</SelectItem>
+                  <SelectItem value="lunch">Lunch</SelectItem>
+                  <SelectItem value="dinner">Dinner</SelectItem>
+                  <SelectItem value="snacks">Snacks</SelectItem>
+                  <SelectItem value="drinks">Drinks</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="breakfast">Breakfast</TabsTrigger>
+                <TabsTrigger value="lunch">Lunch</TabsTrigger>
+                <TabsTrigger value="dinner">Dinner</TabsTrigger>
+                <TabsTrigger value="snacks">Snacks</TabsTrigger>
+                <TabsTrigger value="drinks">Drinks</TabsTrigger>
+              </TabsList>
+            )}
 
         {['breakfast', 'lunch', 'dinner', 'snacks', 'drinks'].map(mealType => (
           <TabsContent key={mealType} value={mealType} className="space-y-4">

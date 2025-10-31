@@ -385,60 +385,59 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
           ) : (
             <div className="space-y-4">
               {upcomingAppointments.map((appointment) => (
-                <div key={appointment.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="appointment-content">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium">{appointment.title}</h4>
-                      {getStatusBadge(getAppointmentStatus(appointment))}
-                    </div>
-                    
-                    {appointment.description && (
-                      <p className="text-sm text-muted-foreground mb-2">{appointment.description}</p>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
+                <div key={appointment.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <h4 className="font-medium text-base leading-tight">{appointment.title}</h4>
+                        {getStatusBadge(getAppointmentStatus(appointment))}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {format(new Date(appointment.appointment_date), 'h:mm a')}
-                        <span>({appointment.duration_minutes} min)</span>
-                      </div>
-                      {appointment.location && (
+                      
+                      {appointment.description && (
+                        <p className="text-sm text-muted-foreground leading-relaxed">{appointment.description}</p>
+                      )}
+                      
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {appointment.location}
+                          <Calendar className="h-4 w-4 flex-shrink-0" />
+                          <span className="leading-tight">{format(new Date(appointment.appointment_date), 'MMM d, yyyy')}</span>
                         </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 flex-shrink-0" />
+                          <span className="leading-tight">{format(new Date(appointment.appointment_date), 'h:mm a')} ({appointment.duration_minutes} min)</span>
+                        </div>
+                        {appointment.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <span className="leading-tight">{appointment.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {appointment.notes && (
+                        <p className="text-sm p-2 bg-muted rounded leading-relaxed">{appointment.notes}</p>
                       )}
                     </div>
                     
-                    {appointment.notes && (
-                      <p className="text-sm mt-2 p-2 bg-muted rounded">{appointment.notes}</p>
+                    {familyId && (
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditAppointment(appointment)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
-                  
-                  {familyId && (
-                    <div className="flex gap-2 mt-3 pt-3 border-t md:mt-0 md:pt-0 md:border-t-0 md:ml-auto">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditAppointment(appointment)}
-                        className="flex-1 md:flex-initial"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteAppointment(appointment.id)}
-                        className="flex-1 md:flex-initial"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
