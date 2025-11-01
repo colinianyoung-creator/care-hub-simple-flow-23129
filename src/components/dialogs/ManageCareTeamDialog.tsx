@@ -39,31 +39,21 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
   const loadTeamData = async () => {
     setLoading(true);
     try {
-      // Load family members
+      // Load family members with their profiles in a single query
       const { data: membersData, error: membersError } = await supabase
         .from('user_memberships')
-        .select('*')
+        .select(`
+          *,
+          profiles!user_memberships_user_id_fkey (
+            id,
+            full_name,
+            email,
+            contact_email
+          )
+        `)
         .eq('family_id', familyId);
 
       if (membersError) throw membersError;
-
-      // Get safe profile data for each member
-      const membersWithProfiles = await Promise.all(
-        (membersData || []).map(async (membership) => {
-          const { data: profileData, error: profileError } = await supabase
-            .rpc('get_profile_safe');
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            return { ...membership, profiles: null };
-          }
-          
-          return { 
-            ...membership, 
-            profiles: profileData?.[0] || null 
-          };
-        })
-      );
 
       // Load pending invites
       const { data: invitesData, error: invitesError } = await supabase
@@ -75,7 +65,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
 
       if (invitesError) throw invitesError;
 
-      setMembers(membersWithProfiles || []);
+      setMembers(membersData || []);
       setInvites(invitesData || []);
 
       // Load role change requests

@@ -42,6 +42,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [requests, setRequests] = useState<any[]>([]);
   const [instances, setInstances] = useState<any[]>([]);
   const [carers, setCarers] = useState<Record<string, string>>({});
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAssignmentForm, setShowAssignmentForm] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -519,6 +520,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       
       setRequests(allRequests);
       setInstances(instancesData || []);
+      
+      // Trigger calendar refresh by updating key
+      setCalendarRefreshKey(prev => prev + 1);
     } catch (error: any) {
       if (signal?.aborted || error.name === 'AbortError') return;
       
@@ -824,6 +828,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             </div>
             
             <ScheduleCalendar 
+              key={calendarRefreshKey}
               familyId={familyId} 
               userRole={userRole}
               careRecipientNameHint={careRecipientNameHint}

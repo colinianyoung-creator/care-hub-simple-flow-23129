@@ -53,15 +53,35 @@ export const MobileDayView = ({
       setLoading(true);
       const dateStr = format(currentDate, 'yyyy-MM-dd');
       
-      // Load shift instances
-      const { data: shiftData, error: shiftError } = await supabase
-        .rpc('get_shift_instances_with_names', {
-          _family_id: familyId,
-          _start_date: dateStr,
-          _end_date: dateStr
-        });
+      // Load time_entries (actual shifts) for this day
+      const { data: timeEntries, error: timeError } = await supabase
+        .from('time_entries')
+        .select(`
+          *,
+          profiles!time_entries_user_id_fkey (
+            id,
+            full_name
+          )
+        `)
+        .eq('family_id', familyId)
+        .gte('clock_in', `${dateStr}T00:00:00`)
+        .lt('clock_in', `${dateStr}T23:59:59`)
+        .order('clock_in', { ascending: true });
 
-      if (shiftError) throw shiftError;
+      if (timeError) throw timeError;
+      
+      // Transform time_entries to shift format
+      const shiftData = timeEntries?.map(entry => ({
+        id: entry.id,
+        scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+        start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : format(new Date(entry.clock_in), 'HH:mm:ss'),
+        carer_id: entry.user_id,
+        carer_name: entry.profiles?.full_name || 'Unknown',
+        status: 'completed',
+        notes: entry.notes,
+        shift_type: 'basic'
+      })) || [];
       
       // Load approved leave requests for this day
       const { data: leaveData, error: leaveError } = await supabase
@@ -118,15 +138,35 @@ export const MobileDayView = ({
       const today = format(new Date(), 'yyyy-MM-dd');
       const nextWeek = format(addDays(new Date(), 7), 'yyyy-MM-dd');
       
-      // Load shift instances
-      const { data: shiftData, error: shiftError } = await supabase
-        .rpc('get_shift_instances_with_names', {
-          _family_id: familyId,
-          _start_date: today,
-          _end_date: nextWeek
-        });
+      // Load time_entries (actual shifts) for the period
+      const { data: timeEntries, error: timeError } = await supabase
+        .from('time_entries')
+        .select(`
+          *,
+          profiles!time_entries_user_id_fkey (
+            id,
+            full_name
+          )
+        `)
+        .eq('family_id', familyId)
+        .gte('clock_in', `${today}T00:00:00`)
+        .lt('clock_in', `${nextWeek}T23:59:59`)
+        .order('clock_in', { ascending: true });
 
-      if (shiftError) throw shiftError;
+      if (timeError) throw timeError;
+
+      // Transform time_entries to shift format
+      const shiftData = timeEntries?.map(entry => ({
+        id: entry.id,
+        scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+        start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : format(new Date(entry.clock_in), 'HH:mm:ss'),
+        carer_id: entry.user_id,
+        carer_name: entry.profiles?.full_name || 'Unknown',
+        status: 'completed',
+        notes: entry.notes,
+        shift_type: 'basic'
+      })) || [];
 
       // Load approved leave requests for the period
       const { data: leaveData, error: leaveError } = await supabase
