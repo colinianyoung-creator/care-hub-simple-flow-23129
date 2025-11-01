@@ -15,7 +15,7 @@ interface DietEntry {
   notes: string | null;
   photo_url: string | null;
   created_at: string;
-  user_id: string;
+  created_by: string;
   profiles?: {
     full_name: string | null;
   };
@@ -90,7 +90,7 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
 
       const { data, error } = await supabase
         .from('diet_entries')
-        .select('*, profiles:user_id(full_name)')
+        .select('*, profiles:created_by(full_name)')
         .eq('family_id', familyId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
@@ -138,7 +138,7 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
   };
 
   const canDeleteEntry = (entry: DietEntry) => {
-    return !!familyId;
+    return currentUserId && entry.created_by === currentUserId;
   };
 
   const goToPreviousDay = () => {

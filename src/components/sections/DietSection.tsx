@@ -370,8 +370,8 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
               ) : (
                 entries.map(entry => (
                   <Card key={entry.id}>
-                    <CardContent className="pt-4">
-                      <div className="flex justify-between items-start gap-4">
+                     <CardContent className="pt-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{entry.description}</span>
@@ -397,13 +397,16 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
                           </p>
                         </div>
                         {canDelete(entry) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(entry.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex sm:flex-col gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(entry.id)}
+                              className="self-start"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </CardContent>

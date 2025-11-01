@@ -40,7 +40,11 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
 
   const requestTypes = isAdminEdit ? [
     { value: 'basic', label: 'Basic Shift' },
-    { value: 'cover', label: 'Cover Shift' }
+    { value: 'cover', label: 'Cover Shift' },
+    { value: 'annual_leave', label: 'Annual Leave' },
+    { value: 'sickness', label: 'Sickness' },
+    { value: 'public_holiday', label: 'Public Holiday' },
+    { value: 'other', label: 'Other' }
   ] : [
     { value: 'sickness', label: 'Sickness' },
     { value: 'annual_leave', label: 'Annual Leave' },

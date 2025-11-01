@@ -104,6 +104,7 @@ export const MobileDayView = ({
       const filteredShifts = shiftData?.filter(shift => !carersWithLeave.has(shift.carer_id)) || [];
 
       setDayShifts([...filteredShifts, ...leaveShifts]);
+      console.log(`📱 Day View: Loaded ${filteredShifts.length + leaveShifts.length} shifts for ${dateStr}`);
     } catch (error) {
       console.error('Error loading day shifts:', error);
     } finally {
@@ -168,6 +169,7 @@ export const MobileDayView = ({
       const filteredShifts = shiftData?.filter(shift => !carersWithLeave.has(shift.carer_id)) || [];
 
       setUpcomingShifts([...filteredShifts, ...leaveShifts]);
+      console.log(`📱 List View: Loaded ${filteredShifts.length + leaveShifts.length} upcoming shifts`);
     } catch (error) {
       console.error('Error loading upcoming shifts:', error);
     } finally {

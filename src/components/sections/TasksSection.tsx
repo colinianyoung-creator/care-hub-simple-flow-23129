@@ -181,11 +181,19 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const markTaskComplete = async (taskId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const task = tasks.find(t => t.id === taskId);
+      
+      // If current user is admin OR task creator, skip review (archive immediately)
+      const skipReview = userRole === 'family_admin' || 
+                         userRole === 'disabled_person' ||
+                         task?.created_by === user?.id;
+      
       const { error } = await supabase
         .from('tasks')
         .update({ 
           completed: true,
-          is_archived: false
+          is_archived: skipReview // Archive immediately if admin completes it
         })
         .eq('id', taskId);
 
@@ -194,7 +202,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       toast({
         title: "Task completed",
-        description: "Task moved to Done tab"
+        description: skipReview ? "Task moved to Done tab" : "Task sent for review"
       });
     } catch (error) {
       console.error('Error marking task complete:', error);

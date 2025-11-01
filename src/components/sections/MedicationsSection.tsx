@@ -388,7 +388,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
           medications.map((medication) => (
             <Card key={medication.id}>
               <CardHeader>
-                <div className="flex justify-between items-start gap-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
                   <div className="flex-1 space-y-1">
                     <CardTitle className="text-lg">{medication.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">
@@ -396,7 +396,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
                       {medication.care_recipients && ` • For: ${medication.care_recipients.name}`}
                     </p>
                   </div>
-                  <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex gap-2 sm:flex-row">
                     <Button
                       variant="ghost"
                       size="sm"

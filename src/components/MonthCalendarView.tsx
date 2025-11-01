@@ -337,7 +337,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
               return (
                 <div 
                   key={index} 
-                  className={`min-h-20 sm:min-h-32 md:min-h-40 p-1 sm:p-2 border border-border ${
+                  className={`relative overflow-hidden min-h-20 sm:min-h-32 md:min-h-40 p-1 sm:p-2 border border-border ${
                     !isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : ''
                   } ${isToday ? 'bg-primary/10 border-primary' : ''}`}
                 >
