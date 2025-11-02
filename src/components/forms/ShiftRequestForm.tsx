@@ -138,6 +138,10 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
               updateData.notes = formData.reason;
             }
             
+            if (formData.request_type) {
+              updateData.shift_type = formData.request_type;
+            }
+            
             if (Object.keys(updateData).length > 0) {
               const { error } = await supabase
                 .from('time_entries')
@@ -159,7 +163,8 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
                 user_id: formData.carer_id,
                 clock_in: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
                 clock_out: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
-                notes: formData.reason || `${formData.shift_category} shift`
+                notes: formData.reason || `${formData.shift_category} shift`,
+                shift_type: formData.request_type || formData.shift_category || 'basic'
               });
 
             if (error) throw error;

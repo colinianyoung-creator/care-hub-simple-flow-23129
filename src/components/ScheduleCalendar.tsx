@@ -114,7 +114,8 @@ useEffect(() => {
           carer_id: entry.user_id,
           carer_name: newCarers[entry.user_id] || 'Unknown',
           status: 'scheduled',
-          notes: entry.notes
+          notes: entry.notes,
+          shift_type: (entry as any).shift_type || 'basic'
         })) || [];
 
         setWeekInstances(transformedInstances);
@@ -320,6 +321,18 @@ useEffect(() => {
         return 'bg-blue-500 text-white font-bold';
       case 'cover':
         return 'bg-green-500 text-white font-bold';
+      case 'sickness':
+      case 'sick_leave':
+        return 'bg-red-500 text-white font-bold';
+      case 'annual_leave':
+      case 'holiday':
+        return 'bg-yellow-500 text-white font-bold';
+      case 'public_holiday':
+        return 'bg-purple-500 text-white font-bold';
+      case 'training':
+        return 'bg-orange-500 text-white font-bold';
+      case 'other':
+        return 'bg-gray-600 text-white font-bold';
       default:
         return 'bg-gray-500 text-white font-bold';
     }

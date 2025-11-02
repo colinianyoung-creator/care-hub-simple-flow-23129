@@ -114,6 +114,34 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const onEditShift = (shift: any) => {
     console.log('🟢 Edit shift triggered:', shift);
     
+    // Validate shift object
+    try {
+      if (!shift || !shift.id) {
+        throw new Error('Invalid shift: missing ID');
+      }
+      
+      // For time entries, validate dates
+      if (shift.clock_in) {
+        const testDate = new Date(shift.clock_in);
+        if (isNaN(testDate.getTime())) {
+          throw new Error('Invalid shift: bad clock_in date');
+        }
+      }
+      
+      // For calendar shifts, validate date components
+      if (!shift.clock_in && !shift.scheduled_date && !shift.date) {
+        throw new Error('Invalid shift: missing date information');
+      }
+    } catch (error: any) {
+      console.error('❌ Shift validation failed:', error);
+      toast({
+        title: 'Cannot Edit Shift',
+        description: error.message || 'Invalid shift data',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     // Handle leave requests
     if (shift.is_leave_request || shift.id?.toString().startsWith('leave-')) {
       console.log('📋 Opening leave request editor');

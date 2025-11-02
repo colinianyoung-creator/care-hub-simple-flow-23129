@@ -394,7 +394,7 @@ export const MobileDayView = ({
         ) : (
           <div className="space-y-3">
             {dayShifts.map((shift) => (
-              <div key={shift.id} className="flex flex-col gap-2">
+              <React.Fragment key={shift.id}>
                 <Badge 
                   className={`${getShiftTypeColor(shift)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
                   onClick={() => handleShiftClick(shift)}
@@ -413,11 +413,11 @@ export const MobileDayView = ({
                   </div>
                 </Badge>
                 {shift.notes && (
-                  <div className="text-sm text-muted-foreground p-2 bg-muted rounded ml-1">
+                  <div className="text-sm text-muted-foreground p-2 bg-muted rounded ml-1 mt-1">
                     {shift.notes}
                   </div>
                 )}
-              </div>
+              </React.Fragment>
             ))}
           </div>
         )}

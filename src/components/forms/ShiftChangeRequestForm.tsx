@@ -30,10 +30,35 @@ export const ShiftChangeRequestForm = ({ timeEntry, open, onOpenChange, onSucces
     return null;
   }
   
-  const [formData, setFormData] = useState({
-    new_start_time: timeEntry.clock_in && timeEntry.id ? format(new Date(timeEntry.clock_in), "yyyy-MM-dd'T'HH:mm") : '',
-    new_end_time: timeEntry.clock_out && timeEntry.id ? format(new Date(timeEntry.clock_out), "yyyy-MM-dd'T'HH:mm") : '',
-    reason: ''
+  const [formData, setFormData] = useState(() => {
+    try {
+      // Defensive date parsing to prevent crashes
+      const clockIn = new Date(timeEntry.clock_in);
+      const clockOut = new Date(timeEntry.clock_out || timeEntry.clock_in);
+      
+      // Validate dates
+      if (isNaN(clockIn.getTime()) || isNaN(clockOut.getTime())) {
+        console.error('Invalid dates in timeEntry:', timeEntry);
+        return {
+          new_start_time: '',
+          new_end_time: '',
+          reason: ''
+        };
+      }
+      
+      return {
+        new_start_time: format(clockIn, "yyyy-MM-dd'T'HH:mm"),
+        new_end_time: format(clockOut, "yyyy-MM-dd'T'HH:mm"),
+        reason: ''
+      };
+    } catch (error) {
+      console.error('Failed to parse shift dates:', error);
+      return {
+        new_start_time: '',
+        new_end_time: '',
+        reason: ''
+      };
+    }
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
