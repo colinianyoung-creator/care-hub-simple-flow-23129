@@ -8,6 +8,7 @@ import { Clock, Edit, Trash2, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatShiftType } from "@/lib/textUtils";
 import { supabase } from '@/integrations/supabase/client';
+import { getShiftTypeColor } from '@/lib/shiftUtils';
 
 interface DayShiftsModalProps {
   isOpen: boolean;
@@ -18,7 +19,6 @@ interface DayShiftsModalProps {
   userRole: string;
   onEditShift?: (shift: any) => void;
   onDeleteShift?: (shiftId: string) => void;
-  getShiftTypeColor: (shiftType: string, type?: string, isLeaveRequest?: boolean) => string;
   getDisplayNames: (shift: any) => string;
   handleShiftClick: (shift: any) => void;
   canEditShift: () => boolean;
@@ -33,7 +33,6 @@ export const DayShiftsModal: React.FC<DayShiftsModalProps> = ({
   userRole,
   onEditShift,
   onDeleteShift,
-  getShiftTypeColor,
   getDisplayNames,
   handleShiftClick,
   canEditShift
@@ -107,7 +106,7 @@ export const DayShiftsModal: React.FC<DayShiftsModalProps> = ({
                     </div>
                     
                     <Badge 
-                      className={`${getShiftTypeColor(shift.shift_type, shift.type, shift.is_leave_request)} mb-2`}
+                      className={`${getShiftTypeColor(shift.shift_type, shift.is_leave_request)} mb-2`}
                     >
                       {formatShiftType(shift.shift_type || shift.type || 'basic')}
                     </Badge>

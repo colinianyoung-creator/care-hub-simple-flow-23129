@@ -12,6 +12,7 @@ import { useIsTablet } from "@/hooks/use-tablet";
 import { MobileDayView } from "./MobileDayView";
 import { DayShiftsModal } from "./dialogs/DayShiftsModal";
 import { formatShiftType } from "@/lib/textUtils";
+import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
 
 interface ScheduleCalendarProps {
   familyId: string;
@@ -296,47 +297,7 @@ useEffect(() => {
     }
   };
 
-  const getShiftTypeColor = (shiftType: string, type?: string, isLeaveRequest?: boolean) => {
-    if (isLeaveRequest || type === 'leave') {
-      switch (shiftType) {
-        case 'holiday':
-        case 'annual_leave':
-          return 'bg-yellow-500 text-white font-bold';
-        case 'sickness':
-        case 'sick_leave':
-          return 'bg-red-500 text-white font-bold';
-        case 'public_holiday':
-          return 'bg-purple-500 text-white font-bold';
-        case 'cover':
-          return 'bg-green-500 text-white font-bold';
-        default:
-          return 'bg-orange-500 text-white font-bold';
-      }
-    }
-    
-    const effectiveType = shiftType || type || 'basic';
-    
-    switch (effectiveType) {
-      case 'basic':
-        return 'bg-blue-500 text-white font-bold';
-      case 'cover':
-        return 'bg-green-500 text-white font-bold';
-      case 'sickness':
-      case 'sick_leave':
-        return 'bg-red-500 text-white font-bold';
-      case 'annual_leave':
-      case 'holiday':
-        return 'bg-yellow-500 text-white font-bold';
-      case 'public_holiday':
-        return 'bg-purple-500 text-white font-bold';
-      case 'training':
-        return 'bg-orange-500 text-white font-bold';
-      case 'other':
-        return 'bg-gray-600 text-white font-bold';
-      default:
-        return 'bg-gray-500 text-white font-bold';
-    }
-  };
+  // Removed - now using shared utility from src/lib/shiftUtils.ts
 
   const handleShiftClick = (shift: any) => {
     if (shift.is_leave_request) {
@@ -496,7 +457,7 @@ useEffect(() => {
                                   isTablet 
                                     ? 'text-xs cursor-pointer p-2 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden min-h-[38px] max-h-[42px] relative z-20'
                                     : 'text-xs px-1 py-0 w-full cursor-pointer hover:opacity-80 transition-opacity overflow-hidden'
-                                } ${getShiftTypeColor(shift.shift_type, shift.type, shift.is_leave_request)}`}
+                                } ${getShiftTypeColor(shift.shift_type, shift.is_leave_request)}`}
                                 title={getDisplayNames(shift)}
                                 onClick={() => handleShiftClick(shift)}
                               >
@@ -610,7 +571,6 @@ useEffect(() => {
         userRole={userRole}
         onEditShift={onEditShift}
         onDeleteShift={onDeleteShift}
-        getShiftTypeColor={getShiftTypeColor}
         getDisplayNames={getDisplayNames}
         handleShiftClick={handleShiftClick}
         canEditShift={canEditShift}

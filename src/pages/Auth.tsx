@@ -23,6 +23,8 @@ const Auth = () => {
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,12 +75,22 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Profile will be created by trigger, no manual call needed
-        
-        toast({
-          title: "Success!",
-          description: "Please check your email to confirm your account.",
-        });
+        // Check if email confirmation is required
+        if (data.user.identities && data.user.identities.length === 0) {
+          // Email confirmation required
+          setAwaitingVerification(true);
+          setVerificationEmail(email);
+          toast({
+            title: 'Verify Your Email',
+            description: 'Please check your inbox for a verification link.',
+          });
+        } else {
+          // Email confirmation disabled or already verified
+          toast({
+            title: 'Success!',
+            description: 'Your account has been created.',
+          });
+        }
       }
     } catch (error: any) {
       toast({
@@ -140,6 +152,34 @@ const Auth = () => {
         title: "Error",
         description: error.message,
         variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: verificationEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Email Sent',
+        description: 'Check your inbox for a new verification link.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
       });
     } finally {
       setResetLoading(false);
@@ -414,6 +454,39 @@ const Auth = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Email Verification Pending */}
+        {awaitingVerification && (
+          <Card className="mt-4 border-primary">
+            <CardHeader>
+              <CardTitle className="text-lg">Verify Your Email</CardTitle>
+              <CardDescription>
+                We sent a verification link to <strong>{verificationEmail}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Click the link in your email to activate your account. 
+                The link expires in 24 hours.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleResendVerification}
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? 'Sending...' : 'Resend Email'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setAwaitingVerification(false)}
+                >
+                  Back to Sign In
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

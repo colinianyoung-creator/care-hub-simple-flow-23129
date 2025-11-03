@@ -63,6 +63,17 @@ export const ShiftChangeRequestForm = ({ timeEntry, open, onOpenChange, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form has valid data before submitting
+    if (!formData.new_start_time || !formData.new_end_time) {
+      toast({
+        title: 'Invalid Input',
+        description: 'Please enter valid start and end times',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {

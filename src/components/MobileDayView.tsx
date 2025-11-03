@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, List, Calendar as CalendarIcon, Clock } from
 import { format, addDays, subDays, startOfDay } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { formatShiftType } from "@/lib/textUtils";
+import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
 
 interface MobileDayViewProps {
   familyId: string;
@@ -115,7 +116,7 @@ export const MobileDayView = ({
         carer_name: carerProfiles.find(p => p.id === leave.user_id)?.full_name || 'Unknown',
         carer_id: leave.user_id,
         status: 'approved',
-        shift_type: 'leave',
+        shift_type: (leave as any).shift_type || 'annual_leave',
         is_leave_request: true,
       })) || [];
 
@@ -242,24 +243,7 @@ export const MobileDayView = ({
     return getDisplayName(shift);
   };
 
-  const getShiftTypeColor = (shift: any) => {
-    if (shift.is_leave_request || shift.shift_type) {
-      switch (shift.shift_type || shift.type) {
-        case 'annual_leave':
-          return 'bg-yellow-500 text-white font-bold';
-        case 'sickness':
-          return 'bg-red-500 text-white font-bold';
-        case 'public_holiday':
-          return 'bg-purple-500 text-white font-bold';
-        case 'cover':
-          return 'bg-green-500 text-white font-bold';
-        default:
-          return 'bg-blue-500 text-white font-bold';
-      }
-    }
-    // Basic shifts
-    return 'bg-blue-500 text-white font-bold';
-  };
+  // Removed - now using shared utility from src/lib/shiftUtils.ts
 
   const canEditShift = (shift: any) => {
     const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
@@ -396,7 +380,7 @@ export const MobileDayView = ({
             {dayShifts.map((shift) => (
               <React.Fragment key={shift.id}>
                 <Badge 
-                  className={`${getShiftTypeColor(shift)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
+                  className={`${getShiftTypeColor(shift.shift_type, shift.is_leave_request)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
                   onClick={() => handleShiftClick(shift)}
                 >
                   <div className="flex flex-col gap-1 w-full min-w-0">

@@ -157,33 +157,43 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Get auth session for edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
       // Delete profile picture from storage if exists
       if (profile.profile_picture_url) {
         try {
           await removeProfilePicture(profile.profile_picture_url);
         } catch (storageError) {
-          console.error('Error deleting profile picture:', storageError);
+          console.warn('Could not delete profile picture:', storageError);
         }
       }
 
-      // Delete user (cascade deletes profile)
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-      if (deleteError) throw deleteError;
+      // Call edge function to delete user (requires service role)
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
-      // Sign out
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Sign out (user is already deleted on the backend)
       await supabase.auth.signOut();
 
       toast({
-        title: "Profile deleted",
-        description: "Your profile has been permanently deleted.",
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted.",
       });
 
-      navigate('/auth');
+      navigate('/');
     } catch (error: any) {
-      console.error('Error deleting profile:', error);
+      console.error('❌ Error deleting account:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete profile",
+        title: "Delete Failed",
+        description: error.message || "Unable to delete account. Please contact support.",
         variant: "destructive",
       });
     }

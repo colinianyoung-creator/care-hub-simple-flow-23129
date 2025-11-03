@@ -216,6 +216,27 @@ const Dashboard = () => {
         return;
       }
 
+      // Check if admin user has no memberships (trigger may not have completed)
+      const expectedRole = profileData?.preferred_role || profileData?.ui_preference;
+      if (expectedRole === 'family_admin' || expectedRole === 'disabled_person') {
+        if (!memberships || memberships.length === 0) {
+          if (retryCount < 3) {
+            console.log(`⏳ Admin user has no memberships, retrying... (${retryCount + 1}/3)`);
+            setLoadingMessage(`Setting up your family space... (${retryCount + 1}/3)`);
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            isLoadingDataRef.current = false; // Release lock before retry
+            return loadUserData(userId, retryCount + 1);
+          } else {
+            console.error('❌ Admin user still has no memberships after retries');
+            toast({
+              title: 'Setup Issue',
+              description: 'Unable to create your family space. Please contact support.',
+              variant: 'destructive'
+            });
+          }
+        }
+      }
+
       // Set families (even if empty)
       setFamilies(memberships || []);
       console.log('✅ Families set:', memberships?.length || 0);

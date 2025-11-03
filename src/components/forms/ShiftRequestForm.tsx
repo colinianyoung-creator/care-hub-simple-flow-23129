@@ -176,6 +176,9 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           description: isEditingLeaveRequest ? "Leave request updated successfully" : 
                       (editShiftData ? "Shift updated successfully" : "Shift created successfully"),
         });
+        
+        // Notify calendar views to refresh
+        window.dispatchEvent(new Event('shift-updated'));
       } else {
         // Carer request - check if editing pending leave request
         if (isEditingLeaveRequest && editShiftData?.id) {

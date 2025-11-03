@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameDay, isSameMonth, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
 
 interface MonthCalendarViewProps {
   isOpen: boolean;
@@ -107,7 +108,9 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         notes: entry.notes,
         family_id: entry.family_id,
         created_at: entry.created_at,
-        updated_at: entry.updated_at
+        updated_at: entry.updated_at,
+        shift_type: (entry as any).shift_type || 'basic', // Include shift_type from DB
+        is_leave_request: false
       })) || [];
 
       // Get approved leave requests for the same period
@@ -253,26 +256,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
     }
   };
 
-  const getShiftTypeColor = (shiftType: string, isLeaveRequest?: boolean) => {
-    if (isLeaveRequest) {
-      switch (shiftType) {
-        case 'holiday':
-        case 'annual_leave':
-          return 'bg-yellow-500 text-white';
-        case 'sickness':
-        case 'sick_leave':
-          return 'bg-red-500 text-white';
-        case 'public_holiday':
-          return 'bg-purple-500 text-white';
-        case 'cover':
-          return 'bg-green-500 text-white';
-        default:
-          return 'bg-orange-500 text-white';
-      }
-    }
-    
-    return 'bg-blue-500 text-white'; // Basic shifts
-  };
+  // Removed - now using shared utility from src/lib/shiftUtils.ts
 
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
@@ -350,9 +334,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                         key={shiftIndex} 
                         variant="secondary" 
                         className={`text-xs w-full justify-start cursor-pointer hover:opacity-80 min-h-[24px] sm:min-h-[32px] md:min-h-[40px] p-1 sm:p-2 ${
-                          shift.is_leave_request 
-                            ? getShiftTypeColor(shift.shift_type, true)
-                            : getShiftTypeColor('basic', false)
+                          getShiftTypeColor(shift.shift_type, shift.is_leave_request)
                         }`}
                         onClick={() => onShiftClick?.(shift)}
                       >
@@ -403,9 +385,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                 key={index} 
                 variant="secondary" 
                 className={`text-sm w-full justify-start cursor-pointer hover:opacity-80 p-3 ${
-                  shift.is_leave_request 
-                    ? getShiftTypeColor(shift.shift_type, true)
-                    : getShiftTypeColor('basic', false)
+                  getShiftTypeColor(shift.shift_type, shift.is_leave_request)
                 }`}
                 onClick={() => {
                   onShiftClick?.(shift);

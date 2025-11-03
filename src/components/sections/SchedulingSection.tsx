@@ -116,27 +116,26 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     
     // Validate shift object
     try {
+      console.log('🔍 Shift validation check:', {
+        has_id: !!shift?.id,
+        has_clock_in: !!shift?.clock_in,
+        clock_in_type: typeof shift?.clock_in,
+        clock_in_valid: shift?.clock_in && !isNaN(new Date(shift.clock_in).getTime()),
+        shift_data: shift
+      });
+      
       if (!shift || !shift.id) {
-        throw new Error('Invalid shift: missing ID');
+        throw new Error('Invalid shift data - missing ID');
       }
-      
-      // For time entries, validate dates
-      if (shift.clock_in) {
-        const testDate = new Date(shift.clock_in);
-        if (isNaN(testDate.getTime())) {
-          throw new Error('Invalid shift: bad clock_in date');
-        }
-      }
-      
-      // For calendar shifts, validate date components
-      if (!shift.clock_in && !shift.scheduled_date && !shift.date) {
-        throw new Error('Invalid shift: missing date information');
+
+      if (!shift.clock_in || isNaN(new Date(shift.clock_in).getTime())) {
+        throw new Error('Invalid shift data - bad clock_in date');
       }
     } catch (error: any) {
-      console.error('❌ Shift validation failed:', error);
+      console.error('❌ Error opening shift:', error);
       toast({
-        title: 'Cannot Edit Shift',
-        description: error.message || 'Invalid shift data',
+        title: 'Error',
+        description: error.message || 'Cannot open this shift',
         variant: 'destructive'
       });
       return;
