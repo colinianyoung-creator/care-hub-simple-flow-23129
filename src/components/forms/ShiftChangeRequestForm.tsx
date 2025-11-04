@@ -25,12 +25,16 @@ export const ShiftChangeRequestForm = ({ timeEntry, open, onOpenChange, onSucces
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
-  // Don't render if not actually opening or no valid data
-  if (!open || !timeEntry?.id) {
-    return null;
-  }
-  
   const [formData, setFormData] = useState(() => {
+    // Safe initialization even if timeEntry is invalid
+    if (!timeEntry?.id || !timeEntry?.clock_in) {
+      return {
+        new_start_time: '',
+        new_end_time: '',
+        reason: ''
+      };
+    }
+    
     try {
       // Defensive date parsing to prevent crashes
       const clockIn = new Date(timeEntry.clock_in);
@@ -60,6 +64,11 @@ export const ShiftChangeRequestForm = ({ timeEntry, open, onOpenChange, onSucces
       };
     }
   });
+  
+  // Don't render if not actually opening or no valid data
+  if (!open || !timeEntry?.id) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
