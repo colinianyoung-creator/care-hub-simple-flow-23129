@@ -128,8 +128,15 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         throw new Error('Invalid shift data - missing ID');
       }
 
-      if (!shift.clock_in || isNaN(new Date(shift.clock_in).getTime())) {
-        throw new Error('Invalid shift data - bad clock_in date');
+      // Validate date information exists in either format
+      if (shift.clock_in) {
+        // Direct time_entry format validation
+        if (isNaN(new Date(shift.clock_in).getTime())) {
+          throw new Error('Invalid shift data - bad clock_in date');
+        }
+      } else if (!shift.scheduled_date || !shift.start_time) {
+        // Calendar format requires both scheduled_date and start_time
+        throw new Error('Invalid shift data - missing date information');
       }
     } catch (error: any) {
       console.error('❌ Error opening shift:', error);
