@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MARSection } from "./MARSection";
+import { MARQuickAdd } from "@/components/MARQuickAdd";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -305,9 +308,16 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   }
 
   return (
-    <div className="space-y-6">
-      {/* Add Medication Form */}
-      {showAddForm ? (
+    <Tabs defaultValue="medications" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="medications">Medications</TabsTrigger>
+        <TabsTrigger value="mar">MAR Log</TabsTrigger>
+        <TabsTrigger value="quick">Quick Add</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="medications" className="space-y-6">
+        {/* Add Medication Form */}
+        {showAddForm ? (
         <Card>
           <CardHeader>
             <CardTitle>{editingMedication ? 'Edit Medication' : 'Add New Medication'}</CardTitle>
@@ -435,7 +445,20 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
             </Card>
           ))
         )}
-      </div>
-    </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="mar">
+        <MARSection familyId={familyId} userRole={userRole} />
+      </TabsContent>
+
+      <TabsContent value="quick">
+        <MARQuickAdd 
+          familyId={familyId} 
+          medications={medications}
+          onUpdate={() => loadMedications()}
+        />
+      </TabsContent>
+    </Tabs>
   );
 };
