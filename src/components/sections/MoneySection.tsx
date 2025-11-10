@@ -10,7 +10,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, Camera, AlertCircle, Receipt } from 'lucide-react';
+import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, Camera, AlertCircle, Receipt, Archive } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { MoneyArchiveSection } from './MoneyArchiveSection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -194,10 +194,11 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
     if (!familyId) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('money_records')
         .select('*')
         .eq('family_id', familyId)
+        .eq('is_archived', false)
         .order('created_at', { ascending: false })
         .limit(50)
         .abortSignal(signal) as any;
@@ -311,6 +312,32 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
       toast({
         title: "Error",
         description: "Failed to delete entry",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleArchiveEntry = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('money_records')
+        .update({ is_archived: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Money entry archived"
+      });
+      
+      // Remove from state immediately
+      setEntries(prev => prev.filter(entry => entry.id !== id));
+    } catch (error) {
+      console.error('Error archiving money entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive entry",
         variant: "destructive"
       });
     }
@@ -518,10 +545,11 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(entry.id)}
+                      onClick={() => handleArchiveEntry(entry.id)}
                       className="flex-1 md:flex-initial"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
                     </Button>
                   </div>
                 </div>

@@ -251,7 +251,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       toast({
         title: "Task Reopened",
-        description: "Task has been reopened",
+        description: userRole === 'carer' 
+          ? "Task reopened. Family admin will be notified."
+          : "Task has been reopened",
       });
 
       loadTasks();
@@ -456,7 +458,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
             </TabsTrigger>
             <TabsTrigger value="review" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
               <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">Review</span>
+              <span className="hidden sm:inline">
+                {userRole === 'carer' ? 'Awaiting Review' : 'Review'}
+              </span>
               <span>({awaitingReviewTasks.length})</span>
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
@@ -532,7 +536,12 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
             <Card>
               <CardHeader>
                 <CardTitle>Tasks Awaiting Review</CardTitle>
-                <CardDescription>Tasks marked as complete by carers, awaiting your approval</CardDescription>
+                <CardDescription>
+                  {userRole === 'carer' 
+                    ? 'Tasks you completed that are awaiting admin approval'
+                    : 'Tasks marked as complete by carers, awaiting your approval'
+                  }
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -553,23 +562,41 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                         </div>
                       </div>
                       <div className="flex gap-2 flex-wrap mt-2">
-                        <Button 
-                          size="sm" 
-                          onClick={() => approveTask(task.id)}
-                          className="bg-green-500 hover:bg-green-600 h-auto px-2 py-1 text-xs"
-                        >
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Approve
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => reopenTask(task.id)}
-                          className="h-auto px-2 py-1 text-xs"
-                        >
-                          <RotateCcw className="h-3 w-3 mr-1" />
-                          Re-open
-                        </Button>
+                        {/* Only show approval buttons for admins */}
+                        {(userRole === 'family_admin' || userRole === 'disabled_person') && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              onClick={() => approveTask(task.id)}
+                              className="bg-green-500 hover:bg-green-600 h-auto px-2 py-1 text-xs"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => reopenTask(task.id)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" />
+                              Re-open
+                            </Button>
+                          </>
+                        )}
+                        
+                        {/* Show reopen button for carers if they created the task */}
+                        {userRole === 'carer' && task.created_by === currentUserId && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => reopenTask(task.id)}
+                            className="h-auto px-2 py-1 text-xs"
+                          >
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                            Reopen Task
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

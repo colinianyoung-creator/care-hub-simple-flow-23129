@@ -85,6 +85,7 @@ export const MoneyArchiveSection: React.FC<MoneyArchiveSectionProps> = ({
           payer_profile:profiles!money_records_created_by_fkey(full_name)
         `)
         .eq('family_id', familyId)
+        .eq('is_archived', true)
         .gte('transaction_date', format(date, 'yyyy-MM-dd'))
         .lte('transaction_date', format(date, 'yyyy-MM-dd'))
         .order('created_at', { ascending: false })

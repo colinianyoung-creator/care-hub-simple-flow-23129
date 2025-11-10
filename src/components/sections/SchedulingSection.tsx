@@ -9,9 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays } from 'date-fns';
 import { ShiftAssignmentForm } from "../forms/ShiftAssignmentForm";
-import { ShiftRequestForm } from "../forms/ShiftRequestForm";
+import { UnifiedShiftForm } from "../forms/UnifiedShiftForm";
 import { ShiftAbsenceForm } from "../forms/ShiftAbsenceForm";
-import { ShiftChangeRequestForm } from "../forms/ShiftChangeRequestForm";
 import { ScheduleCalendar } from "../ScheduleCalendar";
 import { ClockInOut } from "../ClockInOut";
 import { MonthCalendarView } from "../MonthCalendarView";
@@ -52,11 +51,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showEditShift, setShowEditShift] = useState(false);
+  const [showUnifiedShiftForm, setShowUnifiedShiftForm] = useState(false);
   const [editingShift, setEditingShift] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [showChangeRequestForm, setShowChangeRequestForm] = useState(false);
-  const [selectedTimeEntry, setSelectedTimeEntry] = useState<any>(null);
   const [showRefresh, setShowRefresh] = useState(false);
   const { toast } = useToast();
 
@@ -65,12 +62,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   // Debug: Log modal states whenever they change
   useEffect(() => {
     console.log('🔍 Modal render states:', {
-      showChangeRequestForm,
-      hasSelectedTimeEntry: !!selectedTimeEntry,
-      showEditShift,
+      showUnifiedShiftForm,
       hasEditingShift: !!editingShift
     });
-  }, [showChangeRequestForm, selectedTimeEntry, showEditShift, editingShift]);
+  }, [showUnifiedShiftForm, editingShift]);
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
@@ -192,15 +187,15 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         status: shift.status
       };
 
-      console.log('✅ Opening ShiftRequestForm (leave) with:', leaveEditData);
+      console.log('✅ Opening UnifiedShiftForm (leave) with:', leaveEditData);
       setEditingShift(leaveEditData);
-      setShowEditShift(true);
+      setShowUnifiedShiftForm(true);
       return;
     }
     
-    // Carers submit change requests for existing shifts
+    // Carers open unified form in request mode
     if (isCarer && !shift.is_leave_request) {
-      console.log('👤 Carer mode: Opening change request form');
+      console.log('👤 Carer mode: Opening unified form for change request');
       const timeEntry = transformShiftToTimeEntry(shift);
       
       if (!timeEntry) {
@@ -213,9 +208,21 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         return;
       }
       
-      console.log('✅ Opening ShiftChangeRequestForm with:', timeEntry);
-      setSelectedTimeEntry(timeEntry);
-      setShowChangeRequestForm(true);
+      // Prepare edit data in the expected format
+      const editData = {
+        ...timeEntry,
+        carer_id: shift.carer_id || shift.user_id,
+        start_date: shift.scheduled_date || shift.date,
+        start_time: shift.start_time,
+        end_time: shift.end_time,
+        hours: shift.hours || 8,
+        request_type: shift.shift_type || 'basic',
+        reason: shift.notes || ''
+      };
+      
+      console.log('✅ Opening UnifiedShiftForm (carer) with:', editData);
+      setEditingShift(editData);
+      setShowUnifiedShiftForm(true);
       return;
     }
     
@@ -244,9 +251,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           shift_category: 'basic'
         };
         
-        console.log('✅ Opening ShiftRequestForm (new model) with:', editData);
+        console.log('✅ Opening UnifiedShiftForm (new model) with:', editData);
         setEditingShift(editData);
-        setShowEditShift(true);
+        setShowUnifiedShiftForm(true);
         return;
       }
       
@@ -275,9 +282,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           shift_category: 'basic'
         };
         
-        console.log('✅ Opening ShiftRequestForm (transformed) with:', editData);
+        console.log('✅ Opening UnifiedShiftForm (transformed) with:', editData);
         setEditingShift(editData);
-        setShowEditShift(true);
+        setShowUnifiedShiftForm(true);
         return;
       }
       
@@ -316,9 +323,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         shift_category: 'basic'
       };
 
-      console.log('✅ Opening ShiftRequestForm (old model) with:', editData);
+      console.log('✅ Opening UnifiedShiftForm (old model) with:', editData);
       setEditingShift(editData);
-      setShowEditShift(true);
+      setShowUnifiedShiftForm(true);
     }
   };
 
@@ -980,18 +987,18 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                        </div>
                        {isAdmin && request.status === 'pending' && (
                          <div className="w-full">
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             onClick={() => {
-                               setEditingShift(request);
-                               setShowEditShift(true);
-                             }}
-                             className="w-full text-sm"
-                           >
-                             <Edit className="h-4 w-4 mr-1" />
-                             Edit Shift
-                           </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingShift(request);
+                                setShowUnifiedShiftForm(true);
+                              }}
+                              className="w-full text-sm"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit Shift
+                            </Button>
                          </div>
                        )}
                        <div className="flex flex-col md:flex-row gap-2 mt-3 md:mt-0">
@@ -1063,8 +1070,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       )}
 
         {showRequestForm && (
-          <ShiftRequestForm
+          <UnifiedShiftForm
             familyId={familyId}
+            userRole={userRole as 'carer' | 'family_admin' | 'disabled_person'}
             open={showRequestForm}
             onOpenChange={(open) => setShowRequestForm(open)}
             onSuccess={() => {
@@ -1101,42 +1109,23 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           userRole={userRole}
         />
 
-        <ShiftRequestForm
+        <UnifiedShiftForm
           familyId={familyId}
+          userRole={userRole as 'carer' | 'family_admin' | 'disabled_person'}
           editShiftData={editingShift}
-          isAdminEdit={true}
-          open={showEditShift && Boolean(editingShift)}
+          open={showUnifiedShiftForm && Boolean(editingShift)}
           onOpenChange={(open) => {
-            setShowEditShift(open);
+            setShowUnifiedShiftForm(open);
             if (!open) setEditingShift(null);
           }}
           onSuccess={() => {
-            setShowEditShift(false);
+            setShowUnifiedShiftForm(false);
             setEditingShift(null);
             loadSchedulingData();
           }}
           onCancel={() => {
-            setShowEditShift(false);
+            setShowUnifiedShiftForm(false);
             setEditingShift(null);
-          }}
-        />
-
-        <ShiftChangeRequestForm
-          timeEntry={selectedTimeEntry || { id: '', clock_in: '', clock_out: '', family_id: familyId }}
-          open={showChangeRequestForm && Boolean(selectedTimeEntry)}
-          onOpenChange={(open) => {
-            console.log('🔍 Modal onOpenChange:', open);
-            setShowChangeRequestForm(open);
-            if (!open) setSelectedTimeEntry(null);
-          }}
-          onSuccess={() => {
-            setShowChangeRequestForm(false);
-            setSelectedTimeEntry(null);
-            loadSchedulingData();
-          }}
-          onCancel={() => {
-            setShowChangeRequestForm(false);
-            setSelectedTimeEntry(null);
           }}
         />
 

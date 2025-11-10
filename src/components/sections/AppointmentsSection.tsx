@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit, Calendar, Clock, MapPin, AlertCircle, Loader2 } from "lucide-react";
@@ -374,124 +375,147 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
         </Button>
       ) : null}
 
-      {/* Upcoming Appointments */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Appointments ({upcomingAppointments.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {upcomingAppointments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No upcoming appointments</p>
-          ) : (
-            <div className="space-y-4">
-              {upcomingAppointments.map((appointment) => (
-                <div key={appointment.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <h4 className="font-medium text-base leading-tight">{appointment.title}</h4>
-                        {getStatusBadge(getAppointmentStatus(appointment))}
-                      </div>
-                      
-                      {appointment.description && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">{appointment.description}</p>
-                      )}
-                      
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 flex-shrink-0" />
-                          <span className="leading-tight">{format(new Date(appointment.appointment_date), 'MMM d, yyyy')}</span>
+      {/* Tabs for Upcoming and Archive */}
+      <Tabs defaultValue="upcoming">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upcoming">Upcoming ({upcomingAppointments.length})</TabsTrigger>
+          <TabsTrigger value="archive">Archive ({pastAppointments.length})</TabsTrigger>
+        </TabsList>
+
+        {/* Upcoming Appointments Tab */}
+        <TabsContent value="upcoming" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Appointments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {upcomingAppointments.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No upcoming appointments</p>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingAppointments.map((appointment) => (
+                    <div key={appointment.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <h4 className="font-medium text-base leading-tight">{appointment.title}</h4>
+                            {getStatusBadge(getAppointmentStatus(appointment))}
+                          </div>
+                          
+                          {appointment.description && (
+                            <p className="text-sm text-muted-foreground leading-relaxed">{appointment.description}</p>
+                          )}
+                          
+                          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 flex-shrink-0" />
+                              <span className="leading-tight">{format(new Date(appointment.appointment_date), 'MMM d, yyyy')}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 flex-shrink-0" />
+                              <span className="leading-tight">{format(new Date(appointment.appointment_date), 'h:mm a')}</span>
+                            </div>
+                            {appointment.location && (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4 flex-shrink-0" />
+                                <span className="leading-tight">{appointment.location}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {appointment.notes && (
+                            <p className="text-sm p-2 bg-muted rounded leading-relaxed">{appointment.notes}</p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 flex-shrink-0" />
-                          <span className="leading-tight">{format(new Date(appointment.appointment_date), 'h:mm a')} ({appointment.duration_minutes} min)</span>
-                        </div>
-                        {appointment.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4 flex-shrink-0" />
-                            <span className="leading-tight">{appointment.location}</span>
+                        
+                        {familyId && (
+                          <div className="flex flex-col md:flex-row gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditAppointment(appointment)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteAppointment(appointment.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         )}
                       </div>
-                      
-                      {appointment.notes && (
-                        <p className="text-sm p-2 bg-muted rounded leading-relaxed">{appointment.notes}</p>
-                      )}
                     </div>
-                    
-                    {familyId && (
-                      <div className="flex flex-col md:flex-row gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditAppointment(appointment)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteAppointment(appointment.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Past Appointments */}
-      {pastAppointments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Past Appointments ({pastAppointments.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pastAppointments.map((appointment) => (
-                <div key={appointment.id} className="border rounded-lg p-4 space-y-3 opacity-60">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium">{appointment.title}</h4>
-                        {getStatusBadge(getAppointmentStatus(appointment))}
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
+        {/* Archive Tab (Past Appointments) */}
+        <TabsContent value="archive" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Past Appointments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pastAppointments.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No past appointments</p>
+              ) : (
+                <div className="space-y-4">
+                  {pastAppointments.map((appointment) => (
+                    <div key={appointment.id} className="border rounded-lg p-4 opacity-60">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <h4 className="font-medium text-base leading-tight">{appointment.title}</h4>
+                            {getStatusBadge(getAppointmentStatus(appointment))}
+                          </div>
+                          
+                          {appointment.description && (
+                            <p className="text-sm text-muted-foreground leading-relaxed">{appointment.description}</p>
+                          )}
+                          
+                          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 flex-shrink-0" />
+                              <span className="leading-tight">{format(new Date(appointment.appointment_date), 'MMM d, yyyy')}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 flex-shrink-0" />
+                              <span className="leading-tight">{format(new Date(appointment.appointment_date), 'h:mm a')}</span>
+                            </div>
+                            {appointment.location && (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4 flex-shrink-0" />
+                                <span className="leading-tight">{appointment.location}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {format(new Date(appointment.appointment_date), 'h:mm a')}
-                        </div>
+                        
+                        {/* Archive is READ-ONLY - only show delete for cleanup */}
+                        {familyId && (userRole === 'family_admin' || userRole === 'disabled_person') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    
-                    {familyId && (
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteAppointment(appointment.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
