@@ -16,13 +16,14 @@ interface UnifiedShiftFormProps {
   familyId: string;
   userRole: 'carer' | 'family_admin' | 'disabled_person';
   editShiftData?: any;
+  careRecipientName?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, open, onOpenChange, onSuccess, onCancel }: UnifiedShiftFormProps) => {
+export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel }: UnifiedShiftFormProps) => {
   const [formData, setFormData] = useState({
     request_type: editShiftData?.request_type || '',
     start_date: editShiftData?.start_date || '',
@@ -318,12 +319,17 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, open, onOp
             <div className="p-4 bg-muted rounded-lg border">
               <h4 className="font-medium mb-2">{isAdmin ? 'Editing Shift:' : 'Current Shift:'}</h4>
               <div className="text-sm space-y-1">
-                {editShiftData.carer_id && (
-                  <div>
-                    <span className="font-medium">Assigned to:</span>{' '}
-                    {carers.find(c => c.user_id === editShiftData.carer_id)?.profiles.full_name || 'Unknown Carer'}
-                  </div>
-                )}
+              {editShiftData.carer_id && (
+                <div>
+                  <span className="font-medium">
+                    {isCarer ? 'Care recipient:' : 'Assigned to:'}
+                  </span>{' '}
+                  {isCarer 
+                    ? (careRecipientName || 'Care Recipient')
+                    : (carers.find(c => c.user_id === editShiftData.carer_id)?.profiles.full_name || 'Unknown Carer')
+                  }
+                </div>
+              )}
                 {editShiftData.start_date && (
                   <div><span className="font-medium">Date:</span> {new Date(editShiftData.start_date).toLocaleDateString()}</div>
                 )}
@@ -383,28 +389,28 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, open, onOp
 
             <div>
               <Label htmlFor="start_date">{isAdmin && !editShiftData ? 'Date (optional)' : 'Start Date'}</Label>
-              <Input
-                id="start_date"
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                required={isCarer || !!editShiftData}
-              />
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                    required={false}
+                  />
             </div>
 
             <div>
               <Label htmlFor="hours">Hours {isAdmin && !editShiftData && '(optional)'}</Label>
-              <Input
-                id="hours"
-                type="number"
-                step="0.5"
-                min="0"
-                max="24"
-                value={formData.hours}
-                onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
-                placeholder="e.g. 8"
-                required={isCarer || !!editShiftData}
-              />
+                  <Input
+                    id="hours"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="24"
+                    value={formData.hours}
+                    onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
+                    placeholder="e.g. 8"
+                    required={false}
+                  />
             </div>
 
             <div>

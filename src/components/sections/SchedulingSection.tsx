@@ -853,17 +853,17 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                   >
                     Month View
                   </Button>
-                  <Button 
-                    onClick={() => {
-                      const event = new CustomEvent('mobile-toggle-list-view');
-                      window.dispatchEvent(event);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="h-10 px-3 md:hidden"
-                  >
-                    {showListView ? 'Day View' : 'List'}
-                  </Button>
+            <Button 
+              onClick={() => {
+                const event = new CustomEvent('mobile-toggle-list-view');
+                window.dispatchEvent(event);
+              }}
+              variant="outline"
+              size="sm"
+              className="h-10 px-3 lg:hidden"
+            >
+              {showListView ? 'Day View' : 'List'}
+            </Button>
                 </div>
               </div>
             </div>
@@ -1073,6 +1073,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           <UnifiedShiftForm
             familyId={familyId}
             userRole={userRole as 'carer' | 'family_admin' | 'disabled_person'}
+            careRecipientName={careRecipientNameHint}
             open={showRequestForm}
             onOpenChange={(open) => setShowRequestForm(open)}
             onSuccess={() => {

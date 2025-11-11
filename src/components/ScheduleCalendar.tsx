@@ -374,13 +374,6 @@ useEffect(() => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentWeek(new Date())}
-              >
-                Today
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -408,15 +401,6 @@ useEffect(() => {
                   </Button>
                 </>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onToggleListView}
-                className="md:hidden"
-              >
-                {showListView ? <Calendar className="h-4 w-4 mr-1" /> : <List className="h-4 w-4 mr-1" />}
-                {showListView ? 'Day View' : 'List'}
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -516,16 +500,6 @@ useEffect(() => {
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-4 pt-4 border-t gap-4">
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div>
-                <span>Fixed Shifts</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-green-100 border border-green-200"></div>
-                <span>Variable Shifts</span>
-              </div>
-            </div>
             
             <div className="flex items-center gap-2">
               <div className="text-sm text-muted-foreground">

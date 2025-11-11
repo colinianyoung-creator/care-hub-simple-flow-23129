@@ -390,10 +390,7 @@ export const MobileDayView = ({
                         {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
                       </span>
                     </div>
-                     <div className="flex flex-col items-start">
-                       <span className="text-xs md:text-sm truncate">{formatShiftType(shift.shift_type || shift.type || 'basic')}</span>
-                       <span className="text-[10px] md:text-xs opacity-90 truncate">{getDisplayName(shift)}</span>
-                     </div>
+                  <span className="text-xs md:text-sm truncate">{getDisplayName(shift)}</span>
                   </div>
                 </Badge>
                 {shift.notes && (

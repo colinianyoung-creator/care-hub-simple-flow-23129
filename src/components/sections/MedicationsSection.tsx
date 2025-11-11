@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Check, AlertCircle, Loader2, Pill, ClipboardList, Zap } from "lucide-react";
 import { format } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -309,11 +309,20 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
 
   return (
     <Tabs defaultValue="medications" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="medications">Medications</TabsTrigger>
-        <TabsTrigger value="mar">MAR Log</TabsTrigger>
-        <TabsTrigger value="quick">Quick Add</TabsTrigger>
-      </TabsList>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="medications" className="flex items-center justify-center px-1 py-2">
+              <Pill className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Medications</span>
+            </TabsTrigger>
+            <TabsTrigger value="mar" className="flex items-center justify-center px-1 py-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">MAR Log</span>
+            </TabsTrigger>
+            <TabsTrigger value="quick" className="flex items-center justify-center px-1 py-2">
+              <Zap className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Quick Add</span>
+            </TabsTrigger>
+          </TabsList>
 
       <TabsContent value="medications" className="space-y-6">
         {/* Add Medication Form */}
@@ -397,34 +406,15 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         ) : (
           medications.map((medication) => (
             <Card key={medication.id}>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
-                  <div className="flex-1 space-y-1">
-                    <CardTitle className="text-lg">{medication.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {medication.dosage} • {medication.frequency}
-                      {medication.care_recipients && ` • For: ${medication.care_recipients.name}`}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 sm:flex-row">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditMedication(medication)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteMedication(medication.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold">{medication.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {medication.dosage} • {medication.frequency}
+                    {medication.care_recipients && ` • For: ${medication.care_recipients.name}`}
+                  </p>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                
                 {medication.instructions && (
                   <p className="text-sm text-muted-foreground">{medication.instructions}</p>
                 )}
@@ -441,6 +431,27 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
                     )}
                   </div>
                 )}
+                
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditMedication(medication)}
+                    className="flex-1"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteMedication(medication.id)}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))

@@ -62,38 +62,42 @@ export const MARQuickAdd = ({ familyId, medications, onUpdate }: MARQuickAddProp
       {medications.map((med) => (
         <Card key={med.id}>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3">
               <div>
                 <div className="font-medium">{med.name}</div>
                 <div className="text-sm text-muted-foreground">{med.dosage}</div>
               </div>
-              <div className="flex gap-2">
+              
+              <div className="flex gap-2 pt-2 border-t">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleQuickRecord(med.id, 'administered')}
                   disabled={recording === med.id}
-                  className="text-green-600 hover:text-green-700"
+                  className="flex-1 text-green-600 hover:text-green-700"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Given
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleQuickRecord(med.id, 'refused')}
                   disabled={recording === med.id}
-                  className="text-orange-600 hover:text-orange-700"
+                  className="flex-1 text-orange-600 hover:text-orange-700"
                 >
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  Refused
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleQuickRecord(med.id, 'missed')}
                   disabled={recording === med.id}
-                  className="text-red-600 hover:text-red-700"
+                  className="flex-1 text-red-600 hover:text-red-700"
                 >
-                  <XCircle className="h-4 w-4" />
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Missed
                 </Button>
               </div>
             </div>

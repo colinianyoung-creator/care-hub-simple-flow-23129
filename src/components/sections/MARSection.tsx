@@ -219,19 +219,26 @@ export const MARSection = ({ familyId, userRole }: MARSectionProps) => {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">Medication Administration Record</h2>
-          <p className="text-sm text-muted-foreground">Track medication administration</p>
+          <h2 className="text-lg sm:text-xl font-semibold">Medication Administration Record</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">Track medication administration</p>
         </div>
         <div className="flex gap-2">
           {canEdit && (
-            <Button onClick={() => { setEditEntry(null); setShowForm(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Record Administration
+            <Button 
+              onClick={() => { setEditEntry(null); setShowForm(true); }}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Record</span>
             </Button>
           )}
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            size="sm"
+          >
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
       </div>

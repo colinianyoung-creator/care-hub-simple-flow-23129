@@ -378,10 +378,16 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
   return (
     <div className="space-y-4">
       <Tabs defaultValue="recent">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="recent">Recent</TabsTrigger>
-          <TabsTrigger value="archive">Archive</TabsTrigger>
-        </TabsList>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="recent" className="flex items-center justify-center px-1 py-2">
+              <Receipt className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Recent</span>
+            </TabsTrigger>
+            <TabsTrigger value="archive" className="flex items-center justify-center px-1 py-2">
+              <Archive className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Archive</span>
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="recent" className="space-y-4 mt-4">
           <Card>
@@ -501,11 +507,11 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
             No expenses recorded yet
           </p>
         ) : (
-          entries.map(entry => (
+          todaysEntries.map(entry => (
             <Card key={entry.id}>
               <CardContent className="pt-4">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 space-y-1">
+                <div className="flex flex-col gap-4">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Receipt className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{entry.description}</span>
@@ -523,9 +529,9 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                     <p className="text-lg font-semibold text-primary">
                       £{Number(entry.amount).toFixed(2)}
                     </p>
-                      <p className="text-sm text-muted-foreground">
-                        Paid by: {getMemberName(entry.created_by)}
-                      </p>
+                    <p className="text-sm text-muted-foreground">
+                      Paid by: {getMemberName(entry.created_by)}
+                    </p>
                     {entry.notes && (
                       <p className="text-sm">{entry.notes}</p>
                     )}
@@ -533,20 +539,22 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                       {format(new Date(entry.created_at), 'PPp')}
                     </p>
                   </div>
-                  <div className="flex gap-2 mt-3 pt-3 border-t md:mt-0 md:pt-0 md:border-t-0 md:ml-auto">
+                  
+                  <div className="flex gap-2 pt-2 border-t">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEditEntry(entry)}
-                      className="flex-1 md:flex-initial"
+                      className="flex-1"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleArchiveEntry(entry.id)}
-                      className="flex-1 md:flex-initial"
+                      className="flex-1"
                     >
                       <Archive className="h-4 w-4 mr-1" />
                       Archive
