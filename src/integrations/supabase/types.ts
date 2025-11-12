@@ -455,6 +455,80 @@ export type Database = {
           },
         ]
       }
+      medication_administrations: {
+        Row: {
+          administered_time: string | null
+          carer_id: string | null
+          created_at: string
+          created_by: string | null
+          dose_given: string | null
+          family_id: string
+          id: string
+          medication_id: string
+          notes: string | null
+          scheduled_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          administered_time?: string | null
+          carer_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dose_given?: string | null
+          family_id: string
+          id?: string
+          medication_id: string
+          notes?: string | null
+          scheduled_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          administered_time?: string | null
+          carer_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dose_given?: string | null
+          family_id?: string
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          scheduled_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_administrations_carer_id_fkey"
+            columns: ["carer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administrations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administrations_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administrations_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medications: {
         Row: {
           care_recipient_id: string | null
@@ -1074,6 +1148,23 @@ export type Database = {
       generate_shift_instances: {
         Args: { _assignment_id: string; _end_date: string; _start_date: string }
         Returns: number
+      }
+      get_mar_entries_for_family: {
+        Args: { _end: string; _family_id: string; _start: string }
+        Returns: {
+          administered_time: string
+          carer_id: string
+          carer_name: string
+          created_at: string
+          dose_given: string
+          id: string
+          medication_dosage: string
+          medication_id: string
+          medication_name: string
+          notes: string
+          scheduled_time: string
+          status: string
+        }[]
       }
       get_profile_safe: {
         Args: never
