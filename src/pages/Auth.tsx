@@ -86,9 +86,16 @@ const Auth = () => {
           });
         } else {
           // Email confirmation disabled or already verified
+          const roleMessages = {
+            family_admin: 'Welcome to CareHub! Your Family Admin account has been created.',
+            disabled_person: 'Welcome to CareHub! Your personal care space has been created.',
+            carer: 'Welcome to CareHub! Your Carer account has been created.',
+            family_viewer: 'Welcome to CareHub! Your Family Viewer account has been created.',
+          };
+          
           toast({
             title: 'Success!',
-            description: 'Your account has been created.',
+            description: roleMessages[selectedRole as keyof typeof roleMessages] || 'Your account has been created.',
           });
         }
       }
