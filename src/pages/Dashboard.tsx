@@ -246,8 +246,15 @@ const Dashboard = () => {
         console.log('✅ Setting role from membership:', memberships[0].role);
         setUserRole(memberships[0].role);
       } else {
+        // For unconnected users, use ui_preference
         const fallbackRole = profileData?.ui_preference || 'carer';
         console.log('⚠️ No memberships, using profile ui_preference:', fallbackRole);
+        
+        // Add warning for admin roles without memberships (should not happen after trigger fix)
+        if (fallbackRole === 'family_admin' || fallbackRole === 'disabled_person') {
+          console.warn('🚨 Admin user has no memberships - family creation may have failed');
+        }
+        
         setUserRole(fallbackRole);
       }
 
