@@ -23,6 +23,7 @@ interface DashboardHeaderProps {
   showCreateButton?: boolean;
   onProfileUpdate?: () => void;
   isLoading?: boolean;
+  onFamilySelected?: (familyId: string) => void;
 }
 
 export const DashboardHeader = ({ 
@@ -38,7 +39,8 @@ export const DashboardHeader = ({
   showJoinButton = false,
   showCreateButton = false,
   onProfileUpdate,
-  isLoading = false
+  isLoading = false,
+  onFamilySelected
 }: DashboardHeaderProps) => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
@@ -105,7 +107,15 @@ export const DashboardHeader = ({
           <InviteMembersButton familyId={familyId} variant="outline" className="hidden sm:flex" />
         )}
         {showJoinButton && (
-          <JoinFamilyButton variant="outline" className="hidden sm:flex" />
+          <JoinFamilyButton 
+            variant="outline" 
+            className="hidden sm:flex" 
+            onSuccess={(familyId) => {
+              if (familyId && onFamilySelected) {
+                onFamilySelected(familyId);
+              }
+            }}
+          />
         )}
         {showCreateButton && (
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />

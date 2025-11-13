@@ -13,9 +13,10 @@ interface RoleBasedDashboardProps {
   profilePictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: (newRole?: string) => void;
+  onFamilySelected?: (familyId: string) => void;
 }
 
-export const RoleBasedDashboard = ({ user, currentFamily, onSignOut, userRole: propUserRole, userName, profilePictureUrl, currentFamilyId, onProfileUpdate }: RoleBasedDashboardProps) => {
+export const RoleBasedDashboard = ({ user, currentFamily, onSignOut, userRole: propUserRole, userName, profilePictureUrl, currentFamilyId, onProfileUpdate, onFamilySelected }: RoleBasedDashboardProps) => {
   // If no family, use role from props (from profile), otherwise from membership
   const userRole = currentFamily?.role || propUserRole || 'carer';
   const familyName = currentFamily?.families?.name || currentFamily?.families?.id || userName || 'Your Dashboard';
@@ -29,7 +30,8 @@ export const RoleBasedDashboard = ({ user, currentFamily, onSignOut, userRole: p
     profilePictureUrl,
     currentFamilyId: currentFamilyId || familyId, // Pass current family ID for role updates
     onBack: () => {}, // Add empty onBack function for now
-    onProfileUpdate
+    onProfileUpdate,
+    onFamilySelected
   };
 
   switch (userRole) {
