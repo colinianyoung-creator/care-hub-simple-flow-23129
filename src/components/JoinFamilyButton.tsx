@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 interface JoinFamilyButtonProps {
   variant?: 'default' | 'outline';
   className?: string;
-  onSuccess?: () => void;
+  onSuccess?: (familyId?: string) => void;
 }
 
 export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: JoinFamilyButtonProps) => {
@@ -47,7 +47,7 @@ export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase.rpc('redeem_invite', {
+      const { data, error } = await supabase.rpc('redeem_invite', {
         _code: inviteCode.trim().toLowerCase()
       });
 
@@ -55,14 +55,26 @@ export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: 
 
       toast({
         title: "Success!",
-        description: "You've joined the family. Refreshing...",
+        description: "You've joined the family.",
       });
 
       setShowDialog(false);
       
+      // Get the family ID from the newly created membership
+      const { data: newMembership } = await supabase
+        .from('user_memberships')
+        .select('family_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const newFamilyId = newMembership?.family_id;
+
       if (onSuccess) {
-        onSuccess();
-      } else {
+        onSuccess(newFamilyId);
+      } else if (newFamilyId) {
+        // Fallback if no handler provided
         setTimeout(() => window.location.reload(), 1000);
       }
     } catch (error: any) {

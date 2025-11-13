@@ -28,6 +28,7 @@ interface FamilyDashboardProps {
   profilePictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: () => void;
+  onFamilySelected?: (familyId: string) => void;
 }
 
 export const FamilyDashboard = ({ 
@@ -39,7 +40,8 @@ export const FamilyDashboard = ({
   canGoBack = false,
   profilePictureUrl = '',
   currentFamilyId,
-  onProfileUpdate
+  onProfileUpdate,
+  onFamilySelected
 }: FamilyDashboardProps) => {
   const { toast } = useToast();
   const [careRecipientName, setCareRecipientName] = useState('');
@@ -105,6 +107,7 @@ export const FamilyDashboard = ({
           setTimeout(() => setLoading(false), 2000);
         }}
         isLoading={loading}
+        onFamilySelected={onFamilySelected}
       />
 
       <div className="container mx-auto px-4 py-8 space-y-8">

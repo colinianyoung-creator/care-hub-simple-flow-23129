@@ -35,6 +35,7 @@ interface DisabledPersonDashboardProps {
   profilePictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: () => void;
+  onFamilySelected?: (familyId: string) => void;
 }
 
 export const DisabledPersonDashboard = ({ 
@@ -46,7 +47,8 @@ export const DisabledPersonDashboard = ({
   canGoBack = false,
   profilePictureUrl = '',
   currentFamilyId,
-  onProfileUpdate
+  onProfileUpdate,
+  onFamilySelected
 }: DisabledPersonDashboardProps) => {
   const [weeklyHours, setWeeklyHours] = useState(0);
   const [pendingTasks, setPendingTasks] = useState(0);
@@ -198,6 +200,7 @@ export const DisabledPersonDashboard = ({
         showInviteButton={!!familyId}
         showCreateButton={!familyId}
         onProfileUpdate={onProfileUpdate}
+        onFamilySelected={onFamilySelected}
       />
 
       {/* Main Content */}

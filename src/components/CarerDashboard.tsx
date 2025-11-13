@@ -33,9 +33,10 @@ interface CarerDashboardProps {
   profilePictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: () => void;
+  onFamilySelected?: (familyId: string) => void;
 }
 
-export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, careRecipientNameHint, profilePictureUrl = '', currentFamilyId, onProfileUpdate }: CarerDashboardProps) => {
+export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, careRecipientNameHint, profilePictureUrl = '', currentFamilyId, onProfileUpdate, onFamilySelected }: CarerDashboardProps) => {
   const [weeklyHours, setWeeklyHours] = useState(0);
   const [loading, setLoading] = useState(false);
   const [memberships, setMemberships] = useState<any[]>([]);
@@ -167,6 +168,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             onSwitchFamily={() => setShowFamilySwitcher(true)}
             showJoinButton={showJoinButton}
             onProfileUpdate={onProfileUpdate}
+            onFamilySelected={onFamilySelected}
           />
           
           <HeroBanner 
@@ -230,8 +232,11 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
         isOpen={showFamilySwitcher}
         onClose={() => setShowFamilySwitcher(false)}
         onFamilySelected={(family) => {
-          // Reload page to switch family context
-          window.location.reload();
+          console.log('🔄 Family selected:', family.family_id);
+          if (onFamilySelected) {
+            onFamilySelected(family.family_id);
+          }
+          setShowFamilySwitcher(false);
         }}
       />
     </div>

@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [families, setFamilies] = useState<any[]>([]);
+  const [selectedFamilyId, setSelectedFamilyId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>("User");
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -99,13 +100,25 @@ const Dashboard = () => {
     };
   }, [navigate]);
 
-  // Track current family ID for role updates (must be before any conditional returns)
+  // Track current family ID for role updates and initialize selected family
   useEffect(() => {
-    const currentFamily = families.length > 0 ? families[0] : null;
-    if (currentFamily?.family_id) {
-      setCurrentFamilyId(currentFamily.family_id);
+    if (families.length > 0) {
+      // Find selected family or default to first
+      const currentFamily = selectedFamilyId 
+        ? families.find(f => f.family_id === selectedFamilyId)
+        : families[0];
+      
+      const familyToUse = currentFamily || families[0];
+      
+      if (familyToUse?.family_id) {
+        setCurrentFamilyId(familyToUse.family_id);
+        // Initialize selected family if not set
+        if (!selectedFamilyId) {
+          setSelectedFamilyId(familyToUse.family_id);
+        }
+      }
     }
-  }, [families]);
+  }, [families, selectedFamilyId]);
 
   const loadUserData = async (userId: string, retryCount = 0) => {
     // Prevent multiple simultaneous loads
@@ -294,6 +307,16 @@ const Dashboard = () => {
     }
   };
 
+  const handleFamilySelected = async (familyId: string) => {
+    console.log('🔄 Switching to family:', familyId);
+    setSelectedFamilyId(familyId);
+    
+    // Optionally reload user data to ensure fresh data for the new family
+    if (user) {
+      await loadUserData(user.id);
+    }
+  };
+
   const handleFirstTimeUser = async (userId: string, profileData: any) => {
     // Check for pending invite code from user metadata
     const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -374,7 +397,10 @@ const Dashboard = () => {
   }
 
   // Always show role-based dashboard, even if no family yet
-  const currentFamily = families.length > 0 ? families[0] : null;
+  // Find the selected family, or default to first
+  const currentFamily = selectedFamilyId 
+    ? families.find(f => f.family_id === selectedFamilyId) || families[0]
+    : families[0];
 
   return (
     <RoleBasedDashboard
@@ -397,6 +423,7 @@ const Dashboard = () => {
           console.error('Error refreshing profile picture:', error);
         }
       }}
+      onFamilySelected={handleFamilySelected}
     />
   );
 };
