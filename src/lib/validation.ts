@@ -183,3 +183,22 @@ export const profileUpdateSchema = z.object({
   contact_phone: z.string().max(20, 'Phone must be less than 20 characters').optional(),
   care_recipient_name: z.string().max(100, 'Name must be less than 100 characters').optional()
 });
+
+// ==========================================
+// Body Map Injury Logs
+// ==========================================
+
+export const bodyLogSchema = z.object({
+  body_location: z.string().trim().min(1, 'Body location is required').max(100),
+  body_region_code: z.string().trim().min(1, 'Region code is required').max(50),
+  view_type: z.enum(['front', 'back'], { errorMap: () => ({ message: 'Invalid view type' }) }),
+  description: z.string()
+    .trim()
+    .min(1, 'Description is required')
+    .max(1000, 'Description must be less than 1000 characters'),
+  type_severity: z.string().trim().min(1, 'Type/Severity is required').max(100),
+  incident_datetime: z.string().refine((val) => {
+    const date = new Date(val);
+    return !isNaN(date.getTime());
+  }, 'Valid date/time is required')
+});
