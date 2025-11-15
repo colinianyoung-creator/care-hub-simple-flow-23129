@@ -15,6 +15,7 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sanitizeError } from "@/lib/errorHandler";
+import { BodyMapTracker } from '@/components/BodyMapTracker';
 
 interface CareNote {
   id: string;
@@ -322,8 +323,11 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
   return (
     <Tabs defaultValue="today" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="today">Today's Notes</TabsTrigger>
+        <TabsTrigger value="body-map" className="flex items-center gap-2">
+          🩹 Body Map
+        </TabsTrigger>
         <TabsTrigger value="archive" className="flex items-center gap-2">
           <Archive className="h-4 w-4" />
           Archive
@@ -639,6 +643,13 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
           ))
         )}
       </div>
+      </TabsContent>
+
+      <TabsContent value="body-map">
+        <BodyMapTracker 
+          familyId={familyId!} 
+          userRole={userRole}
+        />
       </TabsContent>
 
       <TabsContent value="archive">
