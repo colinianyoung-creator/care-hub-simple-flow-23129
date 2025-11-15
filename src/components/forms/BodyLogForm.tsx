@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import type { Tables } from "@/integrations/supabase/types";
 
 type BodyLogFormData = z.infer<typeof bodyLogSchema>;
 
@@ -31,15 +32,7 @@ interface BodyLogFormProps {
   viewType: 'front' | 'back';
   onSuccess: () => void;
   onCancel: () => void;
-  editData?: {
-    id: string;
-    body_location: string;
-    body_region_code: string;
-    view_type: 'front' | 'back';
-    description: string;
-    type_severity: string;
-    incident_datetime: string;
-  };
+  editData?: Tables<'body_logs'> | null;
 }
 
 const SEVERITY_OPTIONS = [
@@ -87,7 +80,7 @@ export const BodyLogForm = ({
     defaultValues: editData ? {
       body_location: editData.body_location,
       body_region_code: editData.body_region_code,
-      view_type: editData.view_type,
+      view_type: editData.view_type as 'front' | 'back',
       description: editData.description,
       type_severity: editData.type_severity,
       incident_datetime: editData.incident_datetime.slice(0, 16)

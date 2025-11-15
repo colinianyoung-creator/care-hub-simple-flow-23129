@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import { frontRegions, backRegions, getSeverityColor, BodyRegion } from '@/lib/bodyMapRegions';
 import { AlertCircle } from 'lucide-react';
+import type { Tables } from "@/integrations/supabase/types";
 
-interface BodyLog {
-  id: string;
-  body_region_code: string;
-  body_location: string;
-  type_severity: string;
-  view_type: 'front' | 'back';
-  incident_datetime: string;
-}
+type BodyLog = Tables<'body_logs'>;
 
 interface BodyMapProps {
   viewType: 'front' | 'back';
