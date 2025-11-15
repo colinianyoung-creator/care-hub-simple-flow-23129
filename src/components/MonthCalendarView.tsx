@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameDay, isSameMonth, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
@@ -17,9 +17,10 @@ interface MonthCalendarViewProps {
   careRecipientNameHint?: string;
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
+  currentUserId?: string;
 }
 
-export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [] }: MonthCalendarViewProps) => {
+export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [], currentUserId }: MonthCalendarViewProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [shifts, setShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,10 +58,10 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
     const timeoutId = setTimeout(() => {
       if (abortController && !abortController.signal.aborted) {
         abortController.abort();
-        setError('Request timed out. Please try again.');
+        setError('Request timed out after 10 seconds. Please try again.');
         setLoading(false);
       }
-    }, 5000);
+    }, 10000);
     
     try {
       if (abortController?.signal.aborted) return;
@@ -96,12 +97,18 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const monthStartStr = format(monthStart, 'yyyy-MM-dd');
       const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
       
-      const { data: timeEntries, error: entriesError } = await supabase
+      let query = supabase
         .from('time_entries')
         .select('*')
         .eq('family_id', familyId)
         .gte('clock_in', `${monthStartStr}T00:00:00`)
         .lte('clock_in', `${monthEndStr}T23:59:59`);
+
+      if (userRole === 'carer' && viewMode === 'single-family' && currentUserId) {
+        query = query.eq('user_id', currentUserId);
+      }
+
+      const { data: timeEntries, error: entriesError } = await query;
 
       if (entriesError) throw entriesError;
 
@@ -209,15 +216,14 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
     } catch (error: any) {
       if (error.name === 'AbortError' || abortController?.signal.aborted) {
         console.log('Request was cancelled');
+        setError('Request was cancelled');
         return;
       }
       console.error('Error loading month shifts:', error);
       setError(error.message || 'Failed to load calendar data');
     } finally {
       clearTimeout(timeoutId);
-      if (!abortController?.signal.aborted) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -314,14 +320,19 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         </DialogHeader>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-muted-foreground">Loading calendar...</div>
+          <div className="flex flex-col items-center justify-center h-64 gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading shifts...</p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="text-destructive">{error}</div>
+          <div className="flex flex-col items-center justify-center h-64 gap-4 text-center px-4">
+            <AlertCircle className="h-10 w-10 text-destructive" />
+            <div>
+              <p className="text-sm text-destructive font-medium mb-1">Failed to load calendar</p>
+              <p className="text-xs text-muted-foreground">{error}</p>
+            </div>
             <Button onClick={() => loadMonthShifts()} variant="outline" size="sm">
-              Try Again
+              Retry
             </Button>
           </div>
         ) : shifts.length === 0 ? (

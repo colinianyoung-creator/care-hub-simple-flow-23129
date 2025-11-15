@@ -74,6 +74,30 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
 
+  // Load user's family count on mount for toggle visibility
+  const loadUserFamilyCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: memberships, error } = await supabase
+        .from('user_memberships')
+        .select('family_id, families(id, name)')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setUserFamilies(memberships?.map(m => ({
+        id: m.family_id,
+        name: (m.families as any)?.name || 'Unknown'
+      })) || []);
+      
+      console.log('👥 User belongs to families:', memberships?.length);
+    } catch (error) {
+      console.error('Error loading family count:', error);
+    }
+  };
+
   // Helper: Transform calendar shift to time entry format
   const transformShiftToTimeEntry = (shift: any) => {
     console.log('🔄 Transforming shift to time entry:', shift);
@@ -114,28 +138,15 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Step 1: Get all families the carer belongs to
-      const { data: memberships, error: membError } = await supabase
-        .from('user_memberships')
-        .select(`
-          family_id,
-          role,
-          families (
-            id,
-            name
-          )
-        `)
-        .eq('user_id', user.id);
+      // Use existing userFamilies instead of re-fetching
+      const familyIds = userFamilies.map(f => f.id);
+      
+      if (familyIds.length === 0) {
+        console.log('No families found for user');
+        return;
+      }
 
-      if (membError) throw membError;
-
-      const familyIds = memberships?.map(m => m.family_id) || [];
-      setUserFamilies(memberships?.map(m => ({
-        id: m.family_id,
-        name: (m.families as any)?.name || 'Unknown'
-      })) || []);
-
-      // Step 2: Get all time_entries assigned to this user across all families
+      // Get all time_entries assigned to this user across all families
       const { data: allShifts, error: shiftsError } = await supabase
         .from('time_entries')
         .select(`
@@ -414,6 +425,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       setShowUnifiedShiftForm(true);
     }
   };
+
+  // Load family count on mount for carers
+  useEffect(() => {
+    if (isCarer) {
+      loadUserFamilyCount();
+    }
+  }, [isCarer]);
 
   // Listen for custom event to open add shift form
   useEffect(() => {
@@ -987,6 +1005,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
               }}
               viewMode={viewMode}
               allFamiliesShifts={allFamiliesShifts}
+              currentUserId={currentUserId || undefined}
               onDeleteShift={async (shiftId) => {
                 try {
                   const { error } = await supabase
@@ -1195,6 +1214,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             careRecipientNameHint={careRecipientNameHint}
             onShiftClick={onEditShift}
             carersMap={carers}
+            viewMode={viewMode}
+            allFamiliesShifts={allFamiliesShifts}
+            currentUserId={currentUserId || undefined}
           />
         )}
 
