@@ -15,9 +15,11 @@ interface MonthCalendarViewProps {
   onShiftClick?: (shift: any) => void;
   carersMap?: Record<string, string>;
   careRecipientNameHint?: string;
+  viewMode?: 'single-family' | 'all-families';
+  allFamiliesShifts?: any[];
 }
 
-export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint }: MonthCalendarViewProps) => {
+export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [] }: MonthCalendarViewProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [shifts, setShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,27 +48,51 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         abortController.abort();
       };
     }
-  }, [isOpen, currentMonth, familyId, carersMap, careRecipientNameHint, userRole]);
+  }, [isOpen, currentMonth, familyId, carersMap, careRecipientNameHint, userRole, viewMode, allFamiliesShifts]);
  
   const loadMonthShifts = async (abortController?: AbortController) => {
     setLoading(true);
     setError(null);
     
-    // Set a timeout for the request
     const timeoutId = setTimeout(() => {
       if (abortController && !abortController.signal.aborted) {
         abortController.abort();
         setError('Request timed out. Please try again.');
         setLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 5000);
     
     try {
       if (abortController?.signal.aborted) return;
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
       
-      // Query time_entries directly instead of using empty shift_instances table
+      // If in all-families mode, use pre-loaded data
+      if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
+        const filteredShifts = allFamiliesShifts
+          .filter(shift => {
+            const shiftDate = new Date(shift.clock_in);
+            return shiftDate >= monthStart && shiftDate <= monthEnd;
+          })
+          .map(entry => ({
+            id: entry.id,
+            date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+            time: format(new Date(entry.clock_in), 'HH:mm'),
+            endTime: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : null,
+            carer_id: entry.user_id,
+            carerName: entry.profiles?.full_name || 'Unknown',
+            shift_type: entry.shift_type || 'basic',
+            isLeaveRequest: false,
+            family_id: entry.family_id,
+            family_name: entry.families?.name || 'Unknown'
+          }));
+        setShifts(filteredShifts);
+        setLoading(false);
+        clearTimeout(timeoutId);
+        return;
+      }
+      
+      // Single-family mode
       const monthStartStr = format(monthStart, 'yyyy-MM-dd');
       const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
       
