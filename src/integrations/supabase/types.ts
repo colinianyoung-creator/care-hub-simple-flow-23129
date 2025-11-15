@@ -75,6 +75,69 @@ export type Database = {
           },
         ]
       }
+      body_logs: {
+        Row: {
+          body_location: string
+          body_region_code: string
+          care_recipient_id: string | null
+          created_at: string
+          created_by: string
+          description: string
+          family_id: string
+          id: string
+          incident_datetime: string
+          is_archived: boolean | null
+          type_severity: string
+          updated_at: string
+          view_type: string
+        }
+        Insert: {
+          body_location: string
+          body_region_code: string
+          care_recipient_id?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          family_id: string
+          id?: string
+          incident_datetime?: string
+          is_archived?: boolean | null
+          type_severity: string
+          updated_at?: string
+          view_type: string
+        }
+        Update: {
+          body_location?: string
+          body_region_code?: string
+          care_recipient_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          family_id?: string
+          id?: string
+          incident_datetime?: string
+          is_archived?: boolean | null
+          type_severity?: string
+          updated_at?: string
+          view_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_logs_care_recipient_id_fkey"
+            columns: ["care_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "body_logs_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_notes: {
         Row: {
           author_id: string
