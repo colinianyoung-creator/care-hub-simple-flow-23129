@@ -28,6 +28,7 @@ interface ScheduleCalendarProps {
   onToggleListView?: () => void;
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
+  currentUserId?: string;
 }
 
 export const ScheduleCalendar = ({ 
@@ -43,7 +44,8 @@ export const ScheduleCalendar = ({
   showListView = false,
   onToggleListView,
   viewMode = 'single-family',
-  allFamiliesShifts = []
+  allFamiliesShifts = [],
+  currentUserId
 }: ScheduleCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [carers, setCarers] = useState<Record<string, string>>({});
@@ -109,12 +111,19 @@ useEffect(() => {
         const weekStartStr = format(weekStart, 'yyyy-MM-dd');
         const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
         
-        const { data: timeEntries, error: entriesError } = await supabase
+        let query = supabase
           .from('time_entries')
           .select('*')
           .eq('family_id', familyId)
           .gte('clock_in', `${weekStartStr}T00:00:00`)
           .lte('clock_in', `${weekEndStr}T23:59:59`);
+
+        // If carer in single-family mode, only show their shifts
+        if (userRole === 'carer' && viewMode === 'single-family' && currentUserId) {
+          query = query.eq('user_id', currentUserId);
+        }
+
+        const { data: timeEntries, error: entriesError } = await query;
 
         if (entriesError) throw entriesError;
 

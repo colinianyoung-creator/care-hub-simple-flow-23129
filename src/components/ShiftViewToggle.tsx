@@ -8,8 +8,13 @@ interface ShiftViewToggleProps {
 }
 
 export const ShiftViewToggle = ({ viewMode, onViewModeChange, familyCount }: ShiftViewToggleProps) => {
+  console.log('🔘 ShiftViewToggle render:', { viewMode, familyCount });
+  
   // Only show toggle if carer belongs to 2+ families
-  if (familyCount < 2) return null;
+  if (familyCount < 2) {
+    console.log('🚫 Toggle hidden: familyCount < 2');
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
