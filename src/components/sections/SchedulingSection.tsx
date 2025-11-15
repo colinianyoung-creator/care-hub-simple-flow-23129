@@ -17,6 +17,7 @@ import { MonthCalendarView } from "../MonthCalendarView";
 import { ManageCareTeamDialog } from "../dialogs/ManageCareTeamDialog";
 import { ExportTimesheetDialog } from "../dialogs/ExportTimesheetDialog";
 import { ApprovedAbsencesArchive } from "../ApprovedAbsencesArchive";
+import { ShiftViewToggle } from "../ShiftViewToggle";
 
 interface SchedulingSectionProps {
   familyId: string | undefined;
@@ -55,6 +56,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [editingShift, setEditingShift] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showRefresh, setShowRefresh] = useState(false);
+  const [viewMode, setViewMode] = useState<'single-family' | 'all-families'>('single-family');
+  const [allFamiliesShifts, setAllFamiliesShifts] = useState<any[]>([]);
+  const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
   const { toast } = useToast();
 
   console.log('showListView state:', showListView);
@@ -105,9 +109,91 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     return timeEntry;
   };
 
+  const loadAllMyShifts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Step 1: Get all families the carer belongs to
+      const { data: memberships, error: membError } = await supabase
+        .from('user_memberships')
+        .select(`
+          family_id,
+          role,
+          families (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (membError) throw membError;
+
+      const familyIds = memberships?.map(m => m.family_id) || [];
+      setUserFamilies(memberships?.map(m => ({
+        id: m.family_id,
+        name: (m.families as any)?.name || 'Unknown'
+      })) || []);
+
+      // Step 2: Get all time_entries assigned to this user across all families
+      const { data: allShifts, error: shiftsError } = await supabase
+        .from('time_entries')
+        .select(`
+          *,
+          families (
+            id,
+            name
+          ),
+          profiles!time_entries_user_id_fkey (
+            id,
+            full_name
+          )
+        `)
+        .eq('user_id', user.id)
+        .in('family_id', familyIds)
+        .order('clock_in', { ascending: true });
+
+      if (shiftsError) throw shiftsError;
+
+      setAllFamiliesShifts(allShifts || []);
+    } catch (error) {
+      console.error('Error loading cross-family shifts:', error);
+      toast({
+        title: "Error loading shifts",
+        description: "Could not load your shifts across families",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Handle edit shift/leave request click from calendar
-  const onEditShift = (shift: any) => {
+  const onEditShift = async (shift: any) => {
     console.log('🟢 Edit shift triggered:', shift);
+    
+    // Determine which family this shift belongs to
+    const shiftFamilyId = viewMode === 'all-families' && shift.family_id
+      ? shift.family_id 
+      : familyId;
+
+    // Check user's role in that specific family (for cross-family mode)
+    if (viewMode === 'all-families' && shiftFamilyId) {
+      const { data: membership } = await supabase
+        .from('user_memberships')
+        .select('role')
+        .eq('user_id', currentUserId)
+        .eq('family_id', shiftFamilyId)
+        .single();
+
+      // Verify user is assigned to this shift
+      if (shift.user_id && shift.user_id !== currentUserId && shift.carer_id !== currentUserId) {
+        toast({
+          title: "Cannot edit shift",
+          description: "You can only edit shifts assigned to you",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
     
     // Validate shift object
     try {
@@ -396,6 +482,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [familyId]);
+
+  // Load cross-family data when view mode changes
+  useEffect(() => {
+    if (viewMode === 'all-families' && isCarer) {
+      loadAllMyShifts();
+    }
+  }, [viewMode, isCarer]);
 
   // Show refresh button after 5 seconds of loading
   useEffect(() => {
@@ -842,6 +935,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         <TabsContent value="schedule" className="space-y-4">
             <div className="space-y-4">
             <div className="space-y-4">
+              {isCarer && (
+                <ShiftViewToggle
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  familyCount={userFamilies.length}
+                />
+              )}
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h3 className="text-lg font-semibold">Weekly Schedule</h3>
                 <div className="flex gap-2">
@@ -885,6 +985,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                 console.log('Toggle list view called from ScheduleCalendar');
                 setShowListView(!showListView);
               }}
+              viewMode={viewMode}
+              allFamiliesShifts={allFamiliesShifts}
               onDeleteShift={async (shiftId) => {
                 try {
                   const { error } = await supabase

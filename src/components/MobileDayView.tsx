@@ -15,6 +15,8 @@ interface MobileDayViewProps {
   carersMap?: Record<string, string>;
   onToggleListView: () => void;
   showListView: boolean;
+  viewMode?: 'single-family' | 'all-families';
+  allFamiliesShifts?: any[];
 }
 
 export const MobileDayView = ({
@@ -23,7 +25,9 @@ export const MobileDayView = ({
   careRecipientNameHint,
   carersMap,
   onToggleListView,
-  showListView
+  showListView,
+  viewMode = 'single-family',
+  allFamiliesShifts = []
 }: MobileDayViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dayShifts, setDayShifts] = useState<any[]>([]);
@@ -36,7 +40,7 @@ export const MobileDayView = ({
     } else {
       loadDayShifts();
     }
-  }, [currentDate, familyId, showListView]);
+  }, [currentDate, familyId, showListView, viewMode, allFamiliesShifts]);
 
   useEffect(() => {
     const handleToggleListView = () => {
@@ -53,8 +57,34 @@ export const MobileDayView = ({
     try {
       setLoading(true);
       const dateStr = format(currentDate, 'yyyy-MM-dd');
+
+      // If in all-families mode, use the pre-loaded cross-family data
+      if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
+        const filteredShifts = allFamiliesShifts
+          .filter(shift => {
+            const shiftDateStr = format(new Date(shift.clock_in), 'yyyy-MM-dd');
+            return shiftDateStr === dateStr;
+          })
+          .map(entry => ({
+            id: entry.id,
+            scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+            start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+            end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : format(new Date(entry.clock_in), 'HH:mm:ss'),
+            carer_id: entry.user_id,
+            carer_name: entry.profiles?.full_name || 'Unknown',
+            status: 'completed',
+            notes: entry.notes,
+            shift_type: entry.shift_type || 'basic',
+            family_id: entry.family_id,
+            family_name: entry.families?.name || 'Unknown'
+          }));
+
+        setDayShifts(filteredShifts);
+        setLoading(false);
+        return;
+      }
       
-      // Load time_entries (actual shifts) for this day
+      // Single-family mode: Load time_entries (actual shifts) for this day
       const { data: timeEntries, error: timeError } = await supabase
         .from('time_entries')
         .select(`

@@ -26,6 +26,8 @@ interface ScheduleCalendarProps {
   carersMap?: Record<string, string>;
   showListView?: boolean;
   onToggleListView?: () => void;
+  viewMode?: 'single-family' | 'all-families';
+  allFamiliesShifts?: any[];
 }
 
 export const ScheduleCalendar = ({ 
@@ -39,7 +41,9 @@ export const ScheduleCalendar = ({
   onDeleteShift,
   carersMap,
   showListView = false,
-  onToggleListView
+  onToggleListView,
+  viewMode = 'single-family',
+  allFamiliesShifts = []
 }: ScheduleCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [carers, setCarers] = useState<Record<string, string>>({});
@@ -76,7 +80,32 @@ useEffect(() => {
   useEffect(() => {
     const loadWeekData = async () => {
       try {
-        // Load time_entries directly (this is where shifts are actually stored)
+        // If in all-families mode, use pre-loaded data
+        if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
+          const filteredShifts = allFamiliesShifts
+            .filter(shift => {
+              const shiftDate = new Date(shift.clock_in);
+              return shiftDate >= weekStart && shiftDate <= weekEnd;
+            })
+            .map(entry => ({
+              id: entry.id,
+              shift_assignment_id: entry.shift_instance_id,
+              scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+              start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+              end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
+              carer_id: entry.user_id,
+              carer_name: entry.profiles?.full_name || 'Unknown',
+              status: 'scheduled',
+              notes: entry.notes,
+              shift_type: entry.shift_type || 'basic',
+              family_id: entry.family_id,
+              family_name: entry.families?.name || 'Unknown'
+            }));
+          setWeekInstances(filteredShifts);
+          return;
+        }
+
+        // Single-family mode: Load time_entries directly
         const weekStartStr = format(weekStart, 'yyyy-MM-dd');
         const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
         
