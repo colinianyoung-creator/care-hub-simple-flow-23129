@@ -639,19 +639,12 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       if (requestsError) throw requestsError;
       if (leaveRequestsError) throw leaveRequestsError;
 
-      // Load this week's shift instances - carers only see their own
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(endOfWeek.getDate() + 6);
-
-      // Load time_entries (actual shifts) with carer info
+      // Load all time_entries (actual shifts) with carer info
       let timeEntriesQuery = supabase
         .from('time_entries')
         .select('*, profiles!user_id(full_name)')
         .eq('family_id', familyId)
-        .gte('clock_in', `${startOfWeek.toISOString().split('T')[0]}T00:00:00`)
-        .lte('clock_in', `${endOfWeek.toISOString().split('T')[0]}T23:59:59`);
+        .order('clock_in', { ascending: true });
 
       // For carers, only show their own shifts
       if (isCarerRole) {
