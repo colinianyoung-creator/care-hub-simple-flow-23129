@@ -21,9 +21,10 @@ interface UnifiedShiftFormProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   onCancel: () => void;
+  onDeleteShift?: (shiftId: string) => Promise<void>;
 }
 
-export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel }: UnifiedShiftFormProps) => {
+export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel, onDeleteShift }: UnifiedShiftFormProps) => {
   const [formData, setFormData] = useState({
     request_type: editShiftData?.request_type || '',
     start_date: editShiftData?.start_date || '',
@@ -259,13 +260,18 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           const { error } = result;
           if (error) throw error;
         } else {
-          // Delete only this instance
-          const { error } = await supabase
-            .from('time_entries')
-            .delete()
-            .eq('id', editShiftData.id);
-          
-          if (error) throw error;
+          // Use the centralized deletion logic with cache-busting
+          if (onDeleteShift) {
+            await onDeleteShift(editShiftData.id);
+          } else {
+            // Fallback if no callback provided
+            const { error } = await supabase
+              .from('time_entries')
+              .delete()
+              .eq('id', editShiftData.id);
+            
+            if (error) throw error;
+          }
         }
       }
 
