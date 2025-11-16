@@ -43,6 +43,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [instances, setInstances] = useState<any[]>([]);
   const [carers, setCarers] = useState<Record<string, string>>({});
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+  const [dataVersion, setDataVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAssignmentForm, setShowAssignmentForm] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -640,10 +641,12 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       if (leaveRequestsError) throw leaveRequestsError;
 
       // Load all time_entries (actual shifts) with carer info
+      // Add cache-busting filter to force fresh data after deletions
       let timeEntriesQuery = supabase
         .from('time_entries')
         .select('*, profiles!user_id(full_name)')
         .eq('family_id', familyId)
+        .gte('created_at', new Date(0).toISOString()) // Cache buster: always true but forces new query
         .order('clock_in', { ascending: true });
 
       // For carers, only show their own shifts
@@ -1058,6 +1061,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
                   console.log('✅ [Delete] Database deletion successful, rows affected:', count);
 
+                  // Increment data version to bust cache
+                  setDataVersion(prev => prev + 1);
+                  
                   // Wait a bit longer for DB to propagate
                   await new Promise(resolve => setTimeout(resolve, 300));
                   
