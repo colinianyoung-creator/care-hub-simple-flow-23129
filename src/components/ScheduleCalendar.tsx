@@ -49,7 +49,6 @@ export const ScheduleCalendar = ({
 }: ScheduleCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [carers, setCarers] = useState<Record<string, string>>({});
-  const [weekInstances, setWeekInstances] = useState<any[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [careRecipientName, setCareRecipientName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -78,89 +77,33 @@ useEffect(() => {
   }
 }, [userRole, careRecipientNameHint]);
  
-// Load data for the calendar
+// Load leave requests and carer info for the calendar
   useEffect(() => {
     const loadWeekData = async () => {
       try {
-        // If in all-families mode, use pre-loaded data
-        if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
-          const filteredShifts = allFamiliesShifts
-            .filter(shift => {
-              const shiftDate = new Date(shift.clock_in);
-              return shiftDate >= weekStart && shiftDate <= weekEnd;
-            })
-            .map(entry => ({
-              id: entry.id,
-              shift_assignment_id: entry.shift_instance_id,
-              scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-              start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
-              end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
-              carer_id: entry.user_id,
-              carer_name: entry.profiles?.full_name || 'Unknown',
-              status: 'scheduled',
-              notes: entry.notes,
-              shift_type: entry.shift_type || 'basic',
-              family_id: entry.family_id,
-              family_name: entry.families?.name || 'Unknown'
-            }));
-          setWeekInstances(filteredShifts);
-          return;
-        }
-
-        // Single-family mode: Load time_entries directly
         const weekStartStr = format(weekStart, 'yyyy-MM-dd');
         const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
-        
-        let query = supabase
-          .from('time_entries')
-          .select('*')
-          .eq('family_id', familyId)
-          .gte('clock_in', `${weekStartStr}T00:00:00`)
-          .lte('clock_in', `${weekEndStr}T23:59:59`);
 
-        // If carer in single-family mode, only show their shifts
-        if (userRole === 'carer' && viewMode === 'single-family' && currentUserId) {
-          query = query.eq('user_id', currentUserId);
+        // Get unique carer IDs from instances prop
+        const carerIds = [...new Set(instances.map(entry => entry.carer_id).filter(Boolean))] as string[];
+        
+        // Load carer profiles if not provided
+        if (!carersMap || Object.keys(carersMap).length === 0) {
+          const { data: carerProfiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', carerIds);
+
+          // Build carer map
+          const newCarers: Record<string, string> = {};
+          carerProfiles?.forEach(profile => {
+            newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
+          });
+          setCarers(newCarers);
         }
 
-        const { data: timeEntries, error: entriesError } = await query;
-
-        if (entriesError) throw entriesError;
-
-        // Get unique carer IDs from time entries
-        const carerIds = [...new Set(timeEntries?.map(entry => entry.user_id).filter(Boolean))] as string[];
-        
-        // Load carer profiles
-        const { data: carerProfiles } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', carerIds);
-
-        // Build carer map
-        const newCarers: Record<string, string> = {};
-        carerProfiles?.forEach(profile => {
-          newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
-        });
-        setCarers(newCarers);
-
-        // Transform time_entries to shift instances format
-        const transformedInstances = timeEntries?.map(entry => ({
-          id: entry.id,
-          shift_assignment_id: entry.shift_instance_id, // Use shift_instance_id for editing
-          scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-          start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
-          end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
-          carer_id: entry.user_id,
-          carer_name: newCarers[entry.user_id] || 'Unknown',
-          status: 'scheduled',
-          notes: entry.notes,
-          shift_type: (entry as any).shift_type || 'basic'
-        })) || [];
-
-        setWeekInstances(transformedInstances);
-
         // Fetch care recipient name for carers
-        if (userRole === 'carer' && !careRecipientName) {
+        if (userRole === 'carer' && !careRecipientName && familyId) {
           const { data: adminMembership } = await supabase
             .from('user_memberships')
             .select('profiles(full_name, care_recipient_name)')
@@ -176,34 +119,36 @@ useEffect(() => {
         }
 
         // Load approved leave requests for this week
-        const { data: leaveData, error: leaveError } = await supabase
-          .from('leave_requests')
-          .select('*')
-          .eq('family_id', familyId)
-          .eq('status', 'approved')
-          .or(`and(start_date.lte.${weekEndStr},end_date.gte.${weekStartStr})`);
+        if (familyId) {
+          const { data: leaveData, error: leaveError } = await supabase
+            .from('leave_requests')
+            .select('*')
+            .eq('family_id', familyId)
+            .eq('status', 'approved')
+            .or(`and(start_date.lte.${weekEndStr},end_date.gte.${weekStartStr})`);
 
-        if (leaveError) {
-          console.error('Error loading leave requests:', leaveError);
-        }
+          if (leaveError) {
+            console.error('Error loading leave requests:', leaveError);
+          }
 
-        // Load carer profiles for leave requests
-        const leaveCarerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
-        if (leaveCarerIds.length > 0) {
-          const { data: leaveCarerProfiles } = await supabase
-            .from('profiles')
-            .select('id, full_name')
-            .in('id', leaveCarerIds);
+          // Load carer profiles for leave requests
+          const leaveCarerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
+          if (leaveCarerIds.length > 0) {
+            const { data: leaveCarerProfiles } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', leaveCarerIds);
 
-          // Merge carer names into leave requests
-          const leavesWithCarers = leaveData?.map(leave => ({
-            ...leave,
-            carer_name: leaveCarerProfiles?.find(p => p.id === leave.user_id)?.full_name || newCarers[leave.user_id] || 'Unknown'
-          })) || [];
+            // Merge carer names into leave requests
+            const leavesWithCarers = leaveData?.map(leave => ({
+              ...leave,
+              carer_name: leaveCarerProfiles?.find(p => p.id === leave.user_id)?.full_name || carers[leave.user_id] || 'Unknown'
+            })) || [];
 
-          setLeaveRequests(leavesWithCarers);
-        } else {
-          setLeaveRequests(leaveData || []);
+            setLeaveRequests(leavesWithCarers);
+          } else {
+            setLeaveRequests(leaveData || []);
+          }
         }
       } catch (error) {
         console.error('Error loading week data:', error);
@@ -211,11 +156,11 @@ useEffect(() => {
     };
 
     loadWeekData();
-  }, [familyId, currentWeek, careRecipientName, instances]);
+  }, [familyId, currentWeek, careRecipientName, instances, carersMap]);
 
   const getShiftsForDay = (day: Date) => {
     const dayString = format(day, 'yyyy-MM-dd');
-    const shifts = weekInstances.filter(instance => instance.scheduled_date === dayString);
+    const shifts = instances.filter(instance => instance.scheduled_date === dayString);
     
     // Include leave requests that are approved (filter out denied ones)
     const leaves = leaveRequests.filter(leave => {
@@ -506,17 +451,17 @@ useEffect(() => {
             
             <div className="flex items-center gap-2">
               <div className="text-sm text-muted-foreground">
-                {weekInstances.length} shifts this week
+                {instances.length} shifts this week
               </div>
             </div>
           </div>
 
           {/* List view for carers */}
-          {userRole === 'carer' && showListView && weekInstances.length > 0 && (
+          {userRole === 'carer' && showListView && instances.length > 0 && (
             <div className="mt-6 pt-4 border-t">
               <h4 className="font-medium mb-3">This Week's Shifts</h4>
               <div className="space-y-2">
-                {weekInstances.map((shift) => (
+                {instances.map((shift) => (
                   <div key={shift.id} className="flex items-center justify-between p-3 bg-muted/50 rounded">
                     <div>
                       <span className="font-medium">{format(new Date(shift.scheduled_date), 'EEE, MMM d')}</span>
