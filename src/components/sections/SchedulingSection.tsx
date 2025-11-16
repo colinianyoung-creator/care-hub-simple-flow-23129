@@ -645,21 +645,37 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
 
-      let instancesQuery = supabase
-        .from('shift_instances')
-        .select(`
-          *,
-          shift_assignments!inner(carer_id)
-        `)
-        .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
-        .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
-      
+      // Load time_entries (actual shifts) with carer info
+      let timeEntriesQuery = supabase
+        .from('time_entries')
+        .select('*, profiles!user_id(full_name)')
+        .eq('family_id', familyId)
+        .gte('clock_in', `${startOfWeek.toISOString().split('T')[0]}T00:00:00`)
+        .lte('clock_in', `${endOfWeek.toISOString().split('T')[0]}T23:59:59`);
+
+      // For carers, only show their own shifts
       if (isCarerRole) {
-        instancesQuery = instancesQuery.eq('shift_assignments.carer_id', userId);
+        timeEntriesQuery = timeEntriesQuery.eq('user_id', userId);
       }
-      
-      const { data: instancesData, error: instancesError } = await instancesQuery;
-      if (instancesError) throw instancesError;
+
+      const { data: timeEntriesData, error: timeEntriesError } = await timeEntriesQuery;
+      if (timeEntriesError) throw timeEntriesError;
+
+      // Transform time_entries to instances format for calendar
+      const transformedInstances = (timeEntriesData || []).map(entry => ({
+        id: entry.id,
+        shift_assignment_id: entry.id,
+        scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+        start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
+        carer_id: entry.user_id,
+        carer_name: entry.profiles?.full_name || 'Unknown',
+        status: 'scheduled',
+        notes: entry.notes,
+        shift_type: (entry as any).shift_type || 'basic',
+        clock_in: entry.clock_in,
+        clock_out: entry.clock_out
+      }));
 
       if (timeoutId) clearTimeout(timeoutId);
 
@@ -674,7 +690,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       ];
       
       setRequests(allRequests);
-      setInstances(instancesData || []);
+      setInstances(transformedInstances);
       
       // Trigger calendar refresh by updating key
       setCalendarRefreshKey(prev => prev + 1);
@@ -768,9 +784,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
   const handleDeleteAssignment = async (assignmentId: string) => {
     try {
-      console.log('🗑️ Deleting assignment (time_entry):', assignmentId);
+      console.log('🗑️ [Delete Assignment] Starting for:', assignmentId);
       
-      // Delete the time_entry directly (assignmentId is time_entry.id)
       const { error } = await supabase
         .from('time_entries')
         .delete()
@@ -778,16 +793,17 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
       if (error) throw error;
 
+      console.log('✅ [Delete Assignment] Database deletion successful');
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await loadSchedulingData();
+
       toast({
         title: "Success",
-        description: "Shift has been completely removed from all views",
+        description: "Shift has been removed from all views",
       });
-
-      // Force immediate refresh
-      setCalendarRefreshKey(prev => prev + 1);
-      await loadSchedulingData();
     } catch (error) {
-      console.error('Error deleting assignment:', error);
+      console.error('❌ [Delete Assignment] Failed:', error);
       toast({
         title: "Error",
         description: "Failed to delete shift assignment",
@@ -1016,32 +1032,35 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
               currentUserId={currentUserId || undefined}
               onDeleteShift={async (shiftId) => {
                 try {
-                  console.log('🗑️ Deleting shift (time_entry):', shiftId);
+                  console.log('🗑️ [Delete] Starting deletion for shift:', shiftId);
                   
-                  // Delete the time_entry directly (shiftId is time_entry.id)
                   const { error } = await supabase
                     .from('time_entries')
                     .delete()
                     .eq('id', shiftId);
 
-                  if (error) throw error;
+                  if (error) {
+                    console.error('❌ [Delete] Database error:', error);
+                    throw error;
+                  }
 
-                  // Force immediate state refresh
-                  setCalendarRefreshKey(prev => prev + 1);
-                  
-                  toast({
-                    title: "Success",
-                    description: "Shift deleted successfully",
-                  });
+                  console.log('✅ [Delete] Database deletion successful');
 
-                  // Reload all scheduling data
+                  await new Promise(resolve => setTimeout(resolve, 100));
                   await loadSchedulingData();
                   
-                } catch (error) {
-                  console.error('Error deleting shift:', error);
                   toast({
-                    title: "Error",
-                    description: "Failed to delete shift",
+                    title: "Shift deleted",
+                    description: "The shift has been removed from all views",
+                  });
+                  
+                  console.log('✅ [Delete] Complete. New calendarRefreshKey:', calendarRefreshKey);
+                  
+                } catch (error) {
+                  console.error('❌ [Delete] Failed:', error);
+                  toast({
+                    title: "Error deleting shift",
+                    description: "The shift could not be deleted. Please try again.",
                     variant: "destructive",
                   });
                 }
