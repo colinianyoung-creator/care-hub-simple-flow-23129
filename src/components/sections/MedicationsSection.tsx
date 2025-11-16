@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MARSection } from "./MARSection";
-import { MARQuickAdd } from "@/components/MARQuickAdd";
+import { DoseTrackerSection } from "./DoseTrackerSection";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, Check, AlertCircle, Loader2, Pill, ClipboardList, Zap } from "lucide-react";
+import { Plus, Trash2, Edit, Check, AlertCircle, Loader2, Pill, ClipboardCheck } from "lucide-react";
 import { format } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -309,18 +308,14 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
 
   return (
     <Tabs defaultValue="medications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="medications" className="flex items-center justify-center px-1 py-2">
               <Pill className="h-4 w-4" />
               <span className="hidden sm:inline ml-2">Medications</span>
             </TabsTrigger>
-            <TabsTrigger value="mar" className="flex items-center justify-center px-1 py-2">
-              <ClipboardList className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">MAR Log</span>
-            </TabsTrigger>
-            <TabsTrigger value="quick" className="flex items-center justify-center px-1 py-2">
-              <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Quick Add</span>
+            <TabsTrigger value="tracker" className="flex items-center justify-center px-1 py-2">
+              <ClipboardCheck className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Dose Tracker</span>
             </TabsTrigger>
           </TabsList>
 
@@ -459,16 +454,8 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
         </div>
       </TabsContent>
 
-      <TabsContent value="mar">
-        <MARSection familyId={familyId} userRole={userRole} />
-      </TabsContent>
-
-      <TabsContent value="quick">
-        <MARQuickAdd 
-          familyId={familyId} 
-          medications={medications}
-          onUpdate={() => loadMedications()}
-        />
+      <TabsContent value="tracker">
+        <DoseTrackerSection familyId={familyId} userRole={userRole} />
       </TabsContent>
     </Tabs>
   );
