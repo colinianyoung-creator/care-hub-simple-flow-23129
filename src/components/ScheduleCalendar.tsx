@@ -282,16 +282,29 @@ useEffect(() => {
 
   const deleteRecurringSeries = async (shiftAssignmentId: string) => {
     try {
-      // Mark assignment as inactive
-      const { error: assignmentError } = await supabase
-        .from('shift_assignments')
-        .update({ active: false })
-        .eq('id', shiftAssignmentId);
-
-      if (assignmentError) throw assignmentError;
-
-      // Delete future shift instances
       const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // 1. First, get all shift instance IDs we're about to delete
+      const { data: instances, error: fetchError } = await supabase
+        .from('shift_instances')
+        .select('id')
+        .eq('shift_assignment_id', shiftAssignmentId)
+        .gte('scheduled_date', today);
+
+      if (fetchError) throw fetchError;
+
+      // 2. Delete related time_entries that reference these shift instances
+      if (instances && instances.length > 0) {
+        const instanceIds = instances.map(i => i.id);
+        const { error: timeEntryError } = await supabase
+          .from('time_entries')
+          .delete()
+          .in('shift_instance_id', instanceIds);
+
+        if (timeEntryError) throw timeEntryError;
+      }
+
+      // 3. Delete shift instances
       const { error: instanceError } = await supabase
         .from('shift_instances')
         .delete()
@@ -300,12 +313,23 @@ useEffect(() => {
 
       if (instanceError) throw instanceError;
 
+      // 4. Mark assignment as inactive
+      const { error: assignmentError } = await supabase
+        .from('shift_assignments')
+        .update({ active: false })
+        .eq('id', shiftAssignmentId);
+
+      if (assignmentError) throw assignmentError;
+
+      // 5. Force immediate state refresh
+      setWeekInstances([]);
+      setLeaveRequests([]);
+      onRefresh();
+
       toast({
         title: "Series Deleted",
-        description: "Recurring shift series has been deleted",
+        description: "Shift has been completely removed from all views",
       });
-
-      onRefresh();
     } catch (error) {
       console.error('Error deleting series:', error);
       toast({
