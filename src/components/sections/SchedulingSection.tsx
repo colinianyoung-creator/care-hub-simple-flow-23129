@@ -58,6 +58,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [showRefresh, setShowRefresh] = useState(false);
   const [viewMode, setViewMode] = useState<'single-family' | 'all-families'>('single-family');
   const [allFamiliesShifts, setAllFamiliesShifts] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState(
+    userRole === 'family_admin' || userRole === 'disabled_person' ? "overview" : "schedule"
+  );
   const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
   const { toast } = useToast();
 
@@ -875,7 +878,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   return (
     <div className="space-y-6">
       
-        <Tabs defaultValue={isAdmin ? "overview" : "schedule"} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className={`grid w-full overflow-hidden ${
             isAdmin ? 'grid-cols-4' : 
             isCarer ? 'grid-cols-4' : 
@@ -1038,19 +1041,38 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
               currentUserId={currentUserId || undefined}
               onDeleteShift={async (shiftId) => {
                 try {
-                  const { error } = await supabase
+                  console.log('🗑️ Deleting shift:', shiftId);
+                  
+                  // 1. First delete any time_entries that reference this shift_instance
+                  const { error: timeEntryError } = await supabase
+                    .from('time_entries')
+                    .delete()
+                    .eq('shift_instance_id', shiftId);
+
+                  if (timeEntryError) {
+                    console.error('Error deleting time_entries:', timeEntryError);
+                    // Continue anyway - time_entry may not exist
+                  }
+
+                  // 2. Now delete the shift_instance itself
+                  const { error: instanceError } = await supabase
                     .from('shift_instances')
                     .delete()
                     .eq('id', shiftId);
 
-                  if (error) throw error;
+                  if (instanceError) throw instanceError;
 
+                  // 3. Force immediate state refresh
+                  setCalendarRefreshKey(prev => prev + 1);
+                  
                   toast({
                     title: "Success",
                     description: "Shift deleted successfully",
                   });
 
-                  loadSchedulingData();
+                  // 4. Reload all scheduling data
+                  await loadSchedulingData();
+                  
                 } catch (error) {
                   console.error('Error deleting shift:', error);
                   toast({
