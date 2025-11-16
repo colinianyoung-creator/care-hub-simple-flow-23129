@@ -765,18 +765,48 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
   const handleDeleteAssignment = async (assignmentId: string) => {
     try {
-      const { error } = await supabase
+      // 1. Get all shift instances for this assignment
+      const { data: instances, error: fetchError } = await supabase
+        .from('shift_instances')
+        .select('id')
+        .eq('shift_assignment_id', assignmentId);
+
+      if (fetchError) throw fetchError;
+
+      // 2. Delete related time_entries
+      if (instances && instances.length > 0) {
+        const instanceIds = instances.map(i => i.id);
+        const { error: timeEntryError } = await supabase
+          .from('time_entries')
+          .delete()
+          .in('shift_instance_id', instanceIds);
+
+        if (timeEntryError) throw timeEntryError;
+      }
+
+      // 3. Delete shift instances
+      const { error: instanceError } = await supabase
+        .from('shift_instances')
+        .delete()
+        .eq('shift_assignment_id', assignmentId);
+
+      if (instanceError) throw instanceError;
+
+      // 4. Mark assignment as inactive
+      const { error: assignmentError } = await supabase
         .from('shift_assignments')
         .update({ active: false })
         .eq('id', assignmentId);
 
-      if (error) throw error;
+      if (assignmentError) throw assignmentError;
 
       toast({
         title: "Success",
-        description: "Shift assignment deleted successfully",
+        description: "Shift has been completely removed from all views",
       });
 
+      // 5. Force immediate refresh
+      setCalendarRefreshKey(prev => prev + 1);
       loadSchedulingData();
     } catch (error) {
       console.error('Error deleting assignment:', error);
