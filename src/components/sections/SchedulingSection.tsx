@@ -838,6 +838,71 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     }
   };
 
+  const onDeleteShift = async (shiftId: string) => {
+    try {
+      console.log('🗑️ [Delete] Starting deletion for shift:', shiftId);
+      
+      // First, verify the shift exists
+      const { data: existingShift } = await supabase
+        .from('time_entries')
+        .select('id, user_id')
+        .eq('id', shiftId)
+        .single();
+      
+      if (!existingShift) {
+        throw new Error('Shift not found');
+      }
+      
+      console.log('📋 [Delete] Found shift to delete:', existingShift);
+      
+      // Perform the deletion and check the result
+      const { error, count } = await supabase
+        .from('time_entries')
+        .delete({ count: 'exact' })
+        .eq('id', shiftId);
+
+      if (error) {
+        console.error('❌ [Delete] Database error:', error);
+        throw error;
+      }
+      
+      // Verify that exactly 1 row was deleted
+      if (count === 0) {
+        throw new Error('Deletion was blocked - no rows were affected. You may not have permission to delete this shift.');
+      }
+
+      console.log('✅ [Delete] Database deletion successful, rows affected:', count);
+
+      // Increment data version to bust cache
+      setDataVersion(prev => prev + 1);
+      
+      // Wait a bit longer for DB to propagate
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Force reload without cache
+      await loadSchedulingData();
+      
+      // Force a second reload to ensure we have fresh data
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await loadSchedulingData();
+      
+      toast({
+        title: "Shift deleted",
+        description: "The shift has been removed from all views",
+      });
+      
+      console.log('✅ [Delete] Complete');
+      
+    } catch (error: any) {
+      console.error('❌ [Delete] Failed:', error);
+      toast({
+        title: "Error deleting shift",
+        description: error.message || "The shift could not be deleted. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -1026,70 +1091,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
               viewMode={viewMode}
               allFamiliesShifts={allFamiliesShifts}
               currentUserId={currentUserId || undefined}
-              onDeleteShift={async (shiftId) => {
-                try {
-                  console.log('🗑️ [Delete] Starting deletion for shift:', shiftId);
-                  
-                  // First, verify the shift exists
-                  const { data: existingShift } = await supabase
-                    .from('time_entries')
-                    .select('id, user_id')
-                    .eq('id', shiftId)
-                    .single();
-                  
-                  if (!existingShift) {
-                    throw new Error('Shift not found');
-                  }
-                  
-                  console.log('📋 [Delete] Found shift to delete:', existingShift);
-                  
-                  // Perform the deletion and check the result
-                  const { error, count } = await supabase
-                    .from('time_entries')
-                    .delete({ count: 'exact' })
-                    .eq('id', shiftId);
-
-                  if (error) {
-                    console.error('❌ [Delete] Database error:', error);
-                    throw error;
-                  }
-                  
-                  // Verify that exactly 1 row was deleted
-                  if (count === 0) {
-                    throw new Error('Deletion was blocked - no rows were affected. You may not have permission to delete this shift.');
-                  }
-
-                  console.log('✅ [Delete] Database deletion successful, rows affected:', count);
-
-                  // Increment data version to bust cache
-                  setDataVersion(prev => prev + 1);
-                  
-                  // Wait a bit longer for DB to propagate
-                  await new Promise(resolve => setTimeout(resolve, 300));
-                  
-                  // Force reload without cache
-                  await loadSchedulingData();
-                  
-                  // Force a second reload to ensure we have fresh data
-                  await new Promise(resolve => setTimeout(resolve, 200));
-                  await loadSchedulingData();
-                  
-                  toast({
-                    title: "Shift deleted",
-                    description: "The shift has been removed from all views",
-                  });
-                  
-                  console.log('✅ [Delete] Complete');
-                  
-                } catch (error: any) {
-                  console.error('❌ [Delete] Failed:', error);
-                  toast({
-                    title: "Error deleting shift",
-                    description: error.message || "The shift could not be deleted. Please try again.",
-                    variant: "destructive",
-                  });
-                }
-              }}
+              onDeleteShift={onDeleteShift}
               carersMap={carers}
             />
           </div>
@@ -1312,6 +1314,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             setShowUnifiedShiftForm(false);
             setEditingShift(null);
           }}
+          onDeleteShift={onDeleteShift}
         />
 
     </div>
