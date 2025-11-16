@@ -247,7 +247,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           .eq('id', editShiftData.id);
         
         if (error) throw error;
-      } else if (editShiftData?.shift_assignment_id) {
+      } else if (editShiftData?.id) {
         // Delete shift - check if it's part of a series
         if (deleteOption === 'series') {
           // Delete all future instances with same shift_assignment_id
