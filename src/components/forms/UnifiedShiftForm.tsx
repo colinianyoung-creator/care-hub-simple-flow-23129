@@ -268,13 +268,13 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           });
         } else if (isRecurringShift && deleteOption === 'future') {
           // Delete future instances only
-          console.log('🗑️ Deleting future instances from:', editShiftData.scheduled_date);
+          console.log('🗑️ Deleting future instances from:', editShiftData.start_date);
           
           const { error } = await supabase
             .from('shift_instances')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('scheduled_date', editShiftData.scheduled_date);
+            .gte('scheduled_date', editShiftData.start_date);
 
           if (error) throw error;
 
