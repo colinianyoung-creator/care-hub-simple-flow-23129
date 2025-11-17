@@ -198,6 +198,16 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
       return;
     }
 
+    // Validate days of week for recurring shifts
+    if (isRecurring && formData.days_of_week.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one day of the week for recurring shifts",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
