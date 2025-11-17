@@ -349,7 +349,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           hours: Math.round(((clockOutDate.getTime() - clockInDate.getTime()) / (1000 * 60 * 60)) * 100) / 100,
           reason: shift.notes || '',
           shift_type: shift.notes || 'basic',
-          shift_category: 'basic'
+          shift_category: 'basic',
+          is_recurring: shift.is_recurring || false,
+          shift_assignment_id: shift.shift_assignment_id || null,
+          shift_instance_id: shift.shift_instance_id || null
         };
         
         console.log('✅ Opening UnifiedShiftForm (new model) with:', editData);
@@ -380,7 +383,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           hours: Math.round(((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / (1000 * 60 * 60)) * 100) / 100,
           reason: shift.notes || '',
           shift_type: shift.shift_type || 'basic',
-          shift_category: 'basic'
+          shift_category: 'basic',
+          is_recurring: shift.is_recurring || false,
+          shift_assignment_id: shift.shift_assignment_id || null,
+          shift_instance_id: shift.shift_instance_id || null
         };
         
         console.log('✅ Opening UnifiedShiftForm (transformed) with:', editData);
@@ -389,44 +395,41 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         return;
       }
       
-      // CASE 3: Old data model - shift_assignments with shift_instances
-      if (!shift.shift_assignment_id) {
-        console.warn('⚠️ Cannot edit shift: no shift_assignment_id and not a time_entry');
-        toast({
-          title: "Cannot Edit Shift",
-          description: "This shift cannot be edited (missing required data)",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Find the assignment for this shift
-      const assignment = assignments.find(a => a.id === shift.shift_assignment_id);
-      if (!assignment) {
-        console.warn('⚠️ Assignment not found for shift');
-        toast({
-          title: "Cannot Edit Shift",
-          description: "Shift assignment not found",
-          variant: "destructive"
-        });
+      // CASE 3: Recurring shift with shift_assignment_id
+      if (shift.shift_assignment_id) {
+        console.log('🔄 Handling recurring shift from shift_assignment');
+        
+        const editData = {
+          id: shift.id,
+          shift_instance_id: shift.shift_instance_id || shift.id,
+          carer_id: shift.carer_id,
+          request_type: 'basic',
+          start_date: shift.scheduled_date,
+          start_time: shift.start_time.slice(0, 5),
+          end_time: shift.end_time.slice(0, 5),
+          hours: Math.round(((new Date(`${shift.scheduled_date}T${shift.end_time}`).getTime() - 
+                   new Date(`${shift.scheduled_date}T${shift.start_time}`).getTime()) / (1000 * 60 * 60)) * 100) / 100,
+          reason: shift.notes || '',
+          shift_type: shift.shift_type || 'basic',
+          shift_category: 'basic',
+          is_recurring: true,
+          shift_assignment_id: shift.shift_assignment_id
+        };
+        
+        console.log('✅ Opening UnifiedShiftForm (recurring) with:', editData);
+        setEditingShift(editData);
+        setShowUnifiedShiftForm(true);
         return;
       }
 
-      const editData = {
-        id: shift.id,
-        shift_assignment_id: shift.shift_assignment_id,
-        carer_id: shift.carer_id,
-        request_type: 'basic',
-        start_date: shift.scheduled_date,
-        hours: shift.start_time && shift.end_time ? 
-          Math.round(((new Date(`2000-01-01T${shift.end_time}`).getTime() - new Date(`2000-01-01T${shift.start_time}`).getTime()) / (1000 * 60 * 60)) * 100) / 100 : 8,
-        reason: shift.notes || '',
-        shift_category: 'basic'
-      };
-
-      console.log('✅ Opening UnifiedShiftForm (old model) with:', editData);
-      setEditingShift(editData);
-      setShowUnifiedShiftForm(true);
+      // CASE 4: Fallback error for truly invalid data
+      console.warn('⚠️ Cannot edit shift: missing required data');
+      toast({
+        title: "Cannot Edit Shift",
+        description: "This shift cannot be edited (missing required data)",
+        variant: "destructive"
+      });
+      return;
     }
   };
 
