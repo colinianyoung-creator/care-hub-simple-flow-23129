@@ -286,8 +286,8 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           console.log('Creating recurring shift assignments');
           
           const today = new Date();
-          const fourWeeksFromNow = new Date(today);
-          fourWeeksFromNow.setDate(today.getDate() + 28);
+          const oneYearFromNow = new Date(today);
+          oneYearFromNow.setDate(today.getDate() + 365);
           
           for (const carerId of selectedCarerIds) {
             for (const dayOfWeek of formData.days_of_week) {
@@ -312,12 +312,12 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
 
               console.log('✅ Created shift_assignment:', assignment.id);
 
-              // Generate shift instances for the next 4 weeks
+              // Generate shift instances for the next year
               const { data: instanceCount, error: rpcError } = await supabase
                 .rpc('generate_shift_instances', {
                   _assignment_id: assignment.id,
                   _start_date: format(today, 'yyyy-MM-dd'),
-                  _end_date: format(fourWeeksFromNow, 'yyyy-MM-dd')
+                  _end_date: format(oneYearFromNow, 'yyyy-MM-dd')
                 });
 
               if (rpcError) throw rpcError;
