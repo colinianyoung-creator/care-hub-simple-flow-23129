@@ -704,7 +704,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       // Add cache-busting filter to force fresh data after deletions
       let timeEntriesQuery = supabase
         .from('time_entries')
-        .select('*, profiles!user_id(full_name)')
+        .select('*, profiles!user_id(full_name), shift_instances!shift_instance_id(shift_assignment_id)')
         .eq('family_id', familyId)
         .gte('created_at', new Date(0).toISOString()) // Cache buster: always true but forces new query
         .order('clock_in', { ascending: true });
@@ -720,21 +720,24 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       // Transform time_entries (one-time shifts only - exclude those linked to shift_instances)
       const oneTimeShifts = (timeEntriesData || [])
         .filter(entry => !entry.shift_instance_id) // Only include shifts NOT linked to instances
-        .map(entry => ({
-          id: entry.id,
-          shift_assignment_id: null,
-          scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-          start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
-          end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
-          carer_id: entry.user_id,
-          carer_name: entry.profiles?.full_name || 'Unknown',
-          status: 'scheduled',
-          notes: entry.notes,
-          shift_type: (entry as any).shift_type || 'basic',
-          clock_in: entry.clock_in,
-          clock_out: entry.clock_out,
-          is_recurring: false
-        }));
+        .map(entry => {
+          const shiftAssignmentId = (entry as any).shift_instances?.shift_assignment_id || null;
+          return {
+            id: entry.id,
+            shift_assignment_id: shiftAssignmentId,
+            scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+            start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+            end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
+            carer_id: entry.user_id,
+            carer_name: entry.profiles?.full_name || 'Unknown',
+            status: 'scheduled',
+            notes: entry.notes,
+            shift_type: (entry as any).shift_type || 'basic',
+            clock_in: entry.clock_in,
+            clock_out: entry.clock_out,
+            is_recurring: !!shiftAssignmentId
+          };
+        });
 
       // Combine both recurring and one-time shifts
       const allShifts = [...recurringShifts, ...oneTimeShifts].sort((a, b) => {
