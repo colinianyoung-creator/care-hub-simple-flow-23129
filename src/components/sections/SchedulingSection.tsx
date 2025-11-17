@@ -640,7 +640,64 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       if (requestsError) throw requestsError;
       if (leaveRequestsError) throw leaveRequestsError;
 
-      // Load all time_entries (actual shifts) with carer info
+      // Load shift_instances (recurring shifts) with assignment details
+      const today = new Date();
+      const threeMonthsAgo = new Date(today);
+      threeMonthsAgo.setMonth(today.getMonth() - 3);
+      const threeMonthsFromNow = new Date(today);
+      threeMonthsFromNow.setMonth(today.getMonth() + 3);
+
+      let shiftInstancesQuery = supabase
+        .from('shift_instances')
+        .select(`
+          *,
+          shift_assignments!inner (
+            id,
+            family_id,
+            carer_id,
+            start_time,
+            end_time,
+            shift_type,
+            notes,
+            profiles!shift_assignments_carer_id_fkey (
+              full_name
+            )
+          )
+        `)
+        .eq('shift_assignments.family_id', familyId)
+        .gte('scheduled_date', format(threeMonthsAgo, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(threeMonthsFromNow, 'yyyy-MM-dd'))
+        .order('scheduled_date', { ascending: true });
+
+      if (isCarerRole) {
+        shiftInstancesQuery = shiftInstancesQuery.eq('shift_assignments.carer_id', userId);
+      }
+
+      const { data: shiftInstancesData, error: instancesError } = await shiftInstancesQuery;
+      if (instancesError) {
+        console.error('Error loading shift instances:', instancesError);
+      }
+
+      // Transform shift_instances to calendar format
+      const recurringShifts = (shiftInstancesData || []).map((instance: any) => {
+        const assignment = instance.shift_assignments;
+        return {
+          id: instance.id,
+          shift_assignment_id: assignment.id,
+          shift_instance_id: instance.id,
+          scheduled_date: instance.scheduled_date,
+          start_time: assignment.start_time,
+          end_time: assignment.end_time,
+          carer_id: assignment.carer_id,
+          carer_name: assignment.profiles?.full_name || 'Unknown',
+          status: instance.status,
+          notes: assignment.notes,
+          shift_type: assignment.shift_type || 'basic',
+          is_recurring: true
+        };
+      });
+
+      // Load all time_entries (one-time shifts and actual clock records) with carer info
       // Add cache-busting filter to force fresh data after deletions
       let timeEntriesQuery = supabase
         .from('time_entries')
@@ -657,21 +714,31 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       const { data: timeEntriesData, error: timeEntriesError } = await timeEntriesQuery;
       if (timeEntriesError) throw timeEntriesError;
 
-      // Transform time_entries to instances format for calendar
-      const transformedInstances = (timeEntriesData || []).map(entry => ({
-        id: entry.id,
-        shift_assignment_id: entry.id,
-        scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-        start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
-        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
-        carer_id: entry.user_id,
-        carer_name: entry.profiles?.full_name || 'Unknown',
-        status: 'scheduled',
-        notes: entry.notes,
-        shift_type: (entry as any).shift_type || 'basic',
-        clock_in: entry.clock_in,
-        clock_out: entry.clock_out
-      }));
+      // Transform time_entries (one-time shifts only - exclude those linked to shift_instances)
+      const oneTimeShifts = (timeEntriesData || [])
+        .filter(entry => !entry.shift_instance_id) // Only include shifts NOT linked to instances
+        .map(entry => ({
+          id: entry.id,
+          shift_assignment_id: null,
+          scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+          start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+          end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
+          carer_id: entry.user_id,
+          carer_name: entry.profiles?.full_name || 'Unknown',
+          status: 'scheduled',
+          notes: entry.notes,
+          shift_type: (entry as any).shift_type || 'basic',
+          clock_in: entry.clock_in,
+          clock_out: entry.clock_out,
+          is_recurring: false
+        }));
+
+      // Combine both recurring and one-time shifts
+      const allShifts = [...recurringShifts, ...oneTimeShifts].sort((a, b) => {
+        const dateA = new Date(a.scheduled_date);
+        const dateB = new Date(b.scheduled_date);
+        return dateA.getTime() - dateB.getTime();
+      });
 
       if (timeoutId) clearTimeout(timeoutId);
 
@@ -686,7 +753,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       ];
       
       setRequests(allRequests);
-      setInstances(transformedInstances);
+      setInstances(allShifts);
+      
+      console.log('📊 Loaded scheduling data:', {
+        recurringShifts: recurringShifts.length,
+        oneTimeShifts: oneTimeShifts.length,
+        totalShifts: allShifts.length
+      });
       
       // Trigger calendar refresh by updating key
       setCalendarRefreshKey(prev => prev + 1);

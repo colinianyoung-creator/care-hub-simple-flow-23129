@@ -39,7 +39,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
   const [carers, setCarers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteOption, setDeleteOption] = useState<'single' | 'series'>('single');
+  const [deleteOption, setDeleteOption] = useState<'single' | 'future' | 'series'>('single');
   const { toast } = useToast();
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
@@ -248,29 +248,65 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         
         if (error) throw error;
       } else if (editShiftData?.id) {
-        // Delete shift - check if it's part of a series
-        if (deleteOption === 'series') {
-          // Delete all future instances with same shift_assignment_id
-          const result: any = await (supabase as any)
-            .from('time_entries')
+        // Check if this is a recurring shift (has shift_assignment_id)
+        const isRecurringShift = !!editShiftData.shift_assignment_id;
+
+        if (isRecurringShift && deleteOption === 'series') {
+          // Delete entire series: delete the shift_assignment (cascades to instances)
+          console.log('🗑️ Deleting entire series, shift_assignment_id:', editShiftData.shift_assignment_id);
+          
+          const { error: assignmentError } = await supabase
+            .from('shift_assignments')
+            .delete()
+            .eq('id', editShiftData.shift_assignment_id);
+
+          if (assignmentError) throw assignmentError;
+
+          toast({
+            title: "Success",
+            description: "Entire shift series deleted successfully"
+          });
+        } else if (isRecurringShift && deleteOption === 'future') {
+          // Delete future instances only
+          console.log('🗑️ Deleting future instances from:', editShiftData.scheduled_date);
+          
+          const { error } = await supabase
+            .from('shift_instances')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('clock_in', new Date().toISOString());
-          
-          const { error } = result;
+            .gte('scheduled_date', editShiftData.scheduled_date);
+
           if (error) throw error;
+
+          toast({
+            title: "Success",
+            description: "This shift and all future shifts deleted"
+          });
         } else {
-          // Use the centralized deletion logic with cache-busting
-          if (onDeleteShift) {
-            await onDeleteShift(editShiftData.id);
-          } else {
-            // Fallback if no callback provided
+          // Single shift deletion
+          console.log('🗑️ Deleting single shift:', editShiftData.id);
+          
+          if (isRecurringShift && editShiftData.shift_instance_id) {
+            // Delete the specific shift_instance
             const { error } = await supabase
-              .from('time_entries')
+              .from('shift_instances')
               .delete()
-              .eq('id', editShiftData.id);
-            
+              .eq('id', editShiftData.shift_instance_id);
+
             if (error) throw error;
+
+            toast({
+              title: "Success",
+              description: "Shift deleted successfully"
+            });
+          } else {
+            // Use the onDeleteShift callback for one-time shifts
+            if (onDeleteShift) {
+              console.log('📞 Calling onDeleteShift callback for shift:', editShiftData.id);
+              await onDeleteShift(editShiftData.id);
+              onSuccess();
+              return;
+            }
           }
         }
       }
@@ -458,20 +494,34 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Shift</AlertDialogTitle>
             <AlertDialogDescription>
-              This shift may be part of a recurring series. What would you like to delete?
+              {editShiftData?.is_recurring && editShiftData?.shift_assignment_id ? (
+                <RadioGroup value={deleteOption} onValueChange={(value: any) => setDeleteOption(value)}>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="delete-single" />
+                      <Label htmlFor="delete-single" className="font-normal cursor-pointer">
+                        Delete only this shift
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="future" id="delete-future" />
+                      <Label htmlFor="delete-future" className="font-normal cursor-pointer">
+                        Delete this shift and all future shifts in the series
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="series" id="delete-series" />
+                      <Label htmlFor="delete-series" className="font-normal cursor-pointer">
+                        Delete entire series (all past and future shifts)
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              ) : (
+                <p>This action cannot be undone. This will permanently delete the shift.</p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
-          <RadioGroup value={deleteOption} onValueChange={(value) => setDeleteOption(value as 'single' | 'series')}>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="single" id="single" />
-              <Label htmlFor="single">Delete only this shift</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="series" id="series" />
-              <Label htmlFor="series">Delete this and all future shifts in the series</Label>
-            </div>
-          </RadioGroup>
 
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
