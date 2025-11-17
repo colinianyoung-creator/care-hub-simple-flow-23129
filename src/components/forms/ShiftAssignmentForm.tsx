@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { timeRangeSchema } from "@/lib/validation";
 import { sanitizeError } from "@/lib/errorHandler";
+import { format } from 'date-fns';
 
 interface ShiftAssignmentFormProps {
   familyId: string;
@@ -270,57 +271,86 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
           setShowEditRecurrenceDialog(false);
         }
       } else {
-        // Create direct time entries for each selected carer
-        for (const carerId of selectedCarerIds) {
-          if (isRecurring && formData.days_of_week.length > 0) {
-            // Generate shifts starting from TODAY for the next 4 weeks
-            const startDate = new Date();
-            startDate.setHours(0, 0, 0, 0); // Reset to start of day
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 28); // Next 4 weeks
-
-            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-              const dayOfWeek = d.getDay();
-              if (formData.days_of_week.includes(dayOfWeek)) {
-                const shiftDate = d.toISOString().split('T')[0]; // Get YYYY-MM-DD
-                const shiftStart = new Date(d);
-                shiftStart.setHours(parseInt(formData.start_time.split(':')[0]), parseInt(formData.start_time.split(':')[1]), 0, 0);
-                const shiftEnd = new Date(d);
-                shiftEnd.setHours(parseInt(formData.end_time.split(':')[0]), parseInt(formData.end_time.split(':')[1]), 0, 0);
-
-                await supabase.from('time_entries').insert({
+        // For recurring shifts, create shift_assignments and generate instances
+        if (isRecurring && formData.days_of_week.length > 0) {
+          console.log('Creating recurring shift assignments');
+          
+          const today = new Date();
+          const fourWeeksFromNow = new Date(today);
+          fourWeeksFromNow.setDate(today.getDate() + 28);
+          
+          for (const carerId of selectedCarerIds) {
+            for (const dayOfWeek of formData.days_of_week) {
+              // Create shift_assignment
+              const { data: assignment, error: assignmentError } = await supabase
+                .from('shift_assignments')
+                .insert({
                   family_id: familyId,
-                  user_id: carerId,
-                  clock_in: shiftStart.toISOString(),
-                  clock_out: shiftEnd.toISOString(),
-                  notes: formData.shift_type || 'basic'
+                  carer_id: carerId,
+                  day_of_week: dayOfWeek,
+                  start_time: formData.start_time,
+                  end_time: formData.end_time,
+                  shift_type: formData.shift_type,
+                  is_recurring: true,
+                  active: true,
+                  notes: `Hourly rate: ${formData.hourly_rate || 'N/A'}`
+                })
+                .select()
+                .single();
+
+              if (assignmentError) throw assignmentError;
+
+              console.log('✅ Created shift_assignment:', assignment.id);
+
+              // Generate shift instances for the next 4 weeks
+              const { data: instanceCount, error: rpcError } = await supabase
+                .rpc('generate_shift_instances', {
+                  _assignment_id: assignment.id,
+                  _start_date: format(today, 'yyyy-MM-dd'),
+                  _end_date: format(fourWeeksFromNow, 'yyyy-MM-dd')
                 });
-              }
+
+              if (rpcError) throw rpcError;
+
+              console.log(`✅ Generated ${instanceCount} shift instances for assignment ${assignment.id}`);
             }
-          } else {
-            // One-time shift - create single entry for today
-            const today = new Date();
-            const shiftStart = new Date(today);
-            shiftStart.setHours(parseInt(formData.start_time.split(':')[0]), parseInt(formData.start_time.split(':')[1]), 0, 0);
-            const shiftEnd = new Date(today);
-            shiftEnd.setHours(parseInt(formData.end_time.split(':')[0]), parseInt(formData.end_time.split(':')[1]), 0, 0);
-
-            await supabase.from('time_entries').insert({
-              family_id: familyId,
-              user_id: carerId,
-              clock_in: shiftStart.toISOString(),
-              clock_out: shiftEnd.toISOString(),
-              notes: formData.shift_type || 'basic'
-            });
           }
-        }
 
-        toast({
-          title: "Success",
-          description: isRecurring ? "Recurring shifts created successfully" : "One-time shift created successfully",
-        });
+          toast({
+            title: "Success",
+            description: `Created recurring shifts for ${selectedCarerIds.length} carer(s)`,
+          });
+        } else {
+          // For one-time shifts, create direct time_entries as before
+          console.log('Creating one-time shift');
+          
+          const shiftDate = new Date().toISOString().split('T')[0];
+          
+          for (const carerId of selectedCarerIds) {
+            const { error: timeEntryError } = await supabase
+              .from('time_entries')
+              .insert({
+                family_id: familyId,
+                user_id: carerId,
+                clock_in: `${shiftDate}T${formData.start_time}`,
+                clock_out: `${shiftDate}T${formData.end_time}`,
+                shift_type: formData.shift_type,
+                notes: `One-time shift. Hourly rate: ${formData.hourly_rate || 'N/A'}`
+              });
+
+            if (timeEntryError) throw timeEntryError;
+          }
+
+          toast({
+            title: "Success",
+            description: "Created one-time shift",
+          });
+        }
       }
 
+      // Dispatch custom event to trigger calendar refresh
+      window.dispatchEvent(new CustomEvent('shift-updated'));
+      
       onSuccess();
     } catch (error) {
       const sanitized = sanitizeError(error);

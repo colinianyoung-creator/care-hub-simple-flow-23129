@@ -839,6 +839,7 @@ export type Database = {
           id: string
           is_recurring: boolean | null
           notes: string | null
+          shift_type: string | null
           start_time: string
           updated_at: string
         }
@@ -852,6 +853,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
+          shift_type?: string | null
           start_time: string
           updated_at?: string
         }
@@ -865,6 +867,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
+          shift_type?: string | null
           start_time?: string
           updated_at?: string
         }
