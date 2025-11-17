@@ -184,6 +184,12 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   // Handle edit shift/leave request click from calendar
   const onEditShift = async (shift: any) => {
     console.log('🟢 Edit shift triggered:', shift);
+    console.log('🔍 RECURRING CHECK:', {
+      is_recurring: shift.is_recurring,
+      shift_assignment_id: shift.shift_assignment_id,
+      shift_instance_id: shift.shift_instance_id,
+      should_show_options: !!(shift.is_recurring && shift.shift_assignment_id)
+    });
     
     // Determine which family this shift belongs to
     const shiftFamilyId = viewMode === 'all-families' && shift.family_id
