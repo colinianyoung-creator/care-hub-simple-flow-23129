@@ -699,6 +699,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
           end_time: assignment.end_time,
           carer_id: assignment.carer_id,
           carer_name: assignment.profiles?.full_name || 'Unknown',
+          care_recipient_name: null, // Recurring shifts will rely on careRecipientNameHint prop
           status: instance.status,
           notes: assignment.notes,
           shift_type: assignment.shift_type || 'basic',
@@ -710,7 +711,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       // Add cache-busting filter to force fresh data after deletions
       let timeEntriesQuery = supabase
         .from('time_entries')
-        .select('*, profiles!user_id(full_name), shift_instances!shift_instance_id(shift_assignment_id)')
+        .select('*, profiles!user_id(full_name), shift_instances!shift_instance_id(shift_assignment_id), families!family_id(name)')
         .eq('family_id', familyId)
         .gte('created_at', new Date(0).toISOString()) // Cache buster: always true but forces new query
         .order('clock_in', { ascending: true });
@@ -736,6 +737,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : '17:00:00',
             carer_id: entry.user_id,
             carer_name: entry.profiles?.full_name || 'Unknown',
+            care_recipient_name: (entry as any).families?.name || null,
             status: 'scheduled',
             notes: entry.notes,
             shift_type: (entry as any).shift_type || 'basic',
