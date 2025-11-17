@@ -180,7 +180,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
 
           <div className="space-y-4">
             <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
-              <SchedulingSection familyId={familyId} userRole={userRole} />
+              <SchedulingSection familyId={familyId} userRole={userRole} careRecipientNameHint={careRecipientNameHint} />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>
