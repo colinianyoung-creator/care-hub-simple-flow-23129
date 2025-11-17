@@ -195,27 +195,36 @@ useEffect(() => {
   };
 
   const getDisplayNames = (shift: any) => {
-    const carerName = shift.carer_name || carers[shift.carer_id] || 'Carer';
+    // Handle leave requests with type labels
+    if (shift.is_leave_request || shift.shift_type === 'annual_leave' || shift.type === 'annual_leave' || 
+        shift.shift_type === 'sickness' || shift.type === 'sickness' ||
+        shift.shift_type === 'public_holiday' || shift.type === 'public_holiday' ||
+        shift.shift_type === 'cover' || shift.type === 'cover') {
+      
+      const typeLabels: { [key: string]: string } = {
+        'annual_leave': 'Holiday',
+        'holiday': 'Holiday',
+        'sickness': 'Sickness',
+        'sick_leave': 'Sickness',
+        'public_holiday': 'Public Holiday',
+        'cover': 'Cover'
+      };
+      
+      const shiftType = shift.shift_type || shift.type;
+      const label = typeLabels[shiftType] || getShiftTypeLabel(shiftType);
+      const carerName = shift.carer_name || carers[shift.carer_id] || 'Carer';
+      return `${label} - ${carerName}`;
+    }
     
-    // Color-coded display with type and carer name
-    if (shift.shift_type === 'annual_leave' || shift.type === 'annual_leave') {
-      return `Holiday - ${carerName}`;
-    }
-    if (shift.shift_type === 'sickness' || shift.type === 'sickness') {
-      return `Sickness - ${carerName}`;
-    }
-    if (shift.shift_type === 'public_holiday' || shift.type === 'public_holiday') {
-      return `Public Holiday - ${carerName}`;
-    }
-    if (shift.shift_type === 'cover' || shift.type === 'cover') {
-      return `Cover - ${carerName}`;
-    }
-    
-    // Basic shift or other types
+    // For basic shifts and other types
     if (userRole === 'carer') {
-      return careRecipientName || 'Care Recipient';
+      // Carers see the care recipient's name (check shift data first, then fallback to component state)
+      const recipientName = shift.care_recipient_name || careRecipientName || 'Care Recipient';
+      return recipientName;
     } else {
-      return `Basic - ${carerName}`;
+      // Admins/family_viewers see carer's name (no prefix to match month view)
+      const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
+      return carerName;
     }
   };
 
