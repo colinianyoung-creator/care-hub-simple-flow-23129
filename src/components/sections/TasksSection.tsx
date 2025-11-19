@@ -73,8 +73,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         if (!cancelled) {
           const { data, error } = await supabase
             .from('user_memberships')
-            .select(`user_id, profiles!inner(full_name)`)
+            .select(`user_id, role, profiles!inner(full_name)`)
             .eq('family_id', familyId)
+            .eq('role', 'carer')
             .abortSignal(abortController.signal);
 
           if (!error && data && !cancelled) {
