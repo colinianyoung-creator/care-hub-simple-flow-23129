@@ -412,7 +412,11 @@ useEffect(() => {
                                     </div>
                                     <div className="flex flex-col items-start max-w-full overflow-hidden">
                                       <span className="text-[10px] leading-tight truncate max-w-full">{formatShiftType(shift.shift_type || shift.type || 'basic')}</span>
-                                      <span className="text-[9px] leading-tight opacity-90 truncate max-w-full">{shift.carer_name || carers[shift.carer_id] || 'Carer'}</span>
+                                      <span className="text-[9px] leading-tight opacity-90 truncate max-w-full">
+                                        {userRole === 'carer'
+                                          ? getDisplayNames(shift)
+                                          : (shift.carer_name || carers[shift.carer_id] || 'Unassigned')}
+                                      </span>
                                     </div>
                                   </div>
                                 ) : (
@@ -425,7 +429,9 @@ useEffect(() => {
                                       {formatShiftType(shift.shift_type || shift.type || 'basic')}
                                     </div>
                                     <div className="text-[9px] leading-tight truncate max-w-full opacity-90">
-                                      {shift.carer_name || carers[shift.carer_id] || 'Carer'}
+                                      {userRole === 'carer'
+                                        ? getDisplayNames(shift)
+                                        : (shift.carer_name || carers[shift.carer_id] || 'Unassigned')}
                                     </div>
                                   </div>
                                 )}
