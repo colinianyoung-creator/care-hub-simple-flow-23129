@@ -131,6 +131,12 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
         profiles: profilesMap.get(note.author_id) || null
       })) || [];
 
+      console.log('Notes with profiles:', notesWithProfiles.map(n => ({
+        id: n.id,
+        author_id: n.author_id,
+        author_name: n.profiles?.full_name
+      })));
+      
       setNotes(notesWithProfiles);
     } catch (error) {
       const sanitized = sanitizeError(error);
