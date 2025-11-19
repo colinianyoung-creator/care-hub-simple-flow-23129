@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Info } from "lucide-react";
@@ -10,8 +11,13 @@ import { BodyMap } from "@/components/BodyMap";
 import { BodyLogForm } from "@/components/forms/BodyLogForm";
 import { BodyRegion } from "@/lib/bodyMapRegions";
 import type { Tables } from "@/integrations/supabase/types";
+import { format } from 'date-fns';
 
-type BodyLog = Tables<'body_logs'>;
+type BodyLog = Tables<'body_logs'> & {
+  profiles?: {
+    full_name: string | null;
+  } | null;
+};
 
 interface BodyMapTrackerProps {
   familyId: string;
@@ -34,15 +40,39 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
   const loadBodyLogs = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch body logs
+      const { data: logsData, error: logsError } = await supabase
         .from('body_logs')
         .select('*')
         .eq('family_id', familyId)
         .eq('is_archived', false)
         .order('incident_datetime', { ascending: false });
 
-      if (error) throw error;
-      setBodyLogs(data || []);
+      if (logsError) throw logsError;
+
+      // Get unique author IDs
+      const authorIds = [...new Set(logsData?.map(log => log.created_by) || [])];
+
+      // Fetch profiles for all authors
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', authorIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profile data
+      const profilesMap = new Map(
+        profilesData?.map(profile => [profile.id, profile]) || []
+      );
+
+      // Merge profiles with logs
+      const logsWithProfiles = logsData?.map(log => ({
+        ...log,
+        profiles: profilesMap.get(log.created_by) || null
+      })) || [];
+
+      setBodyLogs(logsWithProfiles);
     } catch (error) {
       console.error('Error loading body logs:', error);
       toast({
