@@ -186,6 +186,83 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
         </CardContent>
       </Card>
 
+      {/* Body Map Logs List */}
+      {bodyLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Injury Log Entries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {bodyLogs.map((log) => (
+                <Card 
+                  key={log.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => {
+                    setEditingLog(log);
+                    setShowLogForm(true);
+                  }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="space-y-2 flex-1">
+                        {/* Timestamp and Author */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                          <p className="text-sm font-medium">
+                            {format(new Date(log.incident_datetime), 'MMM d, yyyy at h:mm a')}
+                          </p>
+                          <Badge variant="outline" className="w-fit">
+                            {log.view_type === 'front' ? '🧍 Front' : '🧍‍♂️ Back'}
+                          </Badge>
+                        </div>
+
+                        {/* Author */}
+                        <p className="text-xs text-muted-foreground">
+                          Logged by: {log.profiles?.full_name || 'Unknown User'}
+                        </p>
+
+                        {/* Body Location and Severity */}
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <div className="font-semibold text-sm">{log.body_location}</div>
+                          <Badge 
+                            variant={
+                              log.type_severity.includes('Severe') || 
+                              log.type_severity.includes('Stage 3') || 
+                              log.type_severity.includes('Stage 4') || 
+                              log.type_severity.includes('3rd degree') 
+                                ? 'destructive'
+                                : log.type_severity.includes('Moderate') || 
+                                  log.type_severity.includes('Stage 2') || 
+                                  log.type_severity.includes('2nd degree')
+                                ? 'default'
+                                : 'secondary'
+                            }
+                          >
+                            {log.type_severity}
+                          </Badge>
+                        </div>
+
+                        {/* Description */}
+                        {log.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {log.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Click to expand hint */}
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">
+                        Click to view/edit
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Form Dialog */}
       <Dialog open={showLogForm} onOpenChange={setShowLogForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
