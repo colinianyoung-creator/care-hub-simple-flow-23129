@@ -185,10 +185,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       const task = tasks.find(t => t.id === taskId);
       
-      // If current user is admin OR task creator, skip review (archive immediately)
+      // Only admins skip review (archive immediately)
       const skipReview = userRole === 'family_admin' || 
-                         userRole === 'disabled_person' ||
-                         task?.created_by === user?.id;
+                         userRole === 'disabled_person';
       
       const { error } = await supabase
         .from('tasks')
@@ -345,7 +344,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const activeTasks = tasks.filter(task => !task.completed);
   const awaitingReviewTasks = tasks.filter(task => task.completed && !task.is_archived);
-  const completedTasks = tasks.filter(task => task.completed);
+  const completedTasks = tasks.filter(task => task.completed && task.is_archived);
 
   if (!familyId) {
     return (
@@ -563,7 +562,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                         </div>
                       </div>
                       <div className="flex gap-2 flex-wrap mt-2">
-                        {/* Only show approval buttons for admins */}
+                        {/* Admin buttons: Approve + Re-open */}
                         {(userRole === 'family_admin' || userRole === 'disabled_person') && (
                           <>
                             <Button 
@@ -586,8 +585,8 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                           </>
                         )}
                         
-                        {/* Show reopen button for carers if they created the task */}
-                        {userRole === 'carer' && task.created_by === currentUserId && (
+                        {/* Carer button: Re-open only */}
+                        {userRole === 'carer' && (
                           <Button 
                             size="sm" 
                             variant="outline"
@@ -595,7 +594,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                             className="h-auto px-2 py-1 text-xs"
                           >
                             <RotateCcw className="h-3 w-3 mr-1" />
-                            Reopen Task
+                            Re-open
                           </Button>
                         )}
                       </div>
