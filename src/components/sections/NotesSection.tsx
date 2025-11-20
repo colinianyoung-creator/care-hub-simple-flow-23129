@@ -551,7 +551,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
                       {note.mood && getMoodIcon(note.mood)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(note.created_at), 'MMM d, yyyy at h:mm a')}
+                      {format(new Date(note.created_at), 'MMM d, yyyy')} at {format(new Date(note.created_at), 'h:mm a')}
                     </p>
                   </div>
                   {canDeleteNote(note) && (
@@ -642,6 +642,19 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
                     <p className="text-sm">{note.incidents}</p>
                   </div>
                 )}
+
+                {/* Fallback for old notes without new fields */}
+                {!note.activity_support && !note.observations && note.content && (
+                  <div>
+                    <h4 className="text-sm font-medium">Note</h4>
+                    <p className="text-sm">{note.content}</p>
+                  </div>
+                )}
+                </div>
+
+                {/* Click to view/edit hint */}
+                <div className="text-xs text-muted-foreground text-right mt-2">
+                  Click to view/edit
                 </div>
               </CardContent>
             </Card>
