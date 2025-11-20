@@ -236,7 +236,7 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
                         {/* Timestamp and Author */}
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                           <p className="text-sm font-medium">
-                            {format(new Date(log.incident_datetime), 'MMM d, yyyy at h:mm a')}
+                            {format(new Date(log.incident_datetime), 'MMM d, yyyy')} at {format(new Date(log.incident_datetime), 'h:mm a')}
                           </p>
                           <Badge variant="outline" className="w-fit">
                             {log.view_type === 'front' ? '🧍 Front' : '🧍‍♂️ Back'}
