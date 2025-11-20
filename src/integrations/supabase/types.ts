@@ -140,39 +140,72 @@ export type Database = {
       }
       care_notes: {
         Row: {
+          activity_support: string | null
+          activity_tags: string[] | null
           author_id: string
+          bathroom_usage: string | null
           care_recipient_id: string | null
           category: string | null
-          content: string
+          content: string | null
           created_at: string
+          eating_drinking: string | null
+          eating_drinking_notes: string | null
           family_id: string
           id: string
+          incidents: string | null
           is_archived: boolean | null
-          title: string
+          is_incident: boolean | null
+          mood: string | null
+          next_steps: string | null
+          observations: string | null
+          outcome_response: string | null
+          title: string | null
           updated_at: string
         }
         Insert: {
+          activity_support?: string | null
+          activity_tags?: string[] | null
           author_id: string
+          bathroom_usage?: string | null
           care_recipient_id?: string | null
           category?: string | null
-          content: string
+          content?: string | null
           created_at?: string
+          eating_drinking?: string | null
+          eating_drinking_notes?: string | null
           family_id: string
           id?: string
+          incidents?: string | null
           is_archived?: boolean | null
-          title: string
+          is_incident?: boolean | null
+          mood?: string | null
+          next_steps?: string | null
+          observations?: string | null
+          outcome_response?: string | null
+          title?: string | null
           updated_at?: string
         }
         Update: {
+          activity_support?: string | null
+          activity_tags?: string[] | null
           author_id?: string
+          bathroom_usage?: string | null
           care_recipient_id?: string | null
           category?: string | null
-          content?: string
+          content?: string | null
           created_at?: string
+          eating_drinking?: string | null
+          eating_drinking_notes?: string | null
           family_id?: string
           id?: string
+          incidents?: string | null
           is_archived?: boolean | null
-          title?: string
+          is_incident?: boolean | null
+          mood?: string | null
+          next_steps?: string | null
+          observations?: string | null
+          outcome_response?: string | null
+          title?: string | null
           updated_at?: string
         }
         Relationships: [

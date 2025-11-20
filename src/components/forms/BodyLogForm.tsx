@@ -32,6 +32,7 @@ interface BodyLogFormProps {
   viewType: 'front' | 'back';
   onSuccess: () => void;
   onCancel: () => void;
+  onArchive?: () => void;
   editData?: Tables<'body_logs'> | null;
 }
 
@@ -62,6 +63,7 @@ export const BodyLogForm = ({
   viewType,
   onSuccess,
   onCancel,
+  onArchive,
   editData
 }: BodyLogFormProps) => {
   const { toast } = useToast();
@@ -221,14 +223,28 @@ export const BodyLogForm = ({
         </p>
       </div>
 
-      <div className="flex gap-2 justify-end pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {editData ? 'Update Log' : 'Save Log'}
-        </Button>
+      <div className="flex gap-2 justify-between pt-4">
+        <div>
+          {editData && onArchive && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onArchive}
+              disabled={isSubmitting}
+            >
+              Archive Log
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {editData ? 'Update Log' : 'Save Log'}
+          </Button>
+        </div>
       </div>
     </form>
   );

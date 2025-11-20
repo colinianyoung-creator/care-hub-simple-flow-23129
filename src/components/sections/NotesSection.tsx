@@ -17,6 +17,7 @@ import { NotesArchiveSection } from './NotesArchiveSection';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sanitizeError } from "@/lib/errorHandler";
 import { BodyMapTracker } from '@/components/BodyMapTracker';
+import CareNoteForm from '@/components/forms/CareNoteForm';
 
 interface CareNote {
   id: string;
@@ -131,12 +132,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
         profiles: profilesMap.get(note.author_id) || null
       })) || [];
 
-      console.log('Notes with profiles:', notesWithProfiles.map(n => ({
-        id: n.id,
-        author_id: n.author_id,
-        author_name: n.profiles?.full_name
-      })));
-      
       setNotes(notesWithProfiles);
     } catch (error) {
       const sanitized = sanitizeError(error);
@@ -671,120 +666,33 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
       </TabsContent>
     </Tabs>
 
-    {/* Note Details Modal */}
-    <Dialog open={showNoteDetails} onOpenChange={setShowNoteDetails}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Care Note Details</DialogTitle>
-        </DialogHeader>
-        {selectedNote && (
-          <div className="space-y-4">
-            {/* Author and Date */}
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-medium">{selectedNote.profiles?.full_name || 'Unknown User'}</p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(selectedNote.created_at), 'MMM d, yyyy at h:mm a')}
-                </p>
-              </div>
-              {selectedNote.is_incident && (
-                <Badge variant="destructive">Incident</Badge>
-              )}
-            </div>
-
-            {/* All note fields displayed in full */}
-            {selectedNote.activity_support && (
-              <div>
-                <h4 className="font-semibold mb-1">Activity/Support</h4>
-                <p>{selectedNote.activity_support}</p>
-                {selectedNote.activity_tags && selectedNote.activity_tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedNote.activity_tags.map(tag => (
-                      <Badge key={tag} variant="secondary">{tag}</Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {selectedNote.observations && (
-              <div>
-                <h4 className="font-semibold mb-1">Observations</h4>
-                <p>{selectedNote.observations}</p>
-              </div>
-            )}
-
-            {selectedNote.outcome_response && (
-              <div>
-                <h4 className="font-semibold mb-1">Outcome/Response</h4>
-                <p>{selectedNote.outcome_response}</p>
-              </div>
-            )}
-
-            {selectedNote.next_steps && (
-              <div>
-                <h4 className="font-semibold mb-1">Next Steps</h4>
-                <p>{selectedNote.next_steps}</p>
-              </div>
-            )}
-
-            {/* Wellbeing section */}
-            {(selectedNote.mood || selectedNote.eating_drinking || selectedNote.bathroom_usage) && (
-              <div className="border-t pt-3">
-                <h4 className="font-semibold mb-2">Wellbeing Trackers</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {selectedNote.mood && (
-                    <div className="flex items-center gap-2">
-                      {getMoodIcon(selectedNote.mood)}
-                      <span className="capitalize">{selectedNote.mood}</span>
-                    </div>
-                  )}
-                  {selectedNote.eating_drinking && (
-                    <div>
-                      <span className="font-medium">Eating/Drinking:</span> {selectedNote.eating_drinking}
-                      {selectedNote.eating_drinking_notes && <p className="text-sm text-muted-foreground mt-1">{selectedNote.eating_drinking_notes}</p>}
-                    </div>
-                  )}
-                  {selectedNote.bathroom_usage && (
-                    <div>
-                      <span className="font-medium">Bathroom:</span> {selectedNote.bathroom_usage}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Incidents */}
-            {selectedNote.is_incident && selectedNote.incidents && (
-              <div className="border-t pt-3 border-red-200">
-                <h4 className="font-semibold text-red-600 mb-2">Incident Details</h4>
-                <p>{selectedNote.incidents}</p>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex justify-end gap-2 border-t pt-4">
-              {canDeleteNote(selectedNote) && (
-                <Button
-                  variant="destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteNote(selectedNote.id);
-                    setShowNoteDetails(false);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Note
-                </Button>
-              )}
-              <Button variant="outline" onClick={() => setShowNoteDetails(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      {/* Note Details Modal */}
+      <Dialog open={showNoteDetails} onOpenChange={setShowNoteDetails}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedNote ? 'Edit Care Note' : 'New Care Note'}
+            </DialogTitle>
+          </DialogHeader>
+          <CareNoteForm
+            familyId={familyId}
+            editData={selectedNote}
+            onSuccess={() => {
+              setShowNoteDetails(false);
+              setSelectedNote(null);
+              loadNotes();
+            }}
+            onCancel={() => {
+              setShowNoteDetails(false);
+              setSelectedNote(null);
+            }}
+            onDelete={selectedNote ? () => {
+              handleDeleteNote(selectedNote.id);
+              setShowNoteDetails(false);
+            } : undefined}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
