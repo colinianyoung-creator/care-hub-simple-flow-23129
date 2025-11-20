@@ -551,6 +551,115 @@ export type Database = {
           },
         ]
       }
+      mar_doses: {
+        Row: {
+          administered_at: string | null
+          created_at: string
+          due_date: string
+          due_time: string
+          family_id: string
+          given_by: string | null
+          id: string
+          medication_id: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          administered_at?: string | null
+          created_at?: string
+          due_date: string
+          due_time: string
+          family_id: string
+          given_by?: string | null
+          id?: string
+          medication_id: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          administered_at?: string | null
+          created_at?: string
+          due_date?: string
+          due_time?: string
+          family_id?: string
+          given_by?: string | null
+          id?: string
+          medication_id?: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mar_doses_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mar_doses_given_by_fkey"
+            columns: ["given_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mar_doses_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mar_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          dose_id: string
+          id: string
+          new_status: string
+          note: string | null
+          old_status: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          dose_id: string
+          id?: string
+          new_status: string
+          note?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          dose_id?: string
+          id?: string
+          new_status?: string
+          note?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mar_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mar_history_dose_id_fkey"
+            columns: ["dose_id"]
+            isOneToOne: false
+            referencedRelation: "mar_doses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medication_administrations: {
         Row: {
           administered_time: string | null
@@ -638,6 +747,7 @@ export type Database = {
           is_archived: boolean | null
           name: string
           start_date: string | null
+          time_slots: string[] | null
           updated_at: string
         }
         Insert: {
@@ -652,6 +762,7 @@ export type Database = {
           is_archived?: boolean | null
           name: string
           start_date?: string | null
+          time_slots?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -666,6 +777,7 @@ export type Database = {
           is_archived?: boolean | null
           name?: string
           start_date?: string | null
+          time_slots?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -1244,6 +1356,14 @@ export type Database = {
         }
         Returns: string
       }
+      generate_mar_doses_for_medication: {
+        Args: {
+          _days_ahead?: number
+          _medication_id: string
+          _start_date?: string
+        }
+        Returns: number
+      }
       generate_shift_instances: {
         Args: { _assignment_id: string; _end_date: string; _start_date: string }
         Returns: number
@@ -1292,6 +1412,22 @@ export type Database = {
           status: Database["public"]["Enums"]["shift_status"]
         }[]
       }
+      get_todays_mar_log: {
+        Args: { _date?: string; _family_id: string }
+        Returns: {
+          administered_at: string
+          dose_id: string
+          due_date: string
+          due_time: string
+          given_by_id: string
+          given_by_name: string
+          medication_dosage: string
+          medication_id: string
+          medication_name: string
+          note: string
+          status: string
+        }[]
+      }
       get_user_admin_role: {
         Args: { _family_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1319,6 +1455,15 @@ export type Database = {
       is_protected_admin: {
         Args: { _family_id: string; _user_id: string }
         Returns: boolean
+      }
+      mark_dose: {
+        Args: {
+          _carer_id: string
+          _dose_id: string
+          _new_status: string
+          _note?: string
+        }
+        Returns: undefined
       }
       redeem_invite: { Args: { _code: string }; Returns: string }
       update_own_role_safe: {
