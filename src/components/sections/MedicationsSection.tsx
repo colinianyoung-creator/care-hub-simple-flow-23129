@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DoseTrackerSection } from "./DoseTrackerSection";
+import { MARDashboard } from "../sections/MARDashboard";
+import { AdminMARDashboard } from "../AdminMARDashboard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -67,18 +69,19 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   const [newMedication, setNewMedication] = useState({
     name: '',
     dosage: '',
-    frequency: '',
+    frequency: '1',
     instructions: '',
     start_date: format(new Date(), 'yyyy-MM-dd'),
     end_date: ''
   });
+  const [timeSlots, setTimeSlots] = useState<string[]>(['09:00']);
 
   const handleEditMedication = (medication: Medication) => {
     setEditingMedication(medication);
     setNewMedication({
       name: medication.name,
       dosage: medication.dosage || '',
-      frequency: medication.frequency || '',
+      frequency: medication.frequency || '1',
       instructions: medication.instructions || '',
       start_date: medication.start_date,
       end_date: medication.end_date || ''
@@ -86,16 +89,32 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
     setShowAddForm(true);
   };
 
+  const getTimeSlotsForFrequency = (freq: string): string[] => {
+    switch (freq) {
+      case '1':
+        return ['09:00'];
+      case '2':
+        return ['09:00', '18:00'];
+      case '3':
+        return ['09:00', '13:00', '18:00'];
+      case '4':
+        return ['09:00', '13:00', '18:00', '21:00'];
+      default:
+        return ['09:00'];
+    }
+  };
+
   const handleCancelEdit = () => {
     setEditingMedication(null);
     setNewMedication({
       name: '',
       dosage: '',
-      frequency: '',
+      frequency: '1',
       instructions: '',
       start_date: format(new Date(), 'yyyy-MM-dd'),
       end_date: ''
     });
+    setTimeSlots(['09:00']);
     setShowAddForm(false);
   };
 
@@ -175,8 +194,8 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
           description: "The medication has been updated successfully.",
         });
       } else {
-        // Insert new medication
-        const { error } = await supabase
+        // Insert new medication with time slots
+        const { data: newMed, error } = await supabase
           .from('medications')
           .insert([{
             family_id: familyId,
@@ -186,14 +205,26 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
             instructions: newMedication.instructions || null,
             start_date: newMedication.start_date || null,
             end_date: newMedication.end_date || null,
-            care_recipient_id: null
-          }] as any);
+            care_recipient_id: null,
+            time_slots: timeSlots.map(t => `${t}:00`)
+          }] as any)
+          .select()
+          .single();
 
         if (error) throw error;
 
+        // Generate doses for the next 7 days
+        if (newMed) {
+          await supabase.rpc('generate_mar_doses_for_medication', {
+            _medication_id: newMed.id,
+            _start_date: format(new Date(), 'yyyy-MM-dd'),
+            _days_ahead: 7
+          });
+        }
+
         toast({
           title: "Medication added",
-          description: "The medication has been added successfully.",
+          description: "Medication and doses have been scheduled successfully.",
         });
       }
 
@@ -340,11 +371,36 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
               />
             </div>
             
-            <Input
-              placeholder="Frequency (e.g., Daily, Twice daily, 3 times a day)"
-              value={newMedication.frequency}
-              onChange={(e) => setNewMedication(prev => ({ ...prev, frequency: e.target.value }))}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Frequency per day</label>
+              <Select
+                value={newMedication.frequency}
+                onValueChange={(value) => {
+                  setNewMedication(prev => ({ ...prev, frequency: value }));
+                  setTimeSlots(getTimeSlotsForFrequency(value));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Once daily (09:00)</SelectItem>
+                  <SelectItem value="2">Twice daily (09:00, 18:00)</SelectItem>
+                  <SelectItem value="3">3 times daily (09:00, 13:00, 18:00)</SelectItem>
+                  <SelectItem value="4">4 times daily (09:00, 13:00, 18:00, 21:00)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Time slots preview */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Scheduled times</label>
+              <div className="flex flex-wrap gap-2">
+                {timeSlots.map((time, idx) => (
+                  <Badge key={idx} variant="outline">{time}</Badge>
+                ))}
+              </div>
+            </div>
 
             <Textarea
               placeholder="Special instructions (optional)"
@@ -455,7 +511,11 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
       </TabsContent>
 
       <TabsContent value="tracker">
-        <DoseTrackerSection familyId={familyId} userRole={userRole} />
+        {canManageMedications ? (
+          <AdminMARDashboard familyId={familyId} />
+        ) : (
+          <MARDashboard familyId={familyId} userRole={userRole} />
+        )}
       </TabsContent>
     </Tabs>
   );

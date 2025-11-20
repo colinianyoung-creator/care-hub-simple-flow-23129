@@ -203,7 +203,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
               <KeyInformationSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
-            <ExpandableDashboardSection id="medications" title="Medications" icon={<Pill className="h-5 w-5" />}>
+            <ExpandableDashboardSection id="medications" title="Medication Administration Record (MAR)" icon={<Pill className="h-5 w-5" />}>
               <MedicationsSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 

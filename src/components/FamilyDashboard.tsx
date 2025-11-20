@@ -192,7 +192,7 @@ export const FamilyDashboard = ({
 
           <ExpandableDashboardSection
             id="medications"
-            title="Medications"
+            title="Medication Administration Record (MAR)"
             icon={<Pill className="h-5 w-5" />}
           >
             <MedicationsSection familyId={familyId} userRole={userRole} />
