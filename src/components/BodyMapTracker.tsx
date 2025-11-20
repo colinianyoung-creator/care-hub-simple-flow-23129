@@ -104,6 +104,33 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
     setEditingLog(null);
   };
 
+  const handleArchiveLog = async (logId: string) => {
+    try {
+      const { error } = await supabase
+        .from('body_logs')
+        .update({ is_archived: true })
+        .eq('id', logId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Log Archived",
+        description: "The injury log has been archived successfully."
+      });
+
+      setShowLogForm(false);
+      setEditingLog(null);
+      loadBodyLogs();
+    } catch (error) {
+      console.error('Error archiving log:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive injury log",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -271,14 +298,15 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
               {editingLog ? 'Edit Injury Log' : 'Record New Injury'}
             </DialogTitle>
           </DialogHeader>
-          <BodyLogForm
-            familyId={familyId}
-            selectedRegion={selectedRegion}
-            viewType={viewType}
-            editData={editingLog}
-            onSuccess={handleFormSuccess}
-            onCancel={handleFormCancel}
-          />
+            <BodyLogForm
+              familyId={familyId}
+              selectedRegion={selectedRegion}
+              viewType={viewType}
+              editData={editingLog}
+              onSuccess={handleFormSuccess}
+              onCancel={handleFormCancel}
+              onArchive={editingLog ? () => handleArchiveLog(editingLog.id) : undefined}
+            />
         </DialogContent>
       </Dialog>
     </div>
