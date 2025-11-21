@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, AlertCircle, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -54,15 +54,17 @@ export const DoseCard = ({
   note,
   onClick,
 }: DoseCardProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <Card
       className={cn(
-        "p-4 cursor-pointer transition-all relative",
-        "hover:scale-[1.02] hover:shadow-lg",
+        "p-4 cursor-pointer transition-all relative group",
+        "hover:scale-[1.02] hover:shadow-lg hover:border-primary/40",
         status === 'given' && "border-green-300 bg-green-50",
         status === 'missed' && "border-red-300 bg-red-50",
         status === 'refused' && "border-blue-300 bg-blue-50",
-        status === 'pending' && "border-yellow-300 bg-yellow-50 animate-pulse"
+        status === 'pending' && "border-yellow-300 bg-yellow-50"
       )}
       onClick={onClick}
     >
@@ -76,22 +78,29 @@ export const DoseCard = ({
             )}
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right flex flex-col items-end gap-1">
           {getStatusBadge(status)}
           {administeredAt && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground">
               {format(new Date(administeredAt), 'h:mm a')}
             </p>
+          )}
+          {status === 'pending' && !isMobile && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs text-primary">
+              <Edit2 className="h-3 w-3" />
+              <span>Click to record</span>
+            </div>
           )}
         </div>
       </div>
       {note && (
         <p className="text-xs text-muted-foreground mt-2 pl-7">{note}</p>
       )}
-      {status === 'pending' && (
-        <div className="mt-2 pt-2 border-t border-border text-center">
-          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-            Tap to record <span className="text-lg">→</span>
+      {status === 'pending' && isMobile && (
+        <div className="mt-2 text-center">
+          <p className="text-xs text-primary font-medium flex items-center justify-center gap-1">
+            <Edit2 className="h-3 w-3" />
+            Tap to record
           </p>
         </div>
       )}

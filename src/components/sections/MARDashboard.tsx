@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, RefreshCw, Calendar as CalendarListIcon, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsTablet } from "@/hooks/use-tablet";
 
 interface MARDashboardProps {
   familyId: string;
@@ -43,6 +44,7 @@ interface GroupedDoses {
 export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { isTablet, isTabletLandscape } = useIsTablet();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [doses, setDoses] = useState<Dose[]>([]);
   const [archiveDoses, setArchiveDoses] = useState<Dose[]>([]);
@@ -360,7 +362,12 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1 gap-4" : "md:grid-cols-2 lg:grid-cols-4")}>
+                  <div className={cn(
+                    "grid gap-3",
+                    isMobile && isTabletLandscape ? "grid-cols-2 gap-3" : 
+                    isMobile ? "grid-cols-1 gap-4" : 
+                    "md:grid-cols-2 lg:grid-cols-4"
+                  )}>
                     {dateDoses.map((dose) => (
                       <DoseCard
                         key={dose.dose_id}

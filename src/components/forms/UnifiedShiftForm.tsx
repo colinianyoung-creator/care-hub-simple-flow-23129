@@ -8,9 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from 'lucide-react';
+import { Info, CalendarIcon } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format as formatDate } from "date-fns";
 
 interface UnifiedShiftFormProps {
   familyId: string;
@@ -22,12 +26,13 @@ interface UnifiedShiftFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   onDeleteShift?: (shiftId: string) => Promise<void>;
+  initialDate?: string;
 }
 
-export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel, onDeleteShift }: UnifiedShiftFormProps) => {
+export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel, onDeleteShift, initialDate }: UnifiedShiftFormProps) => {
   const [formData, setFormData] = useState({
     request_type: editShiftData?.request_type || '',
-    start_date: editShiftData?.start_date || '',
+    start_date: editShiftData?.start_date || initialDate || '',
     end_date: editShiftData?.end_date || '',
     hours: editShiftData?.hours?.toString() || '',
     reason: editShiftData?.reason || '',
@@ -431,13 +436,32 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
 
             <div>
               <Label htmlFor="start_date">{isAdmin && !editShiftData ? 'Date (optional)' : 'Start Date'}</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    required={false}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.start_date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.start_date ? formatDate(new Date(formData.start_date), "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.start_date ? new Date(formData.start_date) : undefined}
+                    onSelect={(date) => setFormData(prev => ({ 
+                      ...prev, 
+                      start_date: date ? formatDate(date, 'yyyy-MM-dd') : '' 
+                    }))}
+                    initialFocus
+                    className="pointer-events-auto"
                   />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>

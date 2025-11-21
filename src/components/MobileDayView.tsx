@@ -17,6 +17,7 @@ interface MobileDayViewProps {
   showListView: boolean;
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
+  refreshTrigger?: number;
 }
 
 export const MobileDayView = ({
@@ -27,7 +28,8 @@ export const MobileDayView = ({
   onToggleListView,
   showListView,
   viewMode = 'single-family',
-  allFamiliesShifts = []
+  allFamiliesShifts = [],
+  refreshTrigger = 0
 }: MobileDayViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dayShifts, setDayShifts] = useState<any[]>([]);
@@ -40,7 +42,7 @@ export const MobileDayView = ({
     } else {
       loadDayShifts();
     }
-  }, [currentDate, familyId, showListView, viewMode, allFamiliesShifts]);
+  }, [currentDate, familyId, showListView, viewMode, allFamiliesShifts, refreshTrigger]);
 
   useEffect(() => {
     const handleToggleListView = () => {
