@@ -76,16 +76,23 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
   });
   const [timeSlots, setTimeSlots] = useState<string[]>(['09:00']);
 
+  // Sync timeSlots with frequency changes
+  useEffect(() => {
+    setTimeSlots(getTimeSlotsForFrequency(newMedication.frequency));
+  }, [newMedication.frequency]);
+
   const handleEditMedication = (medication: Medication) => {
     setEditingMedication(medication);
+    const freq = medication.frequency || '1';
     setNewMedication({
       name: medication.name,
       dosage: medication.dosage || '',
-      frequency: medication.frequency || '1',
+      frequency: freq,
       instructions: medication.instructions || '',
       start_date: medication.start_date,
       end_date: medication.end_date || ''
     });
+    setTimeSlots(getTimeSlotsForFrequency(freq));
     setShowAddForm(true);
   };
 
@@ -174,7 +181,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
 
     try {
       if (editingMedication) {
-        // Update existing medication
+        // Update existing medication including time_slots
         const { error } = await supabase
           .from('medications')
           .update({
@@ -183,15 +190,23 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
             frequency: newMedication.frequency || null,
             instructions: newMedication.instructions || null,
             start_date: newMedication.start_date || null,
-            end_date: newMedication.end_date || null
+            end_date: newMedication.end_date || null,
+            time_slots: timeSlots.map(t => `${t}:00`)
           })
           .eq('id', editingMedication.id);
 
         if (error) throw error;
 
+        // Regenerate doses for updated medication
+        await supabase.rpc('generate_mar_doses_for_medication', {
+          _medication_id: editingMedication.id,
+          _start_date: format(new Date(), 'yyyy-MM-dd'),
+          _days_ahead: 7
+        });
+
         toast({
           title: "Medication updated",
-          description: "The medication has been updated successfully.",
+          description: "Medication and doses have been updated successfully.",
         });
       } else {
         // Insert new medication with time slots

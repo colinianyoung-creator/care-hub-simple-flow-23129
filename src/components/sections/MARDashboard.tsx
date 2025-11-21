@@ -6,11 +6,13 @@ import { DoseCard } from "@/components/DoseCard";
 import { DoseActionModal } from "@/components/DoseActionModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays } from "date-fns";
+import { format, parseISO, startOfDay } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw } from "lucide-react";
+import { CalendarIcon, RefreshCw, Calendar as CalendarListIcon, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MARDashboardProps {
   familyId: string;
@@ -41,11 +43,15 @@ interface GroupedDoses {
 
 export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [doses, setDoses] = useState<Dose[]>([]);
+  const [archiveDoses, setArchiveDoses] = useState<Dose[]>([]);
   const [loading, setLoading] = useState(true);
+  const [archiveLoading, setArchiveLoading] = useState(false);
   const [selectedDose, setSelectedDose] = useState<Dose | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [archiveFilter, setArchiveFilter] = useState<string>("all");
 
   const loadDoses = async (date: Date = selectedDate) => {
     setLoading(true);
@@ -66,6 +72,57 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadArchiveDoses = async () => {
+    setArchiveLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('mar_doses')
+        .select(`
+          id,
+          due_date,
+          due_time,
+          status,
+          administered_at,
+          note,
+          given_by,
+          medication_id,
+          medications!inner(name, dosage),
+          profiles!mar_doses_given_by_fkey(full_name)
+        `)
+        .eq('family_id', familyId)
+        .lt('due_date', format(new Date(), 'yyyy-MM-dd'))
+        .order('due_date', { ascending: false })
+        .order('due_time', { ascending: false });
+
+      if (error) throw error;
+
+      const formatted = (data || []).map((d: any) => ({
+        dose_id: d.id,
+        medication_id: d.medication_id,
+        medication_name: d.medications?.name || 'Unknown',
+        medication_dosage: d.medications?.dosage || '',
+        due_date: d.due_date,
+        due_time: d.due_time,
+        status: d.status,
+        given_by_id: d.given_by,
+        given_by_name: d.profiles?.full_name,
+        administered_at: d.administered_at,
+        note: d.note,
+      }));
+
+      setArchiveDoses(formatted);
+    } catch (error) {
+      console.error('Error loading archive doses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load archived doses",
+        variant: "destructive",
+      });
+    } finally {
+      setArchiveLoading(false);
     }
   };
 
@@ -141,21 +198,41 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
     refused: doses.filter(d => d.status === 'refused').length,
   };
 
+  const filteredArchiveDoses = archiveDoses.filter(dose => {
+    if (archiveFilter === "all") return true;
+    if (archiveFilter === "missed") return dose.status === "missed";
+    if (archiveFilter === "refused") return dose.status === "refused";
+    return true;
+  });
+
+  // Group archive doses by date
+  const groupedArchiveDoses = filteredArchiveDoses.reduce((acc, dose) => {
+    const date = dose.due_date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(dose);
+    return acc;
+  }, {} as Record<string, Dose[]>);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className={cn(
+        "flex justify-between items-start gap-4",
+        isMobile ? "flex-col" : "flex-row items-center"
+      )}>
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Medication Administration Record</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Track and record medication doses
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className={cn("flex gap-2", isMobile && "w-full flex-col")}>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("justify-start text-left font-normal")}>
+              <Button variant="outline" className={cn("justify-start text-left font-normal", isMobile && "w-full")}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, 'PPP')}
+                {format(selectedDate, isMobile ? 'MMM d, yyyy' : 'PPP')}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -172,14 +249,16 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
             size="icon"
             onClick={() => loadDoses()}
             disabled={loading}
+            className={isMobile ? "w-full" : ""}
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            {isMobile && <span className="ml-2">Refresh</span>}
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className={cn("grid gap-4", isMobile ? "grid-cols-2" : "md:grid-cols-5")}>
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-foreground">{stats.total}</div>
@@ -204,7 +283,7 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
             <p className="text-xs text-red-600">Missed</p>
           </CardContent>
         </Card>
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className={cn("border-blue-200 bg-blue-50", isMobile && "col-span-2")}>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-blue-700">{stats.refused}</div>
             <p className="text-xs text-blue-600">Refused</p>
@@ -213,10 +292,14 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
       </div>
 
       {/* Doses by Medication */}
-      <Tabs defaultValue="today" className="w-full">
-        <TabsList>
-          <TabsTrigger value="today">Today's Schedule</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+      <Tabs defaultValue="today" className="w-full" onValueChange={(val) => val === "archive" && loadArchiveDoses()}>
+        <TabsList className={cn("grid w-full", isMobile ? "grid-cols-2" : "")}>
+          <TabsTrigger value="today" className="flex items-center gap-2">
+            {isMobile ? <CalendarListIcon className="h-4 w-4" /> : <><CalendarListIcon className="h-4 w-4" /> Today's Schedule</>}
+          </TabsTrigger>
+          <TabsTrigger value="archive" className="flex items-center gap-2">
+            {isMobile ? <Archive className="h-4 w-4" /> : <><Archive className="h-4 w-4" /> Archive</>}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="today" className="space-y-4 mt-6">
@@ -244,7 +327,7 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-4")}>
                     {med.doses.map((dose) => (
                       <DoseCard
                         key={dose.dose_id}
@@ -265,18 +348,64 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
           )}
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map((days) => (
-              <Button
-                key={days}
-                variant="outline"
-                onClick={() => setSelectedDate(subDays(new Date(), days))}
-              >
-                {days} day{days > 1 ? 's' : ''} ago
-              </Button>
-            ))}
+        <TabsContent value="archive" className="space-y-4 mt-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <h3 className="text-lg font-semibold">Medication History</h3>
+            <Select value={archiveFilter} onValueChange={setArchiveFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Doses</SelectItem>
+                <SelectItem value="missed">Missed Only</SelectItem>
+                <SelectItem value="refused">Refused Only</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {archiveLoading ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Loading archive...
+              </CardContent>
+            </Card>
+          ) : Object.keys(groupedArchiveDoses).length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No archived doses found
+              </CardContent>
+            </Card>
+          ) : (
+            Object.entries(groupedArchiveDoses).map(([date, dateDoses]) => (
+              <Card key={date}>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-4")}>
+                    {dateDoses.map((dose) => (
+                      <DoseCard
+                        key={dose.dose_id}
+                        dueTime={dose.due_time}
+                        status={dose.status as any}
+                        givenBy={dose.given_by_name}
+                        administeredAt={dose.administered_at}
+                        note={dose.note}
+                        onClick={() => {
+                          toast({
+                            title: dose.medication_name,
+                            description: `${dose.medication_dosage} at ${dose.due_time}\nStatus: ${dose.status}${dose.note ? `\nNote: ${dose.note}` : ''}`,
+                          });
+                        }}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </TabsContent>
       </Tabs>
 

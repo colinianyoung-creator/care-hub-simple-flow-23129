@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DoseCardProps {
   dueTime: string;
@@ -58,6 +59,8 @@ export const DoseCard = ({
   onMarkGiven,
   onMarkRefused
 }: DoseCardProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <Card
       className={cn(
@@ -92,12 +95,12 @@ export const DoseCard = ({
         <p className="text-xs text-muted-foreground mt-2 pl-7">{note}</p>
       )}
       {status === 'pending' && (onMarkGiven || onMarkRefused) && (
-        <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+        <div className={cn("mt-3 pt-3 border-t border-border", isMobile ? "flex flex-col gap-2" : "flex gap-2")}>
           {onMarkGiven && (
             <Button
               size="sm"
               variant="success"
-              className="flex-1"
+              className={isMobile ? "w-full" : "flex-1"}
               onClick={(e) => {
                 e.stopPropagation();
                 onMarkGiven();
@@ -111,7 +114,7 @@ export const DoseCard = ({
             <Button
               size="sm"
               variant="destructive"
-              className="flex-1"
+              className={isMobile ? "w-full" : "flex-1"}
               onClick={(e) => {
                 e.stopPropagation();
                 onMarkRefused();
