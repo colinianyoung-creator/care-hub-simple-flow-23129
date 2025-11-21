@@ -98,6 +98,41 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
     setModalOpen(true);
   };
 
+  const handleMarkGiven = async (dose: Dose) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.rpc('mark_dose', {
+        _dose_id: dose.dose_id,
+        _new_status: 'given',
+        _carer_id: user.id,
+        _note: null
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Dose recorded",
+        description: `${dose.medication_name} marked as given`,
+      });
+
+      loadDoses(selectedDate);
+    } catch (error: any) {
+      console.error('Error marking dose:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to record dose",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkRefused = (dose: Dose) => {
+    setSelectedDose(dose);
+    setModalOpen(true);
+  };
+
   const stats = {
     total: doses.length,
     given: doses.filter(d => d.status === 'given').length,
@@ -219,6 +254,8 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                         administeredAt={dose.administered_at}
                         note={dose.note}
                         onClick={() => handleDoseClick(dose)}
+                        onMarkGiven={dose.status === 'pending' ? () => handleMarkGiven(dose) : undefined}
+                        onMarkRefused={dose.status === 'pending' ? () => handleMarkRefused(dose) : undefined}
                       />
                     ))}
                   </div>
