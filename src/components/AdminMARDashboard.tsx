@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Download, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AdminMARDashboardProps {
   familyId: string;
@@ -67,6 +68,7 @@ const getStatusBadge = (status: string) => {
 
 export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [doses, setDoses] = useState<Dose[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,19 +127,22 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className={cn(
+        "flex justify-between items-start gap-4",
+        isMobile ? "flex-col" : "flex-row items-center"
+      )}>
         <div>
           <h2 className="text-2xl font-semibold text-foreground">MAR Administration Dashboard</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Monitor all medication administrations
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className={cn("flex gap-2", isMobile && "w-full flex-col")}>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className={isMobile ? "w-full" : ""}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, 'PPP')}
+                {format(selectedDate, isMobile ? 'MMM d, yyyy' : 'PPP')}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -151,33 +156,39 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
           </Popover>
           <Button
             variant="outline"
-            size="icon"
+            size={isMobile ? "default" : "icon"}
             onClick={() => loadDoses()}
             disabled={loading}
+            className={isMobile ? "w-full" : ""}
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            {isMobile && <span className="ml-2">Refresh</span>}
           </Button>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
+          <Button variant="outline" onClick={handleExport} className={isMobile ? "w-full" : ""}>
+            <Download className={cn("h-4 w-4", !isMobile && "mr-2")} />
+            {isMobile ? <span className="ml-2">Export</span> : "Export"}
           </Button>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Doses</TabsTrigger>
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="missed">
-            Missed
+        <TabsList className={isMobile ? "grid grid-cols-2 w-full" : ""}>
+          <TabsTrigger value="all" className={isMobile ? "text-xs" : ""}>
+            {isMobile ? "All" : "All Doses"}
+          </TabsTrigger>
+          <TabsTrigger value="today" className={isMobile ? "text-xs" : ""}>
+            {isMobile ? "Today" : "Today"}
+          </TabsTrigger>
+          <TabsTrigger value="missed" className={isMobile ? "text-xs" : ""}>
+            {isMobile ? <AlertCircle className="h-4 w-4" /> : "Missed"}
             {missedCount > 0 && (
-              <Badge className="ml-2 bg-red-600 text-white">{missedCount}</Badge>
+              <Badge className="ml-2 bg-red-600 text-white text-xs">{missedCount}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="refused">
-            Refused
+          <TabsTrigger value="refused" className={isMobile ? "text-xs" : ""}>
+            {isMobile ? <XCircle className="h-4 w-4" /> : "Refused"}
             {refusedCount > 0 && (
-              <Badge className="ml-2 bg-blue-600 text-white">{refusedCount}</Badge>
+              <Badge className="ml-2 bg-blue-600 text-white text-xs">{refusedCount}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
