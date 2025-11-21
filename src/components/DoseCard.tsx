@@ -1,6 +1,5 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -13,8 +12,6 @@ interface DoseCardProps {
   administeredAt?: string;
   note?: string;
   onClick: () => void;
-  onMarkGiven?: () => void;
-  onMarkRefused?: () => void;
 }
 
 const getStatusIcon = (status: string) => {
