@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -11,6 +12,8 @@ interface DoseCardProps {
   administeredAt?: string;
   note?: string;
   onClick: () => void;
+  onMarkGiven?: () => void;
+  onMarkRefused?: () => void;
 }
 
 const getStatusIcon = (status: string) => {
@@ -51,7 +54,9 @@ export const DoseCard = ({
   givenBy, 
   administeredAt,
   note,
-  onClick 
+  onClick,
+  onMarkGiven,
+  onMarkRefused
 }: DoseCardProps) => {
   return (
     <Card
@@ -85,6 +90,38 @@ export const DoseCard = ({
       </div>
       {note && (
         <p className="text-xs text-muted-foreground mt-2 pl-7">{note}</p>
+      )}
+      {status === 'pending' && (onMarkGiven || onMarkRefused) && (
+        <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+          {onMarkGiven && (
+            <Button
+              size="sm"
+              variant="success"
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkGiven();
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Given
+            </Button>
+          )}
+          {onMarkRefused && (
+            <Button
+              size="sm"
+              variant="destructive"
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkRefused();
+              }}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Refused
+            </Button>
+          )}
+        </div>
       )}
     </Card>
   );
