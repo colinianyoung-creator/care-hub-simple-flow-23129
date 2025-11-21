@@ -456,11 +456,19 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       onEditShift(event.detail.shift);
     };
 
+    const handleScheduleAddShift = (event: CustomEvent) => {
+      const { date } = event.detail;
+      setEditingShift({ start_date: date });
+      setShowUnifiedShiftForm(true);
+    };
+
     window.addEventListener('open-add-shift', handleOpenAddShift);
     window.addEventListener('schedule-edit-shift', handleScheduleEditShift);
+    window.addEventListener('schedule-add-shift', handleScheduleAddShift);
     return () => {
       window.removeEventListener('open-add-shift', handleOpenAddShift);
       window.removeEventListener('schedule-edit-shift', handleScheduleEditShift);
+      window.removeEventListener('schedule-add-shift', handleScheduleAddShift);
     };
   }, [assignments, currentUserId]);
 
@@ -1180,6 +1188,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
               currentUserId={currentUserId || undefined}
               onDeleteShift={onDeleteShift}
               carersMap={carers}
+              refreshTrigger={dataVersion}
             />
           </div>
         </TabsContent>
@@ -1402,6 +1411,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             setEditingShift(null);
           }}
           onDeleteShift={onDeleteShift}
+          careRecipientName={careRecipientNameHint}
+          initialDate={editingShift?.start_date}
         />
 
     </div>

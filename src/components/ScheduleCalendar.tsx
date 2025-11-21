@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Clock, Edit, Trash2, Calendar, List } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Edit, Trash2, Calendar, List, Plus } from 'lucide-react';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, endOfWeek } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { MobileDayView } from "./MobileDayView";
 import { DayShiftsModal } from "./dialogs/DayShiftsModal";
 import { formatShiftType } from "@/lib/textUtils";
 import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
+import { cn } from "@/lib/utils";
 
 interface ScheduleCalendarProps {
   familyId: string;
@@ -29,6 +30,7 @@ interface ScheduleCalendarProps {
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
   currentUserId?: string;
+  refreshTrigger?: number;
 }
 
 export const ScheduleCalendar = ({ 
@@ -45,7 +47,8 @@ export const ScheduleCalendar = ({
   onToggleListView,
   viewMode = 'single-family',
   allFamiliesShifts = [],
-  currentUserId
+  currentUserId,
+  refreshTrigger = 0
 }: ScheduleCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [carers, setCarers] = useState<Record<string, string>>({});
@@ -305,6 +308,7 @@ useEffect(() => {
         carersMap={carers}
         onToggleListView={onToggleListView}
         showListView={showListView}
+        refreshTrigger={refreshTrigger}
       />
     );
   }
@@ -368,23 +372,40 @@ useEffect(() => {
             {visibleDays.map((day, index) => {
               const shifts = getShiftsForDay(day);
               const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+              const isEmpty = shifts.length === 0;
+              const canAddShift = canEditShift();
               
               return (
                 <div
                   key={index}
-                  className={`${
+                  className={cn(
                     isTablet 
                       ? 'min-h-[120px] p-2' 
-                      : 'min-h-[100px] md:min-h-[140px] lg:min-h-[160px] p-1 md:p-2 lg:p-3'
-                  } border rounded-lg ${
-                    isToday ? 'bg-primary/5 border-primary/20' : 'bg-background'
-                  }`}
+                      : 'min-h-[100px] md:min-h-[140px] lg:min-h-[160px] p-1 md:p-2 lg:p-3',
+                    'border rounded-lg',
+                    isToday ? 'bg-primary/5 border-primary/20' : 'bg-background',
+                    isEmpty && canAddShift && 'hover:bg-primary/5 hover:border-primary/30 cursor-pointer transition-colors group'
+                  )}
+                  onClick={() => {
+                    if (isEmpty && canAddShift) {
+                      window.dispatchEvent(new CustomEvent('schedule-add-shift', { 
+                        detail: { date: format(day, 'yyyy-MM-dd') } 
+                      }));
+                    }
+                  }}
                 >
-                    <div className="text-xs md:text-sm font-medium mb-1">
-                      {format(day, 'EEE')}
-                      <div className="text-xs text-muted-foreground">
-                        {format(day, 'MMM d')}
+                    <div className="text-xs md:text-sm font-medium mb-1 flex items-center justify-between">
+                      <div>
+                        {format(day, 'EEE')}
+                        <div className="text-xs text-muted-foreground">
+                          {format(day, 'MMM d')}
+                        </div>
                       </div>
+                      {isEmpty && canAddShift && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus className="h-3 w-3 text-primary" />
+                        </div>
+                      )}
                     </div>
                   
                   <div className="space-y-1">
