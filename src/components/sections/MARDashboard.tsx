@@ -6,13 +6,12 @@ import { DoseCard } from "@/components/DoseCard";
 import { DoseActionModal } from "@/components/DoseActionModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, startOfDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Calendar as CalendarListIcon, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MARDashboardProps {
   familyId: string;
@@ -51,7 +50,6 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [selectedDose, setSelectedDose] = useState<Dose | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [archiveFilter, setArchiveFilter] = useState<string>("all");
 
   const loadDoses = async (date: Date = selectedDate) => {
     setLoading(true);
@@ -198,15 +196,8 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
     refused: doses.filter(d => d.status === 'refused').length,
   };
 
-  const filteredArchiveDoses = archiveDoses.filter(dose => {
-    if (archiveFilter === "all") return true;
-    if (archiveFilter === "missed") return dose.status === "missed";
-    if (archiveFilter === "refused") return dose.status === "refused";
-    return true;
-  });
-
   // Group archive doses by date
-  const groupedArchiveDoses = filteredArchiveDoses.reduce((acc, dose) => {
+  const groupedArchiveDoses = archiveDoses.reduce((acc, dose) => {
     const date = dose.due_date;
     if (!acc[date]) {
       acc[date] = [];
@@ -369,7 +360,7 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-4")}>
+                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1 gap-4" : "md:grid-cols-2 lg:grid-cols-4")}>
                     {dateDoses.map((dose) => (
                       <DoseCard
                         key={dose.dose_id}
