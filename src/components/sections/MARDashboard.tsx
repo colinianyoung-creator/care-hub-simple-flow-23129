@@ -227,12 +227,12 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
             Track and record medication doses
           </p>
         </div>
-        <div className={cn("flex gap-2", isMobile && "w-full flex-col")}>
+        <div className={cn("flex gap-2", isMobile && "w-full")}>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("justify-start text-left font-normal", isMobile && "w-full")}>
+              <Button variant="outline" className={cn("justify-start text-left font-normal", isMobile && "flex-1")}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, isMobile ? 'MMM d, yyyy' : 'PPP')}
+                {format(selectedDate, isMobile ? 'MMM d' : 'PPP')}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -249,10 +249,9 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
             size="icon"
             onClick={() => loadDoses()}
             disabled={loading}
-            className={isMobile ? "w-full" : ""}
+            title="Refresh doses"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            {isMobile && <span className="ml-2">Refresh</span>}
           </Button>
         </div>
       </div>
@@ -293,12 +292,12 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
 
       {/* Doses by Medication */}
       <Tabs defaultValue="today" className="w-full" onValueChange={(val) => val === "archive" && loadArchiveDoses()}>
-        <TabsList className={cn("grid w-full", isMobile ? "grid-cols-2" : "")}>
-          <TabsTrigger value="today" className="flex items-center gap-2">
-            {isMobile ? <CalendarListIcon className="h-4 w-4" /> : <><CalendarListIcon className="h-4 w-4" /> Today's Schedule</>}
+        <TabsList className={cn("grid w-full grid-cols-2", isMobile && "h-12")}>
+          <TabsTrigger value="today" className={cn("flex items-center gap-2", isMobile && "min-h-[44px]")}>
+            {isMobile ? <CalendarListIcon className="h-5 w-5" /> : <><CalendarListIcon className="h-4 w-4" /> Today's Schedule</>}
           </TabsTrigger>
-          <TabsTrigger value="archive" className="flex items-center gap-2">
-            {isMobile ? <Archive className="h-4 w-4" /> : <><Archive className="h-4 w-4" /> Archive</>}
+          <TabsTrigger value="archive" className={cn("flex items-center gap-2", isMobile && "min-h-[44px]")}>
+            {isMobile ? <Archive className="h-5 w-5" /> : <><Archive className="h-4 w-4" /> Archive</>}
           </TabsTrigger>
         </TabsList>
 
@@ -327,7 +326,7 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-4")}>
+                  <div className={cn("grid gap-3", isMobile ? "grid-cols-1 gap-4" : "md:grid-cols-2 lg:grid-cols-4")}>
                     {med.doses.map((dose) => (
                       <DoseCard
                         key={dose.dose_id}
@@ -337,8 +336,6 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                         administeredAt={dose.administered_at}
                         note={dose.note}
                         onClick={() => handleDoseClick(dose)}
-                        onMarkGiven={dose.status === 'pending' ? () => handleMarkGiven(dose) : undefined}
-                        onMarkRefused={dose.status === 'pending' ? () => handleMarkRefused(dose) : undefined}
                       />
                     ))}
                   </div>
@@ -349,19 +346,7 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
         </TabsContent>
 
         <TabsContent value="archive" className="space-y-4 mt-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <h3 className="text-lg font-semibold">Medication History</h3>
-            <Select value={archiveFilter} onValueChange={setArchiveFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Doses</SelectItem>
-                <SelectItem value="missed">Missed Only</SelectItem>
-                <SelectItem value="refused">Refused Only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <h3 className="text-lg font-semibold">Past Doses</h3>
 
           {archiveLoading ? (
             <Card>

@@ -56,19 +56,16 @@ export const DoseCard = ({
   administeredAt,
   note,
   onClick,
-  onMarkGiven,
-  onMarkRefused
 }: DoseCardProps) => {
-  const isMobile = useIsMobile();
-  
   return (
     <Card
       className={cn(
-        "p-3 cursor-pointer hover:shadow-md transition-all",
+        "p-4 cursor-pointer transition-all relative",
+        "hover:scale-[1.02] hover:shadow-lg",
         status === 'given' && "border-green-300 bg-green-50",
         status === 'missed' && "border-red-300 bg-red-50",
         status === 'refused' && "border-blue-300 bg-blue-50",
-        status === 'pending' && "border-yellow-300 bg-yellow-50"
+        status === 'pending' && "border-yellow-300 bg-yellow-50 animate-pulse"
       )}
       onClick={onClick}
     >
@@ -94,36 +91,11 @@ export const DoseCard = ({
       {note && (
         <p className="text-xs text-muted-foreground mt-2 pl-7">{note}</p>
       )}
-      {status === 'pending' && (onMarkGiven || onMarkRefused) && (
-        <div className={cn("mt-3 pt-3 border-t border-border", isMobile ? "flex flex-col gap-2" : "flex gap-2")}>
-          {onMarkGiven && (
-            <Button
-              size="sm"
-              variant="success"
-              className={isMobile ? "w-full" : "flex-1"}
-              onClick={(e) => {
-                e.stopPropagation();
-                onMarkGiven();
-              }}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1" />
-              Given
-            </Button>
-          )}
-          {onMarkRefused && (
-            <Button
-              size="sm"
-              variant="destructive"
-              className={isMobile ? "w-full" : "flex-1"}
-              onClick={(e) => {
-                e.stopPropagation();
-                onMarkRefused();
-              }}
-            >
-              <XCircle className="h-4 w-4 mr-1" />
-              Refused
-            </Button>
-          )}
+      {status === 'pending' && (
+        <div className="mt-2 pt-2 border-t border-border text-center">
+          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+            Tap to record <span className="text-lg">→</span>
+          </p>
         </div>
       )}
     </Card>

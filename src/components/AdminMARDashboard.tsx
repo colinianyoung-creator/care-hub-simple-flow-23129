@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw, Download, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CalendarIcon, RefreshCw, Download, CheckCircle2, XCircle, Clock, AlertCircle, Calendar as CalendarListIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -72,7 +72,7 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [doses, setDoses] = useState<Dose[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("today");
 
   const loadDoses = async (date: Date = selectedDate) => {
     setLoading(true);
@@ -102,8 +102,6 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
 
   const filterDoses = () => {
     switch (activeTab) {
-      case 'today':
-        return doses;
       case 'missed':
         return doses.filter(d => d.status === 'missed');
       case 'refused':
@@ -137,12 +135,12 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
             Monitor all medication administrations
           </p>
         </div>
-        <div className={cn("flex gap-2", isMobile && "w-full flex-col")}>
+        <div className={cn("flex gap-2", isMobile && "w-full")}>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={isMobile ? "w-full" : ""}>
+              <Button variant="outline" className={isMobile ? "flex-1" : ""}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, isMobile ? 'MMM d, yyyy' : 'PPP')}
+                {format(selectedDate, isMobile ? 'MMM d' : 'PPP')}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -156,37 +154,37 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
           </Popover>
           <Button
             variant="outline"
-            size={isMobile ? "default" : "icon"}
+            size="icon"
             onClick={() => loadDoses()}
             disabled={loading}
-            className={isMobile ? "w-full" : ""}
+            title="Refresh doses"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            {isMobile && <span className="ml-2">Refresh</span>}
           </Button>
-          <Button variant="outline" onClick={handleExport} className={isMobile ? "w-full" : ""}>
-            <Download className={cn("h-4 w-4", !isMobile && "mr-2")} />
-            {isMobile ? <span className="ml-2">Export</span> : "Export"}
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleExport}
+            title="Export MAR report"
+          >
+            <Download className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={isMobile ? "grid grid-cols-2 w-full" : ""}>
-          <TabsTrigger value="all" className={isMobile ? "text-xs" : ""}>
-            {isMobile ? "All" : "All Doses"}
+        <TabsList className={cn("grid w-full", isMobile ? "grid-cols-3 h-12" : "grid-cols-3")}>
+          <TabsTrigger value="today" className={cn(isMobile ? "min-h-[44px]" : "")}>
+            {isMobile ? <CalendarListIcon className="h-5 w-5" /> : "Today"}
           </TabsTrigger>
-          <TabsTrigger value="today" className={isMobile ? "text-xs" : ""}>
-            {isMobile ? "Today" : "Today"}
-          </TabsTrigger>
-          <TabsTrigger value="missed" className={isMobile ? "text-xs" : ""}>
-            {isMobile ? <AlertCircle className="h-4 w-4" /> : "Missed"}
+          <TabsTrigger value="missed" className={cn(isMobile ? "min-h-[44px]" : "")}>
+            {isMobile ? <AlertCircle className="h-5 w-5" /> : "Missed"}
             {missedCount > 0 && (
               <Badge className="ml-2 bg-red-600 text-white text-xs">{missedCount}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="refused" className={isMobile ? "text-xs" : ""}>
-            {isMobile ? <XCircle className="h-4 w-4" /> : "Refused"}
+          <TabsTrigger value="refused" className={cn(isMobile ? "min-h-[44px]" : "")}>
+            {isMobile ? <XCircle className="h-5 w-5" /> : "Refused"}
             {refusedCount > 0 && (
               <Badge className="ml-2 bg-blue-600 text-white text-xs">{refusedCount}</Badge>
             )}
@@ -197,7 +195,6 @@ export const AdminMARDashboard = ({ familyId }: AdminMARDashboardProps) => {
           <Card>
             <CardHeader>
               <CardTitle>
-                {activeTab === 'all' && 'All Medication Doses'}
                 {activeTab === 'today' && `Doses for ${format(selectedDate, 'MMMM d, yyyy')}`}
                 {activeTab === 'missed' && 'Missed Doses'}
                 {activeTab === 'refused' && 'Refused Doses'}
