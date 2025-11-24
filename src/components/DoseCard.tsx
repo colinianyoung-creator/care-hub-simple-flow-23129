@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, AlertCircle, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -12,6 +13,8 @@ interface DoseCardProps {
   administeredAt?: string;
   note?: string;
   onClick: () => void;
+  onMarkGiven?: () => void;
+  onMarkRefused?: () => void;
 }
 
 const getStatusIcon = (status: string) => {
@@ -53,20 +56,23 @@ export const DoseCard = ({
   administeredAt,
   note,
   onClick,
+  onMarkGiven,
+  onMarkRefused,
 }: DoseCardProps) => {
   const isMobile = useIsMobile();
+  const hasActionButtons = status === 'pending' && onMarkGiven && onMarkRefused;
   
   return (
     <Card
       className={cn(
-        "p-4 cursor-pointer transition-all relative group",
-        "hover:scale-[1.02] hover:shadow-lg hover:border-primary/40",
+        "p-4 transition-all relative",
+        !hasActionButtons && "cursor-pointer group hover:scale-[1.02] hover:shadow-lg hover:border-primary/40",
         status === 'given' && "border-green-300 bg-green-50",
         status === 'missed' && "border-red-300 bg-red-50",
         status === 'refused' && "border-blue-300 bg-blue-50",
         status === 'pending' && "border-yellow-300 bg-yellow-50"
       )}
-      onClick={onClick}
+      onClick={hasActionButtons ? undefined : onClick}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -85,7 +91,7 @@ export const DoseCard = ({
               {format(new Date(administeredAt), 'h:mm a')}
             </p>
           )}
-          {status === 'pending' && !isMobile && (
+          {status === 'pending' && !hasActionButtons && !isMobile && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs text-primary">
               <Edit2 className="h-3 w-3" />
               <span>Click to record</span>
@@ -96,7 +102,38 @@ export const DoseCard = ({
       {note && (
         <p className="text-xs text-muted-foreground mt-2 pl-7">{note}</p>
       )}
-      {status === 'pending' && isMobile && (
+      
+      {/* Action Buttons for Pending Doses */}
+      {hasActionButtons && (
+        <div className={cn("mt-3 flex gap-2", isMobile ? "flex-col" : "flex-row")}>
+          <Button
+            size="sm"
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkGiven();
+            }}
+          >
+            <CheckCircle2 className="h-4 w-4 mr-1" />
+            Given
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkRefused();
+            }}
+          >
+            <XCircle className="h-4 w-4 mr-1" />
+            Refused
+          </Button>
+        </div>
+      )}
+      
+      {/* Mobile hint when no action buttons */}
+      {status === 'pending' && !hasActionButtons && isMobile && (
         <div className="mt-2 text-center">
           <p className="text-xs text-primary font-medium flex items-center justify-center gap-1">
             <Edit2 className="h-3 w-3" />
