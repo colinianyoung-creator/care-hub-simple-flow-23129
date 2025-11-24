@@ -637,9 +637,22 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       const { data: assignmentsData, error: assignmentsError } = await assignmentsQuery;
       if (assignmentsError) throw assignmentsError;
 
-      // Shift requests table doesn't exist - skip loading
-      const requestsData: any[] = [];
-      const requestsError = null;
+      // Load shift change requests - carers only see their own
+      let shiftChangeRequestsQuery = supabase
+        .from('shift_change_requests')
+        .select(`
+          *,
+          profiles!shift_change_requests_requested_by_fkey (full_name),
+          time_entries!shift_change_requests_time_entry_id_fkey (clock_in, clock_out)
+        `)
+        .eq('family_id', familyId)
+        .order('created_at', { ascending: false });
+      
+      if (isCarerRole) {
+        shiftChangeRequestsQuery = shiftChangeRequestsQuery.eq('requested_by', userId);
+      }
+      
+      const { data: shiftChangeData, error: shiftChangeError } = await shiftChangeRequestsQuery;
 
       // Load leave requests - carers only see their own
       let leaveRequestsQuery = supabase
@@ -654,7 +667,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       
       const { data: leaveRequestsData, error: leaveRequestsError } = await leaveRequestsQuery;
 
-      if (requestsError) throw requestsError;
+      if (shiftChangeError) throw shiftChangeError;
       if (leaveRequestsError) throw leaveRequestsError;
 
       // Load shift_instances (recurring shifts) with assignment details
@@ -770,7 +783,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       
       // Combine requests with type information for better handling
       const allRequests = [
-        ...(requestsData || []).map(r => ({ ...r, request_source: 'shift' })),
+        ...(shiftChangeData || []).map(r => ({ 
+          ...r, 
+          request_source: 'shift_change',
+          requester_name: r.profiles?.full_name || 'Unknown',
+          original_start: r.time_entries?.clock_in,
+          original_end: r.time_entries?.clock_out
+        })),
         ...(leaveRequestsData || []).map(r => ({ ...r, request_source: 'leave' }))
       ];
       
@@ -809,14 +828,45 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     }
   };
 
-  const handleApproveRequest = async (requestId: string, approved: boolean, requestType: 'shift' | 'leave') => {
+  const handleApproveRequest = async (requestId: string, approved: boolean, requestType: 'shift_change' | 'leave') => {
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user) throw new Error('Not authenticated');
 
-      if (requestType === 'shift') {
-        // Shift requests table doesn't exist - do nothing
-        return;
+      if (requestType === 'shift_change') {
+        // Get the shift change request details
+        const { data: request, error: fetchError } = await supabase
+          .from('shift_change_requests')
+          .select('*')
+          .eq('id', requestId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        if (approved && request) {
+          // Update the time_entry with the new times
+          const { error: updateError } = await supabase
+            .from('time_entries')
+            .update({
+              clock_in: request.new_start_time,
+              clock_out: request.new_end_time
+            })
+            .eq('id', request.time_entry_id);
+
+          if (updateError) throw updateError;
+        }
+
+        // Update the request status
+        const { error: statusError } = await supabase
+          .from('shift_change_requests')
+          .update({
+            status: approved ? 'approved' : 'denied',
+            reviewed_by: user.data.user.id,
+            reviewed_at: new Date().toISOString()
+          })
+          .eq('id', requestId);
+
+        if (statusError) throw statusError;
       } else {
         // Just update the leave request status - don't create shift instances
         const { error } = await supabase
@@ -831,7 +881,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
       toast({
         title: approved ? "Request approved" : "Request denied",
-        description: `The ${requestType} request has been ${approved ? 'approved' : 'denied'}.`,
+        description: approved 
+          ? (requestType === 'shift_change' ? "The shift times have been updated." : "The leave request has been approved.")
+          : "The request has been denied.",
       });
 
       await loadSchedulingData();
@@ -903,11 +955,15 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     }
   };
 
-  const handleDeleteRequest = async (requestId: string, requestType: 'shift' | 'leave') => {
+  const handleDeleteRequest = async (requestId: string, requestType: 'shift_change' | 'leave') => {
     try {
-      if (requestType === 'shift') {
-        // Shift requests table doesn't exist - do nothing
-        return;
+      if (requestType === 'shift_change') {
+        const { error } = await supabase
+          .from('shift_change_requests')
+          .delete()
+          .eq('id', requestId);
+        
+        if (error) throw error;
       } else {
         const { error } = await supabase
           .from('leave_requests')
@@ -919,7 +975,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
 
       toast({
         title: "Request deleted",
-        description: `The ${requestType} request has been deleted.`,
+        description: `The request has been deleted.`,
       });
 
       await loadSchedulingData();
@@ -927,7 +983,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
       console.error('Error deleting request:', error);
       toast({
         title: "Error",
-        description: `Failed to delete ${requestType} request.`,
+        description: `Failed to delete request.`,
         variant: "destructive",
       });
     }
@@ -1232,61 +1288,65 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                   requests.filter(r => r.status === 'pending').map((request) => (
                     <div key={request.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg space-y-3 md:space-y-0">
                       <div className="flex-1">
-                        <div className="font-medium capitalize text-sm md:text-base">
-                          {request.request_type ? request.request_type.replace('_', ' ') : 
-                           request.type ? request.type.replace('_', ' ') : 'Unknown Request'}
+                        <div className="flex items-center gap-2 mb-2">
+                          {request.request_source === 'shift_change' ? (
+                            <Badge variant="outline" className="w-fit">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Shift Change
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="w-fit">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Leave Request
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {request.start_date || request.date} {request.end_date && `- ${request.end_date}`}
-                        </div>
-                        {request.reason && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Reason: {request.reason}
-                          </div>
-                        )}
-                        {request.hours && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Hours: {request.hours}
-                          </div>
+                        
+                        {request.request_source === 'shift_change' ? (
+                          <>
+                            <div className="font-medium text-sm md:text-base">
+                              {request.requester_name}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {request.original_start && (
+                                <div className="flex items-center gap-2">
+                                  <span>Original: {format(new Date(request.original_start), 'MMM d, h:mm a')} - {request.original_end ? format(new Date(request.original_end), 'h:mm a') : 'N/A'}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <span>Requested: {format(new Date(request.new_start_time), 'MMM d, h:mm a')} - {format(new Date(request.new_end_time), 'h:mm a')}</span>
+                              </div>
+                            </div>
+                            {request.reason && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                Reason: {request.reason}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-medium capitalize text-sm md:text-base">
+                              {request.request_type ? request.request_type.replace('_', ' ') : 
+                               request.type ? request.type.replace('_', ' ') : 'Leave Request'}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {request.start_date || request.date} {request.end_date && `- ${request.end_date}`}
+                            </div>
+                            {request.reason && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                Reason: {request.reason}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
-                      <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-2">
-                        <Badge 
-                          variant={
-                            request.status === 'approved' ? 'default' :
-                            request.status === 'denied' ? 'destructive' : 'secondary'
-                          }
-                          className="w-fit"
-                        >
-                          {request.status}
-                        </Badge>
-                        {request.request_type === 'shift_change_notification' && (
-                          <Badge variant="outline" className="w-fit">Change</Badge>
-                         )}
-                       </div>
-                       {isAdmin && request.status === 'pending' && (
-                         <div className="w-full">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingShift(request);
-                                setShowUnifiedShiftForm(true);
-                              }}
-                              className="w-full text-sm"
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit Shift
-                            </Button>
-                         </div>
-                       )}
                        <div className="flex flex-col md:flex-row gap-2 mt-3 md:mt-0">
                         {isAdmin && request.status === 'pending' && (
                           <>
                             <div className="flex gap-2 w-full md:w-auto">
                               <Button 
                                 size="sm" 
-                                onClick={() => handleApproveRequest(request.id, true, request.request_source || 'shift')}
+                                onClick={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
                                 className="flex-1 md:flex-none text-sm"
                               >
                                 Approve
@@ -1294,7 +1354,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleApproveRequest(request.id, false, request.request_source || 'shift')}
+                                onClick={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
                                 className="flex-1 md:flex-none text-sm"
                               >
                                 Deny
@@ -1306,7 +1366,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                           <Button 
                             size="sm" 
                             variant="ghost"
-                            onClick={() => handleDeleteRequest(request.id, request.request_source || 'shift')}
+                            onClick={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
                             className="w-full md:w-auto text-sm"
                           >
                             <Trash2 className="h-4 w-4 md:mr-1" />
