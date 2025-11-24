@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DoseCard } from "@/components/DoseCard";
 import { DoseActionModal } from "@/components/DoseActionModal";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw, Calendar as CalendarListIcon, Archive } from "lucide-react";
+import { CalendarIcon, RefreshCw, Calendar as CalendarListIcon, Archive, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
@@ -208,6 +210,41 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
     return acc;
   }, {} as Record<string, Dose[]>);
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'given':
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+      case 'refused':
+        return <XCircle className="h-4 w-4 text-blue-600" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'missed':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, { label: string; className: string }> = {
+      given: { label: 'Given', className: 'bg-green-100 text-green-800 border-green-200' },
+      refused: { label: 'Refused', className: 'bg-blue-100 text-blue-800 border-blue-200' },
+      pending: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+      missed: { label: 'Missed', className: 'bg-red-100 text-red-800 border-red-200' },
+    };
+
+    const variant = variants[status] || variants.pending;
+    
+    return (
+      <Badge variant="outline" className={cn("font-medium", variant.className)}>
+        <span className="flex items-center gap-1">
+          {getStatusIcon(status)}
+          {variant.label}
+        </span>
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className={cn(
@@ -329,6 +366,8 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                         administeredAt={dose.administered_at}
                         note={dose.note}
                         onClick={() => handleDoseClick(dose)}
+                        onMarkGiven={() => handleMarkGiven(dose)}
+                        onMarkRefused={() => handleMarkRefused(dose)}
                       />
                     ))}
                   </div>
@@ -339,8 +378,6 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
         </TabsContent>
 
         <TabsContent value="archive" className="space-y-4 mt-6">
-          <h3 className="text-lg font-semibold">Past Doses</h3>
-
           {archiveLoading ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
@@ -362,28 +399,38 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className={cn(
-                    "grid gap-3",
-                    isMobile && isTabletLandscape ? "grid-cols-2 gap-3" : 
-                    isMobile ? "grid-cols-1 gap-4" : 
-                    "md:grid-cols-2 lg:grid-cols-4"
-                  )}>
-                    {dateDoses.map((dose) => (
-                      <DoseCard
-                        key={dose.dose_id}
-                        dueTime={dose.due_time}
-                        status={dose.status as any}
-                        givenBy={dose.given_by_name}
-                        administeredAt={dose.administered_at}
-                        note={dose.note}
-                        onClick={() => {
-                          toast({
-                            title: dose.medication_name,
-                            description: `${dose.medication_dosage} at ${dose.due_time}\nStatus: ${dose.status}${dose.note ? `\nNote: ${dose.note}` : ''}`,
-                          });
-                        }}
-                      />
-                    ))}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Medication</TableHead>
+                          <TableHead>Dosage</TableHead>
+                          <TableHead>Due Time</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Given By</TableHead>
+                          <TableHead>Administered</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dateDoses.map((dose) => (
+                          <TableRow key={dose.dose_id}>
+                            <TableCell className="font-medium">{dose.medication_name}</TableCell>
+                            <TableCell>{dose.medication_dosage}</TableCell>
+                            <TableCell>{format(new Date(`2000-01-01T${dose.due_time}`), 'h:mm a')}</TableCell>
+                            <TableCell>{getStatusBadge(dose.status)}</TableCell>
+                            <TableCell>{dose.given_by_name || '-'}</TableCell>
+                            <TableCell>
+                              {dose.administered_at 
+                                ? format(new Date(dose.administered_at), 'h:mm a')
+                                : '-'
+                              }
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">{dose.note || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
