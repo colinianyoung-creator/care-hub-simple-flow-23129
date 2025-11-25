@@ -49,13 +49,13 @@ const calculateHoursFromShift = (shift: any): string => {
 
 export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel, onDeleteShift, initialDate }: UnifiedShiftFormProps) => {
   const [formData, setFormData] = useState({
-    request_type: editShiftData?.shift_type || editShiftData?.request_type || 'basic',
-    start_date: editShiftData?.scheduled_date || editShiftData?.start_date || initialDate || '',
-    end_date: editShiftData?.end_date || '',
-    hours: calculateHoursFromShift(editShiftData),
-    reason: editShiftData?.reason || editShiftData?.notes || '',
-    carer_id: editShiftData?.carer_id || '',
-    shift_category: editShiftData?.shift_type || 'basic'
+    request_type: 'basic',
+    start_date: '',
+    end_date: '',
+    hours: '8',
+    reason: '',
+    carer_id: '',
+    shift_category: 'basic'
   });
   
   const isEditingLeaveRequest = editShiftData?.id && ['annual_leave', 'sickness', 'public_holiday'].includes(editShiftData.request_type);
@@ -82,6 +82,21 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     { value: 'swap', label: 'Shift Swap' },
     { value: 'overtime', label: 'Overtime Request' }
   ];
+
+  // Auto-populate form when modal opens
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        request_type: editShiftData?.shift_type || editShiftData?.request_type || 'basic',
+        start_date: editShiftData?.scheduled_date || editShiftData?.start_date || initialDate || '',
+        end_date: editShiftData?.end_date || '',
+        hours: calculateHoursFromShift(editShiftData),
+        reason: editShiftData?.reason || editShiftData?.notes || '',
+        carer_id: editShiftData?.carer_id || '',
+        shift_category: editShiftData?.shift_type || 'basic'
+      });
+    }
+  }, [open, editShiftData, initialDate]);
 
   // Load carers
   useEffect(() => {
@@ -135,38 +150,88 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
       if (isCarer) {
         // Carers submit change requests instead of direct updates
         if (editShiftData?.id) {
-          // Transform shift data to time entry format if needed
-          const timeEntry = {
-            id: editShiftData.id,
-            clock_in: editShiftData.clock_in || `${editShiftData.start_date}T${editShiftData.start_time || '09:00:00'}`,
-            clock_out: editShiftData.clock_out || `${editShiftData.start_date}T${editShiftData.end_time || '17:00:00'}`,
-            family_id: familyId
-          };
+          // If end_date is set, create bulk change requests for all shifts in range
+          if (formData.end_date && ['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type)) {
+            // Query all shifts in date range for this carer
+            const { data: shiftsInRange, error: queryError } = await supabase
+              .from('time_entries')
+              .select('id, clock_in, clock_out')
+              .eq('family_id', familyId)
+              .eq('user_id', user.data.user.id)
+              .gte('clock_in', `${formData.start_date}T00:00:00`)
+              .lte('clock_in', `${formData.end_date}T23:59:59`);
 
-          // Calculate new times based on form data
-          const startHour = 9;
-          const hours = parseInt(formData.hours) || 8;
-          const endHour = startHour + hours;
+            if (queryError) throw queryError;
 
-          const { error } = await supabase
-            .from('shift_change_requests')
-            .insert({
+            if (!shiftsInRange || shiftsInRange.length === 0) {
+              toast({
+                title: "No Shifts Found",
+                description: "No shifts found in the selected date range",
+                variant: "destructive",
+              });
+              setLoading(false);
+              return;
+            }
+
+            // Create change request for each shift
+            const startHour = 9;
+            const hours = parseInt(formData.hours) || 8;
+            const endHour = startHour + hours;
+
+            const changeRequests = shiftsInRange.map(shift => ({
               family_id: familyId,
-              time_entry_id: timeEntry.id,
+              time_entry_id: shift.id,
               requested_by: user.data.user.id,
-              new_start_time: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
-              new_end_time: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
-              new_shift_type: formData.request_type || 'basic',
+              new_start_time: shift.clock_in,
+              new_end_time: shift.clock_out,
+              new_shift_type: formData.request_type,
               reason: formData.reason || null,
               status: 'pending'
+            }));
+
+            const { error: bulkError } = await supabase
+              .from('shift_change_requests')
+              .insert(changeRequests);
+
+            if (bulkError) throw bulkError;
+
+            toast({
+              title: "Bulk Change Requests Submitted",
+              description: `${shiftsInRange.length} shift change requests submitted for ${formData.start_date} to ${formData.end_date}`,
             });
+          } else {
+            // Single shift change request
+            const timeEntry = {
+              id: editShiftData.id,
+              clock_in: editShiftData.clock_in || `${editShiftData.start_date}T${editShiftData.start_time || '09:00:00'}`,
+              clock_out: editShiftData.clock_out || `${editShiftData.start_date}T${editShiftData.end_time || '17:00:00'}`,
+              family_id: familyId
+            };
 
-          if (error) throw error;
+            const startHour = 9;
+            const hours = parseInt(formData.hours) || 8;
+            const endHour = startHour + hours;
 
-          toast({
-            title: "Change Request Submitted",
-            description: "Your shift change request has been submitted for admin approval",
-          });
+            const { error } = await supabase
+              .from('shift_change_requests')
+              .insert({
+                family_id: familyId,
+                time_entry_id: timeEntry.id,
+                requested_by: user.data.user.id,
+                new_start_time: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
+                new_end_time: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
+                new_shift_type: formData.request_type || 'basic',
+                reason: formData.reason || null,
+                status: 'pending'
+              });
+
+            if (error) throw error;
+
+            toast({
+              title: "Change Request Submitted",
+              description: "Your shift change request has been submitted for admin approval",
+            });
+          }
         }
       } else {
         // Admin mode - direct updates
@@ -217,31 +282,65 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               if (error) throw error;
             }
           } else if (!isEditingLeaveRequest) {
-            // Create new time entry
+            // Admin creating new shift(s)
             const startHour = 9;
             const hours = parseInt(formData.hours) || 8;
             const endHour = startHour + hours;
 
-            const { error } = await supabase
-              .from('time_entries')
-              .insert({
-                family_id: familyId,
-                user_id: formData.carer_id,
-                clock_in: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
-                clock_out: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
-                notes: formData.reason || `${formData.shift_category} shift`,
-                shift_type: formData.request_type || formData.shift_category || 'basic'
-              });
+            // If end_date is set, create shifts for all dates in range
+            if (formData.end_date && ['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type)) {
+              const start = new Date(formData.start_date);
+              const end = new Date(formData.end_date);
+              const shifts = [];
 
-            if (error) throw error;
+              for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+                const dateStr = formatDate(date, 'yyyy-MM-dd');
+                shifts.push({
+                  family_id: familyId,
+                  user_id: formData.carer_id,
+                  clock_in: `${dateStr}T${String(startHour).padStart(2, '0')}:00:00`,
+                  clock_out: `${dateStr}T${String(endHour).padStart(2, '0')}:00:00`,
+                  notes: formData.reason || `${formData.request_type} shift`,
+                  shift_type: formData.request_type
+                });
+              }
+
+              const { error } = await supabase
+                .from('time_entries')
+                .insert(shifts);
+
+              if (error) throw error;
+
+              toast({
+                title: "Success",
+                description: `${shifts.length} shifts created from ${formData.start_date} to ${formData.end_date}`,
+              });
+            } else {
+              // Create single new time entry
+              const { error } = await supabase
+                .from('time_entries')
+                .insert({
+                  family_id: familyId,
+                  user_id: formData.carer_id,
+                  clock_in: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
+                  clock_out: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
+                  notes: formData.reason || `${formData.shift_category} shift`,
+                  shift_type: formData.request_type || formData.shift_category || 'basic'
+                });
+
+              if (error) throw error;
+            }
           }
         }
 
-        toast({
-          title: "Success",
-          description: isEditingLeaveRequest ? "Leave request updated successfully" : 
-                      (editShiftData ? "Shift updated successfully" : "Shift created successfully"),
-        });
+        // Show success toast only for non-bulk operations
+        if (!formData.end_date || !['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type)) {
+          toast({
+            title: "Success",
+            description: isEditingLeaveRequest ? "Leave request updated successfully" : 
+                        (editShiftData ? "Shift updated successfully" : "Shift created successfully"),
+          });
+        }
         
         // Notify calendar views to refresh
         window.dispatchEvent(new Event('shift-updated'));
@@ -454,7 +553,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             </div>
 
             <div>
-              <Label htmlFor="start_date">{isAdmin && !editShiftData ? 'Date (optional)' : 'Start Date'}</Label>
+              <Label htmlFor="start_date">Start Date {isAdmin && !editShiftData && '(optional)'}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -482,6 +581,48 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* End Date - Only for leave types */}
+            {['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type) && (
+              <div>
+                <Label htmlFor="end_date">End Date (optional - for multiple days)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.end_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.end_date ? formatDate(new Date(formData.end_date), "PPP") : <span>Select end date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.end_date ? new Date(formData.end_date) : undefined}
+                      onSelect={(date) => setFormData(prev => ({ 
+                        ...prev, 
+                        end_date: date ? formatDate(date, 'yyyy-MM-dd') : '' 
+                      }))}
+                      disabled={(date) => !formData.start_date || date < new Date(formData.start_date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {formData.end_date && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isCarer 
+                      ? `Will create change requests for all shifts between these dates`
+                      : `Will create shifts for all days between these dates`
+                    }
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <Label htmlFor="hours">Hours {isAdmin && !editShiftData && '(optional)'}</Label>
