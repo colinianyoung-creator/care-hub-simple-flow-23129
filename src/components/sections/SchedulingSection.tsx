@@ -844,12 +844,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
         if (fetchError) throw fetchError;
 
         if (approved && request) {
-          // Update the time_entry with the new times
+          // Update the time_entry with the new times AND shift type
           const { error: updateError } = await supabase
             .from('time_entries')
             .update({
               clock_in: request.new_start_time,
-              clock_out: request.new_end_time
+              clock_out: request.new_end_time,
+              shift_type: request.new_shift_type || 'basic'
             })
             .eq('id', request.time_entry_id);
 
@@ -1280,12 +1281,26 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {requests.filter(r => r.status === 'pending').length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No pending requests found
-                  </div>
-                ) : (
-                  requests.filter(r => r.status === 'pending').map((request) => (
+                {(() => {
+                  // Filter requests based on role
+                  const filteredRequests = isAdmin 
+                    ? requests.filter(r => r.status === 'pending')
+                    : requests.filter(r => {
+                        if (r.status === 'pending') return true;
+                        if (r.status === 'approved' && r.request_source === 'shift_change') {
+                          // Show approved shift change requests until shift date passes
+                          const today = new Date().toISOString().split('T')[0];
+                          return r.new_start_time && r.new_start_time.split('T')[0] >= today;
+                        }
+                        return false;
+                      });
+                  
+                  return filteredRequests.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No pending requests found
+                    </div>
+                  ) : (
+                    filteredRequests.map((request) => (
                     <div key={request.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg space-y-3 md:space-y-0">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -1315,8 +1330,18 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                               )}
                               <div className="flex items-center gap-2 mt-1">
                                 <span>Requested: {format(new Date(request.new_start_time), 'MMM d, h:mm a')} - {format(new Date(request.new_end_time), 'h:mm a')}</span>
+                                {request.new_shift_type && request.new_shift_type !== 'basic' && (
+                                  <Badge variant="secondary" className="ml-2">
+                                    {request.new_shift_type.replace(/_/g, ' ')}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
+                            {request.status === 'approved' && isCarer && (
+                              <Badge variant="outline" className="mt-2 w-fit bg-green-50 text-green-700 border-green-300">
+                                Approved
+                              </Badge>
+                            )}
                             {request.reason && (
                               <div className="text-sm text-muted-foreground mt-1">
                                 Reason: {request.reason}
@@ -1375,8 +1400,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                         )}
                       </div>
                     </div>
-                  ))
-                )}
+                    ))
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
