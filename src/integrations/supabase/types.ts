@@ -1039,6 +1039,7 @@ export type Database = {
           family_id: string
           id: string
           new_end_time: string
+          new_shift_type: string | null
           new_start_time: string
           reason: string | null
           requested_by: string
@@ -1053,6 +1054,7 @@ export type Database = {
           family_id: string
           id?: string
           new_end_time: string
+          new_shift_type?: string | null
           new_start_time: string
           reason?: string | null
           requested_by: string
@@ -1067,6 +1069,7 @@ export type Database = {
           family_id?: string
           id?: string
           new_end_time?: string
+          new_shift_type?: string | null
           new_start_time?: string
           reason?: string | null
           requested_by?: string

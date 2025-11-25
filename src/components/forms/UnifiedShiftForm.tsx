@@ -29,15 +29,33 @@ interface UnifiedShiftFormProps {
   initialDate?: string;
 }
 
+// Helper: Calculate hours from shift data
+const calculateHoursFromShift = (shift: any): string => {
+  if (!shift) return '8';
+  if (shift.hours) return shift.hours.toString();
+  if (shift.clock_in && shift.clock_out) {
+    const start = new Date(shift.clock_in);
+    const end = new Date(shift.clock_out);
+    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return Math.round(hours).toString();
+  }
+  if (shift.start_time && shift.end_time) {
+    const start = parseInt(shift.start_time.split(':')[0]);
+    const end = parseInt(shift.end_time.split(':')[0]);
+    return (end - start).toString();
+  }
+  return '8';
+};
+
 export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipientName, open, onOpenChange, onSuccess, onCancel, onDeleteShift, initialDate }: UnifiedShiftFormProps) => {
   const [formData, setFormData] = useState({
-    request_type: editShiftData?.request_type || '',
-    start_date: editShiftData?.start_date || initialDate || '',
+    request_type: editShiftData?.shift_type || editShiftData?.request_type || 'basic',
+    start_date: editShiftData?.scheduled_date || editShiftData?.start_date || initialDate || '',
     end_date: editShiftData?.end_date || '',
-    hours: editShiftData?.hours?.toString() || '',
-    reason: editShiftData?.reason || '',
+    hours: calculateHoursFromShift(editShiftData),
+    reason: editShiftData?.reason || editShiftData?.notes || '',
     carer_id: editShiftData?.carer_id || '',
-    shift_category: editShiftData?.shift_category || 'basic'
+    shift_category: editShiftData?.shift_type || 'basic'
   });
   
   const isEditingLeaveRequest = editShiftData?.id && ['annual_leave', 'sickness', 'public_holiday'].includes(editShiftData.request_type);
@@ -138,6 +156,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               requested_by: user.data.user.id,
               new_start_time: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
               new_end_time: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
+              new_shift_type: formData.request_type || 'basic',
               reason: formData.reason || null,
               status: 'pending'
             });
