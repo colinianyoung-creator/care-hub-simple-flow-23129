@@ -7,6 +7,14 @@
 export const isAdminRole = (role?: string) =>
   role === 'family_admin' || role === 'disabled_person';
 
+export const canViewOnly = (role?: string) => role === 'family_viewer';
+
+export const canEdit = (role?: string) => 
+  role === 'family_admin' || role === 'disabled_person' || role === 'carer';
+
+export const canManage = (role?: string) => 
+  role === 'family_admin' || role === 'disabled_person';
+
 export function canEditSection(params: {
   hasMembership: boolean;
   membershipRole?: string;

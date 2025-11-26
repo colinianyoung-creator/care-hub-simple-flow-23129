@@ -132,7 +132,7 @@ export const MoneyArchiveSection: React.FC<MoneyArchiveSectionProps> = ({
   };
 
   const canDeleteEntry = (entry: MoneyEntry) => {
-    return !!familyId;
+    return !!familyId && userRole !== 'family_viewer';
   };
 
   const goToPreviousDay = () => {

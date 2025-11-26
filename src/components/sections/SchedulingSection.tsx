@@ -38,6 +38,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
     );
   }
 
+  const isViewer = userRole === 'family_viewer';
+  const canEdit = !isViewer;
+
   const [assignments, setAssignments] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [instances, setInstances] = useState<any[]>([]);
@@ -1231,7 +1234,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
               assignments={assignments}
               instances={instances}
               onRefresh={loadSchedulingData}
-              onEditShift={onEditShift}
+              onEditShift={canEdit ? onEditShift : undefined}
               showListView={(() => {
                 console.log('Passing showListView to ScheduleCalendar:', showListView);
                 return showListView;
@@ -1268,7 +1271,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
                   <CardTitle>Shift Requests</CardTitle>
                   <CardDescription>Holiday, swap, and sick day requests</CardDescription>
                 </div>
-                {isCarer && (
+                {isCarer && canEdit && (
                   <Button 
                     onClick={() => setShowRequestForm(true)}
                     size="sm"
@@ -1456,7 +1459,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
             familyId={familyId}
             userRole={userRole}
             careRecipientNameHint={careRecipientNameHint}
-            onShiftClick={onEditShift}
+            onShiftClick={canEdit ? onEditShift : undefined}
             carersMap={carers}
             viewMode={viewMode}
             allFamiliesShifts={allFamiliesShifts}

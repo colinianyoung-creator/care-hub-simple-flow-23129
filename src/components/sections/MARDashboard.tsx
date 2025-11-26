@@ -55,6 +55,9 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
   const [selectedDose, setSelectedDose] = useState<Dose | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  const isViewer = userRole === 'family_viewer';
+  const canEdit = !isViewer;
+
   const loadDoses = async (date: Date = selectedDate) => {
     setLoading(true);
     try {
@@ -321,12 +324,14 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
       </div>
 
       {/* Doses by Medication */}
-      <Tabs defaultValue="today" className="w-full" onValueChange={(val) => val === "archive" && loadArchiveDoses()}>
+      <Tabs defaultValue={isViewer ? "archive" : "today"} className="w-full" onValueChange={(val) => val === "archive" && loadArchiveDoses()}>
         <TabsList className={cn("grid w-full grid-cols-2", isMobile && "h-12")}>
-          <TabsTrigger value="today" className={cn("flex items-center gap-2", isMobile && "min-h-[44px]")}>
-            {isMobile ? <CalendarListIcon className="h-5 w-5" /> : <><CalendarListIcon className="h-4 w-4" /> Today's Schedule</>}
-          </TabsTrigger>
-          <TabsTrigger value="archive" className={cn("flex items-center gap-2", isMobile && "min-h-[44px]")}>
+          {!isViewer && (
+            <TabsTrigger value="today" className={cn("flex items-center gap-2", isMobile && "min-h-[44px]")}>
+              {isMobile ? <CalendarListIcon className="h-5 w-5" /> : <><CalendarListIcon className="h-4 w-4" /> Today's Schedule</>}
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="archive" className={cn("flex items-center gap-2", isMobile && "min-h-[44px]", isViewer && "col-span-2")}>
             {isMobile ? <Archive className="h-5 w-5" /> : <><Archive className="h-4 w-4" /> Archive</>}
           </TabsTrigger>
         </TabsList>
@@ -365,9 +370,9 @@ export const MARDashboard = ({ familyId, userRole }: MARDashboardProps) => {
                         givenBy={dose.given_by_name}
                         administeredAt={dose.administered_at}
                         note={dose.note}
-                        onClick={() => handleDoseClick(dose)}
-                        onMarkGiven={() => handleMarkGiven(dose)}
-                        onMarkRefused={() => handleMarkRefused(dose)}
+                        onClick={canEdit ? () => handleDoseClick(dose) : undefined}
+                        onMarkGiven={canEdit ? () => handleMarkGiven(dose) : undefined}
+                        onMarkRefused={canEdit ? () => handleMarkRefused(dose) : undefined}
                       />
                     ))}
                   </div>

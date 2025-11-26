@@ -277,8 +277,10 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
 
   const canDeleteNote = (note: CareNote) => {
-    return familyId && currentUserId;
+    return familyId && currentUserId && userRole !== 'family_viewer';
   };
+
+  const canEdit = userRole !== 'family_viewer';
 
   const getMoodIcon = (mood: string) => {
     switch (mood) {
@@ -342,7 +344,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
       <TabsContent value="today" className="space-y-6">
         {/* Add Note Form */}
-        {familyId && showAddForm ? (
+        {familyId && canEdit && showAddForm ? (
         <Card>
           <CardHeader>
             <CardTitle>Add Daily Note</CardTitle>
@@ -510,7 +512,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
             </div>
           </CardContent>
         </Card>
-      ) : familyId ? (
+      ) : familyId && canEdit ? (
         <Button 
           onClick={() => setShowAddForm(true)} 
           className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"

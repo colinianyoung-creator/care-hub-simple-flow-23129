@@ -353,8 +353,10 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
   };
 
   const canDelete = (entry: MoneyEntry) => {
-    return familyId && currentUserId;
+    return familyId && currentUserId && userRole !== 'family_viewer';
   };
+
+  const canEdit = userRole !== 'family_viewer';
 
   const getMemberName = (userId: string) => {
     return familyMembers.find(m => m.id === userId)?.full_name || 'Unknown';
@@ -399,14 +401,14 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
             </CardHeader>
           </Card>
 
-      {familyId && !showForm && (
+      {familyId && canEdit && !showForm && (
         <Button onClick={() => setShowForm(true)} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
           Add Expense
         </Button>
       )}
 
-      {familyId && showForm && (
+      {familyId && canEdit && showForm && (
         <Card>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -540,26 +542,28 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
                     </p>
                   </div>
                   
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditEntry(entry)}
-                      className="flex-1"
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleArchiveEntry(entry.id)}
-                      className="flex-1"
-                    >
-                      <Archive className="h-4 w-4 mr-1" />
-                      Archive
-                    </Button>
-                  </div>
+                  {canDelete(entry) && (
+                    <div className="flex gap-2 pt-2 border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditEntry(entry)}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleArchiveEntry(entry.id)}
+                        className="flex-1"
+                      >
+                        <Archive className="h-4 w-4 mr-1" />
+                        Archive
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
