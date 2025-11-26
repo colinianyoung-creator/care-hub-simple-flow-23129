@@ -110,6 +110,8 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   }, [familyId]);
 
 
+  const canEdit = userRole !== 'family_viewer';
+
   const loadTasks = async (signal?: AbortSignal) => {
     try {
       if (!familyId) {
@@ -373,7 +375,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   return (
     <div className="space-y-6">
       {/* Add Task Form */}
-      {showAddForm && familyId && (
+      {showAddForm && familyId && canEdit && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add New Task</CardTitle>
@@ -437,7 +439,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Tasks</h3>
-        {familyId && (
+        {familyId && canEdit && (
           <Button 
             onClick={() => setShowAddForm(true)}
             className="h-10 px-4 text-sm min-h-[44px] md:min-h-[40px]"
@@ -498,28 +500,28 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap mt-2">
-                      {familyId && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => markTaskComplete(task.id)}
-                          className="bg-green-500 hover:bg-green-600 h-auto px-2 py-1 text-xs"
-                        >
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Mark Done
-                        </Button>
-                      )}
-                      {familyId && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => deleteTask(task.id)}
-                          className="h-auto px-2 py-1 text-xs"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                       <div className="flex gap-2 flex-wrap mt-2">
+                         {familyId && canEdit && (
+                           <Button 
+                             size="sm" 
+                             onClick={() => markTaskComplete(task.id)}
+                             className="bg-green-500 hover:bg-green-600 h-auto px-2 py-1 text-xs"
+                           >
+                             <CheckCircle className="h-3 w-3 mr-1" />
+                             Mark Done
+                           </Button>
+                         )}
+                         {familyId && canEdit && (
+                           <Button 
+                             size="sm" 
+                             variant="outline"
+                             onClick={() => deleteTask(task.id)}
+                             className="h-auto px-2 py-1 text-xs"
+                           >
+                             <Trash2 className="h-3 w-3" />
+                           </Button>
+                         )}
+                       </div>
                   </div>
                 ))}
                 {activeTasks.length === 0 && (
@@ -563,7 +565,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                       </div>
                       <div className="flex gap-2 flex-wrap mt-2">
                         {/* Admin buttons: Approve + Re-open */}
-                        {(userRole === 'family_admin' || userRole === 'disabled_person') && (
+                        {canEdit && (userRole === 'family_admin' || userRole === 'disabled_person') && (
                           <>
                             <Button 
                               size="sm" 
@@ -586,7 +588,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                         )}
                         
                         {/* Carer button: Re-open only */}
-                        {userRole === 'carer' && (
+                        {canEdit && userRole === 'carer' && (
                           <Button 
                             size="sm" 
                             variant="outline"

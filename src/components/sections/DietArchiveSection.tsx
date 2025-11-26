@@ -138,7 +138,7 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
   };
 
   const canDeleteEntry = (entry: DietEntry) => {
-    return currentUserId && entry.created_by === currentUserId;
+    return currentUserId && entry.created_by === currentUserId && userRole !== 'family_viewer';
   };
 
   const goToPreviousDay = () => {

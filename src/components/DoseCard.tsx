@@ -12,7 +12,7 @@ interface DoseCardProps {
   givenBy?: string;
   administeredAt?: string;
   note?: string;
-  onClick: () => void;
+  onClick?: () => void;
   onMarkGiven?: () => void;
   onMarkRefused?: () => void;
 }
@@ -104,7 +104,7 @@ export const DoseCard = ({
       )}
       
       {/* Action Buttons for Pending Doses */}
-      {hasActionButtons && (
+      {status === 'pending' && onMarkGiven && onMarkRefused && (
         <div className={cn("mt-3 flex gap-2", isMobile ? "flex-col" : "flex-row")}>
           <Button
             size="sm"
@@ -133,7 +133,7 @@ export const DoseCard = ({
       )}
       
       {/* Mobile hint when no action buttons */}
-      {status === 'pending' && !hasActionButtons && isMobile && (
+      {status === 'pending' && !onMarkGiven && isMobile && (
         <div className="mt-2 text-center">
           <p className="text-xs text-primary font-medium flex items-center justify-center gap-1">
             <Edit2 className="h-3 w-3" />

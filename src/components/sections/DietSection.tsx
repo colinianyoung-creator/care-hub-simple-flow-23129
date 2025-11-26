@@ -243,8 +243,10 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   };
 
   const canDelete = (entry: DietEntry) => {
-    return familyId && currentUserId;
+    return familyId && currentUserId && userRole !== 'family_viewer';
   };
+
+  const canEdit = userRole !== 'family_viewer';
 
   if (!familyId) {
     return (
@@ -289,14 +291,14 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
 
         {['breakfast', 'lunch', 'dinner', 'snacks', 'drinks'].map(mealType => (
           <TabsContent key={mealType} value={mealType} className="space-y-4">
-            {familyId && !showForm && (
+            {familyId && canEdit && !showForm && (
               <Button onClick={() => setShowForm(true)} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
                 Add {mealType.charAt(0).toUpperCase() + mealType.slice(1)} Entry
               </Button>
             )}
 
-            {familyId && showForm && (
+            {familyId && canEdit && showForm && (
               <Card>
                 <CardContent className="pt-6">
                   <form onSubmit={handleSubmit} className="space-y-4">
