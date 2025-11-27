@@ -16,6 +16,7 @@ const Dashboard = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Checking authentication...");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string>("");
+  const [careRecipientPictureUrl, setCareRecipientPictureUrl] = useState<string>("");
   const [currentFamilyId, setCurrentFamilyId] = useState<string | undefined>(undefined);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { toast } = useToast();
@@ -254,6 +255,37 @@ const Dashboard = () => {
       setFamilies(memberships || []);
       console.log('✅ Families set:', memberships?.length || 0);
 
+      // Load care recipient picture for hero banner
+      if (memberships && memberships.length > 0) {
+        const firstFamilyId = memberships[0].family_id;
+        
+        // Query for disabled_person in this family
+        const { data: careRecipients } = await supabase
+          .from('user_memberships')
+          .select('user_id, profiles!inner(profile_picture_url)')
+          .eq('family_id', firstFamilyId)
+          .eq('role', 'disabled_person')
+          .limit(1);
+        
+        if (careRecipients && careRecipients.length > 0) {
+          const careRecipient = careRecipients[0] as any;
+          setCareRecipientPictureUrl(careRecipient.profiles?.profile_picture_url || '');
+        } else {
+          // Fallback: use family admin's picture if no disabled person
+          const { data: admins } = await supabase
+            .from('user_memberships')
+            .select('user_id, profiles!inner(profile_picture_url)')
+            .eq('family_id', firstFamilyId)
+            .eq('role', 'family_admin')
+            .limit(1);
+          
+          if (admins && admins.length > 0) {
+            const admin = admins[0] as any;
+            setCareRecipientPictureUrl(admin.profiles?.profile_picture_url || '');
+          }
+        }
+      }
+
       // Set role from membership OR fall back to profile ui_preference
       if (memberships && memberships.length > 0) {
         console.log('✅ Setting role from membership:', memberships[0].role);
@@ -410,6 +442,7 @@ const Dashboard = () => {
       userRole={userRole}
       userName={userName}
       profilePictureUrl={profilePictureUrl}
+      careRecipientPictureUrl={careRecipientPictureUrl}
       currentFamilyId={currentFamilyId}
       onProfileUpdate={async () => {
         // Only refresh profile picture URL, not all data

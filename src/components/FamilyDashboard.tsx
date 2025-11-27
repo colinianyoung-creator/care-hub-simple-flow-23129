@@ -26,6 +26,7 @@ interface FamilyDashboardProps {
   userRole: string;
   canGoBack?: boolean;
   profilePictureUrl?: string;
+  careRecipientPictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: () => void;
   onFamilySelected?: (familyId: string) => void;
@@ -39,6 +40,7 @@ export const FamilyDashboard = ({
   userRole,
   canGoBack = false,
   profilePictureUrl = '',
+  careRecipientPictureUrl,
   currentFamilyId,
   onProfileUpdate,
   onFamilySelected
@@ -115,7 +117,7 @@ export const FamilyDashboard = ({
           title={`Welcome back, ${userName?.split(' ')[0] || 'there'}`}
           subtitle={familyId ? "Manage your family's care with ease" : "Create or join a family to access care features"}
           careRecipientName={familyId && userRole !== 'disabled_person' ? careRecipientName : undefined}
-          profilePictureUrl={profilePictureUrl}
+          profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
           onProfileClick={() => setShowProfileDialog(true)}
         />
 

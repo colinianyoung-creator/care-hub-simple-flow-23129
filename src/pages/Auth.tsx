@@ -416,7 +416,6 @@ const Auth = () => {
                         <SelectItem value="family_admin">Family Member (Admin)</SelectItem>
                         <SelectItem value="family_viewer">Family Member (Viewer)</SelectItem>
                         <SelectItem value="carer">Carer</SelectItem>
-                        <SelectItem value="manager">Manager/Agency</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -437,7 +436,7 @@ const Auth = () => {
                     </div>
                   )}
 
-                  {(selectedRole === 'carer' || selectedRole === 'manager' || selectedRole === 'family_viewer') && (
+                  {(selectedRole === 'carer' || selectedRole === 'family_viewer') && (
                     <div className="space-y-2">
                       <Label htmlFor="invite-code">Invite Code (Optional)</Label>
                       <Input

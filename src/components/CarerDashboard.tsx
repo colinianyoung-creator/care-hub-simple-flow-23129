@@ -31,12 +31,13 @@ interface CarerDashboardProps {
   userRole: AppRole;
   careRecipientNameHint?: string;
   profilePictureUrl?: string;
+  careRecipientPictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: () => void;
   onFamilySelected?: (familyId: string) => void;
 }
 
-export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, careRecipientNameHint, profilePictureUrl = '', currentFamilyId, onProfileUpdate, onFamilySelected }: CarerDashboardProps) => {
+export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, careRecipientNameHint, profilePictureUrl = '', careRecipientPictureUrl, currentFamilyId, onProfileUpdate, onFamilySelected }: CarerDashboardProps) => {
   const [weeklyHours, setWeeklyHours] = useState(0);
   const [loading, setLoading] = useState(false);
   const [memberships, setMemberships] = useState<any[]>([]);
@@ -174,7 +175,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
           <HeroBanner 
             title={`Welcome back, ${userName}!`}
             subtitle={familyId ? `Managing care for ${familyName}` : "Join a family to start coordinating care"}
-            profilePictureUrl={profilePictureUrl}
+            profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
             onProfileClick={() => setShowProfileDialog(true)}
           />
 

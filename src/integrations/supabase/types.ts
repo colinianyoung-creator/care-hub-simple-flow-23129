@@ -878,6 +878,7 @@ export type Database = {
           id: string
           phone: string | null
           profile_picture_url: string | null
+          two_factor_enabled: boolean | null
           ui_preference: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
         }
@@ -891,6 +892,7 @@ export type Database = {
           id: string
           phone?: string | null
           profile_picture_url?: string | null
+          two_factor_enabled?: boolean | null
           ui_preference?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
@@ -904,6 +906,7 @@ export type Database = {
           id?: string
           phone?: string | null
           profile_picture_url?: string | null
+          two_factor_enabled?: boolean | null
           ui_preference?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }

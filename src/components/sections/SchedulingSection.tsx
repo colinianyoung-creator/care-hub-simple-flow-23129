@@ -23,9 +23,10 @@ interface SchedulingSectionProps {
   familyId: string | undefined;
   userRole: string;
   careRecipientNameHint?: string;
+  defaultActiveTab?: string;
 }
 
-export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }: SchedulingSectionProps) => {
+export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, defaultActiveTab }: SchedulingSectionProps) => {
   console.log('[SchedulingSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -63,7 +64,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint }:
   const [viewMode, setViewMode] = useState<'single-family' | 'all-families'>('single-family');
   const [allFamiliesShifts, setAllFamiliesShifts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(
-    userRole === 'family_admin' || userRole === 'disabled_person' ? "overview" : "schedule"
+    defaultActiveTab || (userRole === 'family_admin' || userRole === 'disabled_person' ? "overview" : "schedule")
   );
   const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
   const { toast } = useToast();

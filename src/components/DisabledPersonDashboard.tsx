@@ -33,6 +33,7 @@ interface DisabledPersonDashboardProps {
   onSignOut: () => void;
   canGoBack?: boolean;
   profilePictureUrl?: string;
+  careRecipientPictureUrl?: string;
   currentFamilyId?: string;
   onProfileUpdate?: () => void;
   onFamilySelected?: (familyId: string) => void;
@@ -46,6 +47,7 @@ export const DisabledPersonDashboard = ({
   onSignOut, 
   canGoBack = false,
   profilePictureUrl = '',
+  careRecipientPictureUrl,
   currentFamilyId,
   onProfileUpdate,
   onFamilySelected
@@ -55,10 +57,11 @@ export const DisabledPersonDashboard = ({
   const [recentNotes, setRecentNotes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [inviteRole, setInviteRole] = useState<'carer' | 'family_admin' | 'family_viewer' | 'manager'>('carer');
+  const [inviteRole, setInviteRole] = useState<'carer' | 'family_admin' | 'family_viewer'>('carer');
   const [generatedCode, setGeneratedCode] = useState('');
   const [userFirstName, setUserFirstName] = useState('');
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [schedulingSectionTab, setSchedulingSectionTab] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -205,12 +208,12 @@ export const DisabledPersonDashboard = ({
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 space-y-6">
-        <HeroBanner 
-          title={userFirstName ? `Welcome back, ${userFirstName}` : `Welcome back, there`}
-          subtitle={familyId ? "Your care coordination hub" : "Create your family to get started"}
-          profilePictureUrl={profilePictureUrl}
-          onProfileClick={() => setShowProfileDialog(true)}
-        />
+      <HeroBanner 
+        title={userFirstName ? `Welcome back, ${userFirstName}` : `Welcome back, there`}
+        subtitle={familyId ? "Your care coordination hub" : "Create your family to get started"}
+        profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
+        onProfileClick={() => setShowProfileDialog(true)}
+      />
 
         {!familyId && (
           <Alert>
@@ -261,7 +264,21 @@ export const DisabledPersonDashboard = ({
         </div>
 
         {/* Pending Requests */}
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow" 
+          onClick={() => {
+            const schedulingSection = document.querySelector('[id="scheduling"]');
+            if (schedulingSection) {
+              setSchedulingSectionTab('requests');
+              schedulingSection.scrollIntoView({ behavior: 'smooth' });
+              // Expand the section if collapsed
+              const button = schedulingSection.querySelector('button[data-state]');
+              if (button && button.getAttribute('data-state') === 'closed') {
+                (button as HTMLButtonElement).click();
+              }
+            }
+          }}
+        >
           <CardHeader>
             <CardTitle>Pending Requests</CardTitle>
             <CardDescription>View and manage care team requests</CardDescription>
@@ -298,7 +315,6 @@ export const DisabledPersonDashboard = ({
                       <SelectItem value="carer">Carer</SelectItem>
                       <SelectItem value="family_admin">Family Member (Admin)</SelectItem>
                       <SelectItem value="family_viewer">Family Member (Viewer)</SelectItem>
-                      <SelectItem value="manager">Manager/Agency</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -339,7 +355,7 @@ export const DisabledPersonDashboard = ({
             defaultOpen={true}
             icon={<Clock className="h-5 w-5" />}
           >
-            <SchedulingSection familyId={familyId} userRole={userRole} />
+            <SchedulingSection familyId={familyId} userRole={userRole} defaultActiveTab={schedulingSectionTab} />
           </ExpandableDashboardSection>
 
           <ExpandableDashboardSection
