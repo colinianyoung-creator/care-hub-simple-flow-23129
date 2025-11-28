@@ -69,6 +69,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
   const { toast } = useToast();
 
+  // Sync activeTab with defaultActiveTab prop changes (for pending requests navigation)
+  useEffect(() => {
+    if (defaultActiveTab) {
+      setActiveTab(defaultActiveTab);
+    }
+  }, [defaultActiveTab]);
+
   console.log('showListView state:', showListView);
 
   // Debug: Log modal states whenever they change
@@ -963,19 +970,37 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const handleDeleteRequest = async (requestId: string, requestType: 'shift_change' | 'leave') => {
     try {
       if (requestType === 'shift_change') {
-        const { error } = await supabase
+        const { error, count } = await supabase
           .from('shift_change_requests')
-          .delete()
+          .delete({ count: 'exact' })
           .eq('id', requestId);
         
         if (error) throw error;
+        
+        if (count === 0) {
+          toast({
+            title: "Cannot delete",
+            description: "This request may have already been processed or approved",
+            variant: "destructive"
+          });
+          return;
+        }
       } else {
-        const { error } = await supabase
+        const { error, count } = await supabase
           .from('leave_requests')
-          .delete()
+          .delete({ count: 'exact' })
           .eq('id', requestId);
         
         if (error) throw error;
+        
+        if (count === 0) {
+          toast({
+            title: "Cannot delete",
+            description: "This request may have already been processed or approved",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
       toast({
