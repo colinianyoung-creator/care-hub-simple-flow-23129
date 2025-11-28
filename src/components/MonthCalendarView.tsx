@@ -395,7 +395,8 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                         className="text-xs text-muted-foreground w-full h-auto py-1 px-2 hover:bg-primary/10"
                         onClick={() => setExpandedDay(day)}
                       >
-                        View all {dayShifts.length} shifts
+                        <span className="sm:hidden">{dayShifts.length}+</span>
+                        <span className="hidden sm:inline">View all {dayShifts.length} shifts</span>
                       </Button>
                     )}
                   </div>
