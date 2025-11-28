@@ -34,12 +34,12 @@ export const HeroBanner = ({ title, subtitle, children, careRecipientName, profi
             onClick={onProfileClick}
             variant="ghost"
             size="icon"
-            className="rounded-full h-14 w-14 md:h-20 md:w-20 p-0 hover:bg-white/20 transition-all hover:scale-105"
+            className="rounded-full h-16 w-16 md:h-24 md:w-24 p-0 hover:bg-white/20 transition-all hover:scale-105"
           >
             <ProfileAvatar 
               profilePicturePath={profilePictureUrl}
               fallbackIcon={<User className="h-8 w-8 md:h-10 md:w-10 text-white" />}
-              className="h-12 w-12 md:h-18 md:w-18 border-2 border-white/30"
+              className="h-14 w-14 md:h-20 md:w-20 border-2 border-white/30"
             />
           </Button>
         </div>
