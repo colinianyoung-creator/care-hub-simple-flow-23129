@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, FileText, Download, Users, CheckSquare, Calendar, Pill, Shield } from 'lucide-react';
+import Footer from '@/components/Footer';
 
 const Landing = () => {
   return (
@@ -152,6 +153,8 @@ const Landing = () => {
           </Button>
         </Link>
       </section>
+
+      <Footer />
     </div>
   );
 };
