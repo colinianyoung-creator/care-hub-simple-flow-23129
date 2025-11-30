@@ -109,15 +109,22 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
 
       if (error) throw error;
 
-      // Get carer profiles for the leave requests
-      const carerIds = leaveRequests?.map(leave => leave.user_id).filter(Boolean) || [];
-      let carerProfiles: any[] = [];
+      // Get ALL carers from family memberships (not just those with absences)
+      const { data: carerMemberships } = await supabase
+        .from('user_memberships')
+        .select('user_id')
+        .eq('family_id', familyId)
+        .eq('role', 'carer');
+
+      const allCarerIds = carerMemberships?.map(m => m.user_id) || [];
       
-      if (carerIds.length > 0) {
+      // Get profiles for all carers
+      let carerProfiles: any[] = [];
+      if (allCarerIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', carerIds);
+          .in('id', allCarerIds);
         carerProfiles = profiles || [];
       }
 
@@ -139,16 +146,12 @@ export const ApprovedAbsencesArchive = ({ familyId, userRole, currentUserId }: A
 
       setAbsences(filteredData);
 
-      // Extract unique carers for filter dropdown
-      const uniqueCarers = Array.from(new Set(transformedData.map(a => a.carer_id)))
-        .map(carerId => {
-          const absence = transformedData.find(a => a.carer_id === carerId);
-          return {
-            id: carerId,
-            name: absence?.carer_name || 'Unknown Carer'
-          };
-        });
-      setCarers(uniqueCarers);
+      // Set ALL carers for filter dropdown (not just those with absences)
+      const allCarersWithNames = carerProfiles.map(profile => ({
+        id: profile.id,
+        name: profile.full_name || 'Unknown Carer'
+      }));
+      setCarers(allCarersWithNames);
 
     } catch (error) {
       console.error('Error loading approved absences:', error);

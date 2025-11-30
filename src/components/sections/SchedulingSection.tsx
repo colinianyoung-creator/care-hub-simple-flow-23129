@@ -469,8 +469,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
     const handleScheduleAddShift = (event: CustomEvent) => {
       const { date } = event.detail;
-      setEditingShift({ start_date: date });
+      // Clear editing state and set initial date for CREATE mode
+      setEditingShift(null);
       setShowUnifiedShiftForm(true);
+      // Set initial date by dispatching it with the open event
+      setTimeout(() => {
+        const form = document.querySelector('[data-shift-form]');
+        if (form) {
+          (form as any).initialDate = date;
+        }
+      }, 0);
     };
 
     window.addEventListener('open-add-shift', handleOpenAddShift);
