@@ -360,7 +360,12 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
   };
 
   const handleDelete = async () => {
+    // Close modal IMMEDIATELY before any async operations to prevent flash
+    setShowDeleteDialog(false);
+    onOpenChange(false);
+    
     setLoading(true);
+    
     try {
       if (isEditingLeaveRequest) {
         // Delete leave request
@@ -370,6 +375,11 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           .eq('id', editShiftData.id);
         
         if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Leave request deleted successfully"
+        });
       } else if (editShiftData?.id) {
         // Check if this is a recurring shift (has shift_assignment_id)
         const isRecurringShift = !!editShiftData.shift_assignment_id;
@@ -453,24 +463,17 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             if (onDeleteShift) {
               console.log('📞 Calling onDeleteShift callback for shift:', editShiftData.id);
               await onDeleteShift(editShiftData.id);
-              onSuccess();
-              return;
+              toast({
+                title: "Success",
+                description: "Shift deleted successfully"
+              });
             }
           }
         }
       }
-
-      // Reset modal state BEFORE calling onSuccess to prevent flash
-      setShowDeleteDialog(false);
-      onOpenChange(false);
       
-      // Small delay to ensure modal closes before refresh
-      await new Promise(r => setTimeout(r, 50));
-      
-      toast({
-        title: "Deleted",
-        description: deleteOption === 'series' ? "Shift series deleted successfully" : "Shift deleted successfully",
-      });
+      // Small delay to ensure modal is fully closed before refresh
+      await new Promise(r => setTimeout(r, 100));
       
       onSuccess();
     } catch (error) {
@@ -478,7 +481,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
       toast({
         title: "Error",
         description: "Failed to delete",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
