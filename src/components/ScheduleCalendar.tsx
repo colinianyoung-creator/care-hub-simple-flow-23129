@@ -484,12 +484,7 @@ useEffect(() => {
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-4 pt-4 border-t gap-4">
-            
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">
-                {instances.length} shifts this week
-              </div>
-            </div>
+            {/* Shift count removed - was showing incorrect total */}
           </div>
 
           {/* List view for carers */}

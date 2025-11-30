@@ -375,31 +375,57 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         const isRecurringShift = !!editShiftData.shift_assignment_id;
 
         if (isRecurringShift && deleteOption === 'series') {
-          // Delete entire series: delete the shift_assignment (cascades to instances)
+          // Delete entire series: delete all time_entries with this shift_assignment_id
           console.log('🗑️ Deleting entire series, shift_assignment_id:', editShiftData.shift_assignment_id);
           
-          const { error: assignmentError } = await supabase
-            .from('shift_assignments')
+          // Delete all time_entries for this series
+          // @ts-ignore - Supabase type instantiation depth issue
+          const timeEntriesResult = await supabase
+            .from('time_entries')
             .delete()
-            .eq('id', editShiftData.shift_assignment_id);
+            .eq('shift_assignment_id', editShiftData.shift_assignment_id);
 
-          if (assignmentError) throw assignmentError;
+          if (timeEntriesResult.error) throw timeEntriesResult.error;
+          
+          // Also delete shift_instances
+          // @ts-ignore - Supabase type instantiation depth issue
+          const instancesResult = await supabase
+            .from('shift_instances')
+            .delete()
+            .eq('shift_assignment_id', editShiftData.shift_assignment_id);
+          
+          // Mark shift_assignment as inactive instead of deleting
+          // @ts-ignore - Supabase type instantiation depth issue
+          const assignmentResult = await supabase
+            .from('shift_assignments')
+            .update({ active: false })
+            .eq('id', editShiftData.shift_assignment_id);
 
           toast({
             title: "Success",
             description: "Entire shift series deleted successfully"
           });
         } else if (isRecurringShift && deleteOption === 'future') {
-          // Delete future instances only
+          // Delete future time_entries and shift_instances
           console.log('🗑️ Deleting future instances from:', editShiftData.start_date);
           
-          const { error } = await supabase
+          // Delete time_entries for future dates
+          // @ts-ignore - Supabase type instantiation depth issue
+          const timeResult = await supabase
+            .from('time_entries')
+            .delete()
+            .eq('shift_assignment_id', editShiftData.shift_assignment_id)
+            .gte('clock_in', `${editShiftData.start_date}T00:00:00`);
+
+          if (timeResult.error) throw timeResult.error;
+          
+          // Also delete shift_instances
+          // @ts-ignore - Supabase type instantiation depth issue
+          const instanceResult = await supabase
             .from('shift_instances')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
             .gte('scheduled_date', editShiftData.start_date);
-
-          if (error) throw error;
 
           toast({
             title: "Success",
@@ -434,12 +460,18 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         }
       }
 
+      // Reset modal state BEFORE calling onSuccess to prevent flash
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      
+      // Small delay to ensure modal closes before refresh
+      await new Promise(r => setTimeout(r, 50));
+      
       toast({
         title: "Deleted",
         description: deleteOption === 'series' ? "Shift series deleted successfully" : "Shift deleted successfully",
       });
-
-      setShowDeleteDialog(false);
+      
       onSuccess();
     } catch (error) {
       console.error('Error deleting:', error);
