@@ -177,7 +177,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       
       const timeQuery = supabase
         .from('time_entries')
-        .select('clock_in, clock_out, user_id, notes')
+        .select('clock_in, clock_out, user_id, notes, shift_type')
         .eq('family_id', familyId)
         .eq('user_id', selectedCarerId)
         .gte('clock_in', startDate.toISOString())
@@ -231,37 +231,50 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
           return requestDate >= weekStart && requestDate <= weekEnding;
         }) || [];
         
-        const basic = weekTimeEntries
-          .reduce((total, entry) => {
-            if (entry.clock_in && entry.clock_out) {
-              const start = new Date(entry.clock_in);
-              const end = new Date(entry.clock_out);
-              return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-            }
-            return total;
-          }, 0) + weekShiftInstances
-          .filter(shift => shift.status === 'scheduled' || shift.status === 'completed')
-          .reduce((total, shift) => {
-            if (shift.start_time && shift.end_time) {
-              const start = new Date(`2000-01-01T${shift.start_time}`);
-              const end = new Date(`2000-01-01T${shift.end_time}`);
-              return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-            }
-            return total;
-          }, 0);
+        // Helper function to calculate hours by shift type from time entries
+        const calculateHoursByShiftType = (entries: any[], targetType: string) => {
+          return entries
+            .filter(entry => entry.shift_type === targetType)
+            .reduce((total, entry) => {
+              if (entry.clock_in && entry.clock_out) {
+                const start = new Date(entry.clock_in);
+                const end = new Date(entry.clock_out);
+                return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+              }
+              return total;
+            }, 0);
+        };
+        
+        // Calculate hours by shift type from time_entries
+        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic') + 
+          weekShiftInstances
+            .filter(shift => shift.status === 'scheduled' || shift.status === 'completed')
+            .reduce((total, shift) => {
+              if (shift.start_time && shift.end_time) {
+                const start = new Date(`2000-01-01T${shift.start_time}`);
+                const end = new Date(`2000-01-01T${shift.end_time}`);
+                return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+              }
+              return total;
+            }, 0);
           
-        const cover = 0; // No cover category in current schema
+        const cover = calculateHoursByShiftType(weekTimeEntries, 'cover');
           
-        // Estimate leave hours based on reason keywords (default 8 hours per day)
-        const annual_leave = weekLeaveRequests
+        // Calculate leave hours from time_entries shift_type
+        let annual_leave = calculateHoursByShiftType(weekTimeEntries, 'annual_leave');
+        let public_holiday = calculateHoursByShiftType(weekTimeEntries, 'public_holiday');
+        let sickness = calculateHoursByShiftType(weekTimeEntries, 'sickness');
+        
+        // Supplement with leave_requests as fallback (estimate 8 hours per day)
+        annual_leave += weekLeaveRequests
           .filter(req => req.reason?.toLowerCase().includes('annual'))
           .reduce((total, req) => total + 8, 0);
           
-        const public_holiday = weekLeaveRequests
+        public_holiday += weekLeaveRequests
           .filter(req => req.reason?.toLowerCase().includes('holiday') && !req.reason?.toLowerCase().includes('annual'))
           .reduce((total, req) => total + 8, 0);
           
-        const sickness = weekLeaveRequests
+        sickness += weekLeaveRequests
           .filter(req => req.reason?.toLowerCase().includes('sick'))
           .reduce((total, req) => total + 8, 0);
         
