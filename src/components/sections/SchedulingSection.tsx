@@ -59,6 +59,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showUnifiedShiftForm, setShowUnifiedShiftForm] = useState(false);
   const [editingShift, setEditingShift] = useState<any>(null);
+  const [createShiftInitialDate, setCreateShiftInitialDate] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showRefresh, setShowRefresh] = useState(false);
   const [viewMode, setViewMode] = useState<'single-family' | 'all-families'>('single-family');
@@ -469,16 +470,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
     const handleScheduleAddShift = (event: CustomEvent) => {
       const { date } = event.detail;
-      // Clear editing state and set initial date for CREATE mode
+      // Clear editing state and set initial date for CREATE mode via React state
       setEditingShift(null);
+      setCreateShiftInitialDate(date);
       setShowUnifiedShiftForm(true);
-      // Set initial date by dispatching it with the open event
-      setTimeout(() => {
-        const form = document.querySelector('[data-shift-form]');
-        if (form) {
-          (form as any).initialDate = date;
-        }
-      }, 0);
     };
 
     window.addEventListener('open-add-shift', handleOpenAddShift);
@@ -1519,23 +1514,28 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           familyId={familyId}
           userRole={userRole as 'carer' | 'family_admin' | 'disabled_person'}
           editShiftData={editingShift}
-          open={showUnifiedShiftForm && Boolean(editingShift)}
+          open={showUnifiedShiftForm && (Boolean(editingShift) || Boolean(createShiftInitialDate))}
           onOpenChange={(open) => {
             setShowUnifiedShiftForm(open);
-            if (!open) setEditingShift(null);
+            if (!open) {
+              setEditingShift(null);
+              setCreateShiftInitialDate(null);
+            }
           }}
           onSuccess={() => {
             setShowUnifiedShiftForm(false);
             setEditingShift(null);
+            setCreateShiftInitialDate(null);
             loadSchedulingData();
           }}
           onCancel={() => {
             setShowUnifiedShiftForm(false);
             setEditingShift(null);
+            setCreateShiftInitialDate(null);
           }}
           onDeleteShift={onDeleteShift}
           careRecipientName={careRecipientNameHint}
-          initialDate={editingShift?.start_date}
+          initialDate={editingShift ? editingShift.start_date : createShiftInitialDate}
         />
 
     </div>
