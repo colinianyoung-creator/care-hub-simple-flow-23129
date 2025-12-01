@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, List, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, Calendar as CalendarIcon, Clock, Plus } from 'lucide-react';
 import { format, addDays, subDays, startOfDay } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { formatShiftType } from "@/lib/textUtils";
 import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
+import { cn } from '@/lib/utils';
 
 interface MobileDayViewProps {
   familyId: string;
@@ -303,6 +304,20 @@ export const MobileDayView = ({
   const nextDay = () => setCurrentDate(prev => addDays(prev, 1));
   const today = () => setCurrentDate(new Date());
 
+  const canAddShift = () => {
+    return userRole === 'family_admin' || userRole === 'disabled_person';
+  };
+
+  const handleAddShiftClick = () => {
+    if (!canAddShift()) return;
+    
+    // Dispatch event to open create shift modal with pre-filled date
+    const event = new CustomEvent('schedule-add-shift', {
+      detail: { date: format(currentDate, 'yyyy-MM-dd') }
+    });
+    window.dispatchEvent(event);
+  };
+
   if (showListView) {
     return (
       <Card>
@@ -404,8 +419,21 @@ export const MobileDayView = ({
         {loading ? (
           <div className="text-center py-4 text-muted-foreground">Loading...</div>
         ) : dayShifts.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No shifts scheduled for this day
+          <div className="text-center py-8 space-y-3">
+            <div className="text-muted-foreground">
+              No shifts scheduled for this day
+            </div>
+            {canAddShift() && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleAddShiftClick}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Shift
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
