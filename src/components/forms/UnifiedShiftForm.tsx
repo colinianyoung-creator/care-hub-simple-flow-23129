@@ -265,6 +265,18 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         }
       } else {
         // Admin mode - direct updates
+        
+        // Validate carer selection for all new shifts (both recurring and one-time)
+        if (!editShiftData && !isEditingLeaveRequest && !formData.carer_id) {
+          toast({
+            title: "Validation Error",
+            description: "Please select a carer for this shift",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        
         if (isEditingLeaveRequest && editShiftData?.id) {
           // Admin editing approved leave request
           const { error } = await supabase
@@ -298,7 +310,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               .from('shift_assignments')
               .insert({
                 family_id: familyId,
-                carer_id: formData.carer_id,
+                carer_id: formData.carer_id || null,
                 day_of_week: dayOfWeek,
                 start_time: startTime,
                 end_time: endTime,
@@ -367,18 +379,6 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             }
           } else if (!isEditingLeaveRequest) {
             // Admin creating new shift(s)
-            
-            // Validate carer selection for new shifts
-            if (!formData.carer_id) {
-              toast({
-                title: "Validation Error",
-                description: "Please select a carer for this shift",
-                variant: "destructive",
-              });
-              setLoading(false);
-              return;
-            }
-            
             const startHour = 9;
             const hours = parseInt(formData.hours) || 8;
             const endHour = startHour + hours;
