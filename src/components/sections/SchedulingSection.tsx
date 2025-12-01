@@ -49,6 +49,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
   const [dataVersion, setDataVersion] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAssignmentForm, setShowAssignmentForm] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showShiftAbsenceForm, setShowShiftAbsenceForm] = useState(false);
@@ -562,7 +563,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
     return user?.id || null;
   };
 
-  const loadSchedulingData = async (retryCount = 0, signal?: AbortSignal) => {
+  const loadSchedulingData = async (retryCount = 0, signal?: AbortSignal, isBackgroundRefresh = false) => {
     // Check if familyId is provided FIRST
     if (!familyId) {
       console.warn('No familyId provided to loadSchedulingData');
@@ -576,7 +577,12 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
     try {
       if (signal?.aborted) return;
       
-      setLoading(true);
+      // Use subtle refresh indicator for background updates, full loader for initial load
+      if (!isBackgroundRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
 
       timeoutId = setTimeout(() => {
         if (!signal?.aborted) {
@@ -838,6 +844,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       if (timeoutId) clearTimeout(timeoutId);
       if (!signal?.aborted) {
         setLoading(false);
+        setIsRefreshing(false);
       }
     }
   };
@@ -1060,15 +1067,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       // Increment data version to bust cache
       setDataVersion(prev => prev + 1);
       
-      // Wait a bit longer for DB to propagate
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Force reload without cache
-      await loadSchedulingData();
-      
-      // Force a second reload to ensure we have fresh data
-      await new Promise(resolve => setTimeout(resolve, 200));
-      await loadSchedulingData();
+      // Single background refresh with subtle indicator
+      await loadSchedulingData(0, undefined, true);
       
       toast({
         title: "Shift deleted",
@@ -1112,7 +1112,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Subtle refresh overlay - doesn't block UI */}
+      {isRefreshing && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+          <div className="flex items-center gap-2 bg-background border rounded-lg px-4 py-2 shadow-lg">
+            <Loader2 className="animate-spin h-4 w-4" />
+            <span className="text-sm">Refreshing...</span>
+          </div>
+        </div>
+      )}
       
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className={`grid w-full overflow-hidden ${
