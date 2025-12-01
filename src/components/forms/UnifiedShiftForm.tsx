@@ -367,6 +367,18 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             }
           } else if (!isEditingLeaveRequest) {
             // Admin creating new shift(s)
+            
+            // Validate carer selection for new shifts
+            if (!formData.carer_id) {
+              toast({
+                title: "Validation Error",
+                description: "Please select a carer for this shift",
+                variant: "destructive",
+              });
+              setLoading(false);
+              return;
+            }
+            
             const startHour = 9;
             const hours = parseInt(formData.hours) || 8;
             const endHour = startHour + hours;
@@ -638,7 +650,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             {isAdmin && (
               <div>
                 <Label htmlFor="carer_id">
-                  {editShiftData ? 'Change carer (optional)' : 'Assign to carer'}
+                  {editShiftData ? 'Change carer (optional)' : 'Assign to carer'} {!editShiftData && <span className="text-destructive">*</span>}
                 </Label>
                 <Select 
                   value={formData.carer_id} 
