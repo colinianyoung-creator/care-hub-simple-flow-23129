@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameDay, isSameMonth, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
+import { cn } from '@/lib/utils';
 
 interface MonthCalendarViewProps {
   isOpen: boolean;
@@ -298,6 +299,23 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
+  const canAddShift = () => {
+    return userRole === 'family_admin' || userRole === 'disabled_person';
+  };
+
+  const handleDayCellClick = (day: Date) => {
+    if (!canAddShift()) return;
+    
+    // Dispatch event to open create shift modal with pre-filled date
+    const event = new CustomEvent('schedule-add-shift', {
+      detail: { date: format(day, 'yyyy-MM-dd') }
+    });
+    window.dispatchEvent(event);
+    
+    // Close the month view modal
+    onClose();
+  };
+
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -354,17 +372,28 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
               const dayShifts = getShiftsForDay(day);
               const isCurrentMonth = isSameMonth(day, currentMonth);
               const isToday = isSameDay(day, new Date());
+              const isEmpty = dayShifts.length === 0;
+              const isClickable = isEmpty && canAddShift() && isCurrentMonth;
               
               return (
                 <div 
                   key={index} 
-                  className={`relative overflow-hidden min-h-20 sm:min-h-32 md:min-h-40 p-1 sm:p-2 border border-border ${
-                    !isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : ''
-                  } ${isToday ? 'bg-primary/10 border-primary' : ''}`}
+                  className={cn(
+                    "relative overflow-hidden min-h-20 sm:min-h-32 md:min-h-40 p-1 sm:p-2 border border-border group",
+                    !isCurrentMonth && "bg-muted/30 text-muted-foreground",
+                    isToday && "bg-primary/10 border-primary",
+                    isClickable && "cursor-pointer hover:bg-primary/5 transition-colors"
+                  )}
+                  onClick={() => isClickable && handleDayCellClick(day)}
                 >
                   <div className="font-medium text-xs sm:text-sm mb-1 sm:mb-2">
                     {format(day, 'd')}
                   </div>
+                  {isClickable && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Plus className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
                   <div className="space-y-0.5 sm:space-y-1">
                     {dayShifts.slice(0, window.innerWidth < 640 ? 1 : 3).map((shift, shiftIndex) => (
                       <Badge 
