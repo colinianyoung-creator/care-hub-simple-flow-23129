@@ -467,6 +467,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
                 title: "Success",
                 description: "Shift deleted successfully"
               });
+              return; // Exit early - onDeleteShift already handles refresh
             }
           }
         }
