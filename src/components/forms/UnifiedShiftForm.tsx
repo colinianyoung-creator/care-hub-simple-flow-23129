@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { format as formatDate } from "date-fns";
 
@@ -63,7 +64,19 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteOption, setDeleteOption] = useState<'single' | 'future' | 'series'>('single');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const { toast } = useToast();
+
+  const daysOfWeek = [
+    { value: 0, label: 'Sunday' },
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' }
+  ];
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
@@ -139,6 +152,12 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     }
   }, [familyId, open]);
 
+  const handleDayToggle = (day: number, checked: boolean) => {
+    setSelectedDays(prev => 
+      checked ? [...prev, day] : prev.filter(d => d !== day)
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -146,6 +165,17 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user) throw new Error('Not authenticated');
+
+      // Validate recurring shift has days selected
+      if (isAdmin && !editShiftData && isRecurring && selectedDays.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one day for recurring shifts",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       if (isCarer) {
         // Carers submit change requests instead of direct updates
@@ -247,6 +277,60 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             .eq('id', editShiftData.id);
 
           if (error) throw error;
+        } else if (isRecurring && selectedDays.length > 0 && !editShiftData) {
+          // Admin creating new recurring shifts
+          console.log('Creating recurring shift assignments');
+          
+          const today = new Date();
+          const oneYearFromNow = new Date(today);
+          oneYearFromNow.setDate(today.getDate() + 365);
+          
+          const startHour = 9;
+          const hours = parseInt(formData.hours) || 8;
+          const endHour = startHour + hours;
+          
+          const startTime = `${String(startHour).padStart(2, '0')}:00`;
+          const endTime = `${String(endHour).padStart(2, '0')}:00`;
+          
+          for (const dayOfWeek of selectedDays) {
+            // Create shift_assignment
+            const { data: assignment, error: assignmentError } = await supabase
+              .from('shift_assignments')
+              .insert({
+                family_id: familyId,
+                carer_id: formData.carer_id,
+                day_of_week: dayOfWeek,
+                start_time: startTime,
+                end_time: endTime,
+                shift_type: formData.request_type,
+                is_recurring: true,
+                active: true,
+                notes: formData.reason || 'Recurring shift'
+              })
+              .select()
+              .single();
+
+            if (assignmentError) throw assignmentError;
+
+            console.log('✅ Created shift_assignment:', assignment.id);
+
+            // Generate shift instances for the next year
+            const { error: rpcError } = await supabase
+              .rpc('generate_shift_instances', {
+                _assignment_id: assignment.id,
+                _start_date: formatDate(today, 'yyyy-MM-dd'),
+                _end_date: formatDate(oneYearFromNow, 'yyyy-MM-dd')
+              });
+
+            if (rpcError) throw rpcError;
+
+            console.log(`✅ Generated shift instances for assignment ${assignment.id}`);
+          }
+
+          toast({
+            title: "Success",
+            description: `Created recurring shifts for ${selectedDays.length} day(s) of the week`,
+          });
         } else {
           // Admin creating/editing a basic or cover shift
           if (editShiftData?.id && !isEditingLeaveRequest) {
@@ -492,15 +576,20 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editShiftData ? 'Edit Shift' : (isCarer ? 'Request Shift Change' : 'Create Shift')}
+              {editShiftData 
+                ? (isCarer ? 'Request Shift Change' : 'Edit Shift') 
+                : (isCarer ? 'Request Time Off' : 'Create Shift')
+              }
             </DialogTitle>
             <DialogDescription>
               {isCarer 
                 ? 'Submit a request for shift changes or time off'
-                : 'Create or edit a shift assignment'
+                : editShiftData 
+                  ? 'Edit this shift assignment'
+                  : 'Create a new shift or recurring shift pattern'
               }
             </DialogDescription>
           </DialogHeader>
@@ -589,7 +678,9 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             </div>
 
             <div>
-              <Label htmlFor="start_date">Start Date {isAdmin && !editShiftData && '(optional)'}</Label>
+              <Label htmlFor="start_date">
+                Start Date {(!editShiftData && !isRecurring) && '(optional)'}
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -617,6 +708,41 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Recurring Shift Checkbox - Only for admins creating new shifts */}
+            {isAdmin && !editShiftData && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="recurring"
+                  checked={isRecurring}
+                  onCheckedChange={(checked) => setIsRecurring(!!checked)}
+                />
+                <Label htmlFor="recurring" className="cursor-pointer">
+                  Recurring shift (generates multiple instances)
+                </Label>
+              </div>
+            )}
+
+            {/* Days of Week - Only shown when recurring is checked */}
+            {isRecurring && isAdmin && !editShiftData && (
+              <div>
+                <Label>Days of Week</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {daysOfWeek.map((day) => (
+                    <div key={day.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`day-${day.value}`}
+                        checked={selectedDays.includes(day.value)}
+                        onCheckedChange={(checked) => handleDayToggle(day.value, !!checked)}
+                      />
+                      <Label htmlFor={`day-${day.value}`} className="cursor-pointer">
+                        {day.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* End Date - Only for leave types */}
             {['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type) && (
