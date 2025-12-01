@@ -1178,7 +1178,11 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                         <span className="text-sm">Export</span>
                       </Button>
                       <Button 
-                        onClick={() => setShowAssignmentForm(true)} 
+                        onClick={() => {
+                          setEditingShift(null);
+                          setCreateShiftInitialDate(null);
+                          setShowUnifiedShiftForm(true);
+                        }} 
                         variant="outline"
                         className="h-16 flex flex-col items-center justify-center gap-2"
                       >
