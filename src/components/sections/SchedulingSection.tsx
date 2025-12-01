@@ -694,8 +694,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       const today = new Date();
       const threeMonthsAgo = new Date(today);
       threeMonthsAgo.setMonth(today.getMonth() - 3);
-      const threeMonthsFromNow = new Date(today);
-      threeMonthsFromNow.setMonth(today.getMonth() + 3);
+      const oneYearFromNow = new Date(today);
+      oneYearFromNow.setFullYear(today.getFullYear() + 1);
 
       let shiftInstancesQuery = supabase
         .from('shift_instances')
@@ -716,7 +716,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         `)
         .eq('shift_assignments.family_id', familyId)
         .gte('scheduled_date', format(threeMonthsAgo, 'yyyy-MM-dd'))
-        .lte('scheduled_date', format(threeMonthsFromNow, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(oneYearFromNow, 'yyyy-MM-dd'))
         .order('scheduled_date', { ascending: true });
 
       if (isCarerRole) {

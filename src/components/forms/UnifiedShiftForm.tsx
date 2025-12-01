@@ -481,28 +481,36 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         const isRecurringShift = !!editShiftData.shift_assignment_id;
 
         if (isRecurringShift && deleteOption === 'series') {
-          // Delete entire series: delete all time_entries with this shift_assignment_id
+          // Delete entire series
           console.log('🗑️ Deleting entire series, shift_assignment_id:', editShiftData.shift_assignment_id);
           
-          // Delete all time_entries for this series
+          // Step 1: Get all shift_instance IDs for this assignment
           // @ts-ignore - Supabase type instantiation depth issue
-          const timeEntriesResult = await supabase
-            .from('time_entries')
-            .delete()
+          const { data: instanceIds } = await supabase
+            .from('shift_instances')
+            .select('id')
             .eq('shift_assignment_id', editShiftData.shift_assignment_id);
 
-          if (timeEntriesResult.error) throw timeEntriesResult.error;
+          // Step 2: Delete time_entries that reference these instances
+          if (instanceIds && instanceIds.length > 0) {
+            const ids = instanceIds.map(i => i.id);
+            // @ts-ignore - Supabase type instantiation depth issue
+            await supabase
+              .from('time_entries')
+              .delete()
+              .in('shift_instance_id', ids);
+          }
           
-          // Also delete shift_instances
+          // Step 3: Delete shift_instances
           // @ts-ignore - Supabase type instantiation depth issue
-          const instancesResult = await supabase
+          await supabase
             .from('shift_instances')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id);
           
-          // Mark shift_assignment as inactive instead of deleting
+          // Step 4: Mark shift_assignment as inactive
           // @ts-ignore - Supabase type instantiation depth issue
-          const assignmentResult = await supabase
+          await supabase
             .from('shift_assignments')
             .update({ active: false })
             .eq('id', editShiftData.shift_assignment_id);
@@ -512,22 +520,30 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             description: "Entire shift series deleted successfully"
           });
         } else if (isRecurringShift && deleteOption === 'future') {
-          // Delete future time_entries and shift_instances
+          // Delete future instances
           console.log('🗑️ Deleting future instances from:', editShiftData.start_date);
           
-          // Delete time_entries for future dates
+          // Step 1: Get future shift_instance IDs
           // @ts-ignore - Supabase type instantiation depth issue
-          const timeResult = await supabase
-            .from('time_entries')
-            .delete()
+          const { data: futureInstanceIds } = await supabase
+            .from('shift_instances')
+            .select('id')
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('clock_in', `${editShiftData.start_date}T00:00:00`);
+            .gte('scheduled_date', editShiftData.start_date);
 
-          if (timeResult.error) throw timeResult.error;
+          // Step 2: Delete time_entries for these instances
+          if (futureInstanceIds && futureInstanceIds.length > 0) {
+            const ids = futureInstanceIds.map(i => i.id);
+            // @ts-ignore - Supabase type instantiation depth issue
+            await supabase
+              .from('time_entries')
+              .delete()
+              .in('shift_instance_id', ids);
+          }
           
-          // Also delete shift_instances
+          // Step 3: Delete the shift_instances
           // @ts-ignore - Supabase type instantiation depth issue
-          const instanceResult = await supabase
+          await supabase
             .from('shift_instances')
             .delete()
             .eq('shift_assignment_id', editShiftData.shift_assignment_id)
