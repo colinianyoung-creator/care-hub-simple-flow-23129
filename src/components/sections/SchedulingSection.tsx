@@ -1204,11 +1204,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
               <Card 
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  const tabsElement = document.querySelector('[role="tablist"]');
-                  const requestsTab = tabsElement?.querySelector('[value="requests"]') as HTMLButtonElement;
-                  requestsTab?.click();
-                }}
+            onClick={() => setActiveTab('requests')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
@@ -1527,7 +1523,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           familyId={familyId}
           userRole={userRole as 'carer' | 'family_admin' | 'disabled_person'}
           editShiftData={editingShift}
-          open={showUnifiedShiftForm && (Boolean(editingShift) || Boolean(createShiftInitialDate))}
+          open={showUnifiedShiftForm}
           onOpenChange={(open) => {
             setShowUnifiedShiftForm(open);
             if (!open) {
