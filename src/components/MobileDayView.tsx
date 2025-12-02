@@ -38,11 +38,39 @@ export const MobileDayView = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (showListView) {
-      loadUpcomingShifts();
-    } else {
-      loadDayShifts();
-    }
+    const abortController = new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const loadData = async () => {
+      try {
+        timeoutId = setTimeout(() => {
+          abortController.abort();
+          setLoading(false);
+          console.warn("⏱️ [MobileDayView] load timeout after 5s");
+        }, 5000);
+
+        if (showListView) {
+          await loadUpcomingShifts(abortController.signal);
+        } else {
+          await loadDayShifts(abortController.signal);
+        }
+      } catch (error: any) {
+        if (error?.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error('Unexpected error:', error);
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      abortController.abort();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [currentDate, familyId, showListView, viewMode, allFamiliesShifts, refreshTrigger]);
 
   useEffect(() => {
@@ -56,7 +84,7 @@ export const MobileDayView = ({
     };
   }, [onToggleListView]);
 
-  const loadDayShifts = async () => {
+  const loadDayShifts = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const dateStr = format(currentDate, 'yyyy-MM-dd');
@@ -100,7 +128,8 @@ export const MobileDayView = ({
         .eq('family_id', familyId)
         .gte('clock_in', `${dateStr}T00:00:00`)
         .lt('clock_in', `${dateStr}T23:59:59`)
-        .order('clock_in', { ascending: true });
+        .order('clock_in', { ascending: true })
+        .abortSignal(signal);
 
       if (timeError) throw timeError;
       
@@ -124,7 +153,8 @@ export const MobileDayView = ({
         .eq('family_id', familyId)
         .eq('status', 'approved')
         .lte('start_date', dateStr)
-        .gte('end_date', dateStr);
+        .gte('end_date', dateStr)
+        .abortSignal(signal);
 
       if (leaveError) throw leaveError;
 
@@ -159,14 +189,16 @@ export const MobileDayView = ({
 
       setDayShifts([...filteredShifts, ...leaveShifts]);
       console.log(`📱 Day View: Loaded ${filteredShifts.length + leaveShifts.length} shifts for ${dateStr}`);
-    } catch (error) {
-      console.error('Error loading day shifts:', error);
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') {
+        console.error('Error loading day shifts:', error);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const loadUpcomingShifts = async () => {
+  const loadUpcomingShifts = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const today = format(new Date(), 'yyyy-MM-dd');
@@ -185,7 +217,8 @@ export const MobileDayView = ({
         .eq('family_id', familyId)
         .gte('clock_in', `${today}T00:00:00`)
         .lt('clock_in', `${nextWeek}T23:59:59`)
-        .order('clock_in', { ascending: true });
+        .order('clock_in', { ascending: true })
+        .abortSignal(signal);
 
       if (timeError) throw timeError;
 
@@ -209,7 +242,8 @@ export const MobileDayView = ({
         .eq('family_id', familyId)
         .eq('status', 'approved')
         .lte('start_date', nextWeek)
-        .gte('end_date', today);
+        .gte('end_date', today)
+        .abortSignal(signal);
 
       if (leaveError) throw leaveError;
 
@@ -244,8 +278,10 @@ export const MobileDayView = ({
 
       setUpcomingShifts([...filteredShifts, ...leaveShifts]);
       console.log(`📱 List View: Loaded ${filteredShifts.length + leaveShifts.length} upcoming shifts`);
-    } catch (error) {
-      console.error('Error loading upcoming shifts:', error);
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') {
+        console.error('Error loading upcoming shifts:', error);
+      }
     } finally {
       setLoading(false);
     }

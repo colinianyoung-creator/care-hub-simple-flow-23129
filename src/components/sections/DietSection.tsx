@@ -10,7 +10,8 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, AlertCircle, Loader2, UtensilsCrossed, Archive } from 'lucide-react';
+import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from 'date-fns';
 import { DietArchiveSection } from './DietArchiveSection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -52,7 +53,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
   const [selectedMealType, setSelectedMealType] = useState<string>('breakfast');
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const [showRefresh, setShowRefresh] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   
   const [formData, setFormData] = useState({
     description: '',
@@ -66,14 +67,6 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
 
   useEffect(() => {
     getCurrentUser();
-  }, []);
-
-  // Detect mobile
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -260,8 +253,12 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
     <div className="space-y-4">
       <Tabs defaultValue="today">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="archive">Archive</TabsTrigger>
+          <TabsTrigger value="today" className="flex items-center gap-2">
+            {isMobile ? <UtensilsCrossed className="h-5 w-5" /> : <><UtensilsCrossed className="h-4 w-4" /> Today</>}
+          </TabsTrigger>
+          <TabsTrigger value="archive" className="flex items-center gap-2">
+            {isMobile ? <Archive className="h-5 w-5" /> : <><Archive className="h-4 w-4" /> Archive</>}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="today" className="space-y-4 mt-4">

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, Calendar, Clock, MapPin, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Calendar, Clock, MapPin, AlertCircle, Loader2, CalendarCheck, Archive } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { format, isPast, isToday, isFuture } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -44,6 +45,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
   }
 
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -378,8 +380,12 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
       {/* Tabs for Upcoming and Archive */}
       <Tabs defaultValue="upcoming">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upcoming">Upcoming ({upcomingAppointments.length})</TabsTrigger>
-          <TabsTrigger value="archive">Archive ({pastAppointments.length})</TabsTrigger>
+          <TabsTrigger value="upcoming" className="flex items-center gap-2">
+            {isMobile ? <CalendarCheck className="h-5 w-5" /> : <><CalendarCheck className="h-4 w-4" /> Upcoming ({upcomingAppointments.length})</>}
+          </TabsTrigger>
+          <TabsTrigger value="archive" className="flex items-center gap-2">
+            {isMobile ? <Archive className="h-5 w-5" /> : <><Archive className="h-4 w-4" /> Archive ({pastAppointments.length})</>}
+          </TabsTrigger>
         </TabsList>
 
         {/* Upcoming Appointments Tab */}

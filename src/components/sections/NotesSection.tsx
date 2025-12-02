@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle, Loader2, FileText } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -60,6 +61,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   }
 
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [notes, setNotes] = useState<CareNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -332,13 +334,14 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     <>
     <Tabs defaultValue="today" className="space-y-6">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="today">Today's Notes</TabsTrigger>
+        <TabsTrigger value="today" className="flex items-center gap-2">
+          {isMobile ? <FileText className="h-5 w-5" /> : <><FileText className="h-4 w-4" /> Today's Notes</>}
+        </TabsTrigger>
         <TabsTrigger value="body-map" className="flex items-center gap-2">
-          🩹 Body Map
+          {isMobile ? <span className="text-xl">🩹</span> : <>🩹 Body Map</>}
         </TabsTrigger>
         <TabsTrigger value="archive" className="flex items-center gap-2">
-          <Archive className="h-4 w-4" />
-          Archive
+          {isMobile ? <Archive className="h-5 w-5" /> : <><Archive className="h-4 w-4" /> Archive</>}
         </TabsTrigger>
       </TabsList>
 
