@@ -37,16 +37,22 @@ export const MobileDayView = ({
   const [upcomingShifts, setUpcomingShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Use stable reference for allFamiliesShifts to prevent infinite re-renders
+  const allFamiliesShiftsLength = allFamiliesShifts.length;
+
   useEffect(() => {
     const abortController = new AbortController();
     let timeoutId: NodeJS.Timeout | null = null;
+    let isMounted = true;
 
     const loadData = async () => {
       try {
         timeoutId = setTimeout(() => {
-          abortController.abort();
-          setLoading(false);
-          console.warn("⏱️ [MobileDayView] load timeout after 5s");
+          if (isMounted) {
+            abortController.abort();
+            setLoading(false);
+            console.warn("⏱️ [MobileDayView] load timeout after 5s");
+          }
         }, 5000);
 
         if (showListView) {
@@ -68,10 +74,11 @@ export const MobileDayView = ({
     loadData();
 
     return () => {
+      isMounted = false;
       abortController.abort();
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [currentDate, familyId, showListView, viewMode, allFamiliesShifts, refreshTrigger]);
+  }, [currentDate, familyId, showListView, viewMode, allFamiliesShiftsLength, refreshTrigger]);
 
   useEffect(() => {
     const handleToggleListView = () => {
@@ -86,7 +93,10 @@ export const MobileDayView = ({
 
   const loadDayShifts = async (signal?: AbortSignal) => {
     try {
-      setLoading(true);
+      // Only show loading if we don't have data yet to prevent flashing
+      if (dayShifts.length === 0) {
+        setLoading(true);
+      }
       const dateStr = format(currentDate, 'yyyy-MM-dd');
 
       // If in all-families mode, use the pre-loaded cross-family data
@@ -200,7 +210,10 @@ export const MobileDayView = ({
 
   const loadUpcomingShifts = async (signal?: AbortSignal) => {
     try {
-      setLoading(true);
+      // Only show loading if we don't have data yet to prevent flashing
+      if (upcomingShifts.length === 0) {
+        setLoading(true);
+      }
       const today = format(new Date(), 'yyyy-MM-dd');
       const nextWeek = format(addDays(new Date(), 7), 'yyyy-MM-dd');
       
