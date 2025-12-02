@@ -912,6 +912,50 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          care_recipient_name: string
+          created_at: string
+          created_by: string
+          date_range_end: string
+          date_range_start: string
+          family_id: string
+          id: string
+          report_text: string
+          report_type: string | null
+        }
+        Insert: {
+          care_recipient_name: string
+          created_at?: string
+          created_by: string
+          date_range_end: string
+          date_range_start: string
+          family_id: string
+          id?: string
+          report_text: string
+          report_type?: string | null
+        }
+        Update: {
+          care_recipient_name?: string
+          created_at?: string
+          created_by?: string
+          date_range_end?: string
+          date_range_start?: string
+          family_id?: string
+          id?: string
+          report_text?: string
+          report_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_change_requests: {
         Row: {
           created_at: string

@@ -1,1 +1,13 @@
 project_id = "ydfqtfutdziejjqnqudo"
+
+[functions.delete-user]
+verify_jwt = true
+
+[functions.export-mar]
+verify_jwt = true
+
+[functions.export-timesheet]
+verify_jwt = true
+
+[functions.generate-report]
+verify_jwt = true
