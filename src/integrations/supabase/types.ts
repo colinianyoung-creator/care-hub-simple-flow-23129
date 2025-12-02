@@ -1168,7 +1168,10 @@ export type Database = {
           family_id: string
           id: string
           is_archived: boolean | null
+          is_recurring: boolean | null
+          parent_task_id: string | null
           priority: string | null
+          recurrence_type: string | null
           title: string
           updated_at: string
         }
@@ -1182,7 +1185,10 @@ export type Database = {
           family_id: string
           id?: string
           is_archived?: boolean | null
+          is_recurring?: boolean | null
+          parent_task_id?: string | null
           priority?: string | null
+          recurrence_type?: string | null
           title: string
           updated_at?: string
         }
@@ -1196,7 +1202,10 @@ export type Database = {
           family_id?: string
           id?: string
           is_archived?: boolean | null
+          is_recurring?: boolean | null
+          parent_task_id?: string | null
           priority?: string | null
+          recurrence_type?: string | null
           title?: string
           updated_at?: string
         }
@@ -1220,6 +1229,13 @@ export type Database = {
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]

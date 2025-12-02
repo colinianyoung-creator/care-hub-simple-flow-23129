@@ -4,11 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus, AlertCircle, Loader2 } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeError } from "@/lib/errorHandler";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { addDays, addWeeks, addMonths, format } from 'date-fns';
+
+// Helper function to calculate next due date for recurring tasks
+const calculateNextDueDate = (currentDueDate: string | null, recurrenceType: string): string => {
+  const baseDate = currentDueDate ? new Date(currentDueDate) : new Date();
+  
+  switch (recurrenceType) {
+    case 'daily':
+      return format(addDays(baseDate, 1), 'yyyy-MM-dd');
+    case 'weekly':
+      return format(addWeeks(baseDate, 1), 'yyyy-MM-dd');
+    case 'monthly':
+      return format(addMonths(baseDate, 1), 'yyyy-MM-dd');
+    default:
+      return format(addDays(baseDate, 1), 'yyyy-MM-dd');
+  }
+};
 
 
 interface TasksSectionProps {
@@ -37,7 +55,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     title: '',
     description: '',
     due_date: '',
-    assigned_to: ''
+    assigned_to: '',
+    is_recurring: false,
+    recurrence_type: '' as '' | 'daily' | 'weekly' | 'monthly'
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -184,13 +204,37 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
   const markTaskComplete = async (taskId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
       
       // Only admins skip review (archive immediately)
       const skipReview = userRole === 'family_admin' || 
                          userRole === 'disabled_person';
       
+      // If recurring task, create next instance before completing
+      if (task.is_recurring && task.recurrence_type) {
+        const nextDueDate = calculateNextDueDate(task.due_date, task.recurrence_type);
+        
+        const { error: insertError } = await supabase
+          .from('tasks')
+          .insert([{
+            family_id: familyId,
+            title: task.title,
+            description: task.description,
+            due_date: nextDueDate,
+            assigned_to: task.assigned_to,
+            created_by: currentUserId,
+            is_recurring: true,
+            recurrence_type: task.recurrence_type,
+            parent_task_id: task.parent_task_id || task.id // Link to original template
+          }]);
+        
+        if (insertError) {
+          console.error('Error creating next recurring task:', insertError);
+        }
+      }
+      
+      // Mark current task complete
       const { error } = await supabase
         .from('tasks')
         .update({ 
@@ -202,9 +246,13 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       if (error) throw error;
       await loadTasks();
 
+      const toastMessage = task.is_recurring 
+        ? `Task completed. Next occurrence scheduled for ${task.recurrence_type === 'daily' ? 'tomorrow' : task.recurrence_type === 'weekly' ? 'next week' : 'next month'}.`
+        : skipReview ? "Task moved to Done tab" : "Task sent for review";
+
       toast({
         title: "Task completed",
-        description: skipReview ? "Task moved to Done tab" : "Task sent for review"
+        description: toastMessage
       });
     } catch (error) {
       console.error('Error marking task complete:', error);
@@ -316,7 +364,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
           description: newTask.description || null,
           due_date: newTask.due_date || null,
           assigned_to: newTask.assigned_to || null,
-          created_by: currentUserId
+          created_by: currentUserId,
+          is_recurring: newTask.is_recurring,
+          recurrence_type: newTask.is_recurring ? newTask.recurrence_type : null
         }]);
 
       if (error) throw error;
@@ -325,14 +375,18 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         title: '',
         description: '',
         due_date: '',
-        assigned_to: ''
+        assigned_to: '',
+        is_recurring: false,
+        recurrence_type: ''
       });
       setShowAddForm(false);
       loadTasks();
       
       toast({
         title: "Task Created",
-        description: "Task has been created successfully",
+        description: newTask.is_recurring 
+          ? `Recurring ${newTask.recurrence_type} task created` 
+          : "Task has been created successfully",
       });
     } catch (error) {
       console.error('Error creating task:', error);
@@ -417,6 +471,42 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                 </select>
               </div>
             </div>
+            
+            {/* Recurring Task Options */}
+            <div className="space-y-3 p-3 border rounded-md bg-muted/30">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_recurring"
+                  checked={newTask.is_recurring}
+                  onCheckedChange={(checked) => setNewTask(prev => ({ 
+                    ...prev, 
+                    is_recurring: checked === true,
+                    recurrence_type: checked === true ? 'daily' : ''
+                  }))}
+                />
+                <label htmlFor="is_recurring" className="text-sm font-medium cursor-pointer">
+                  Make this a recurring task
+                </label>
+              </div>
+              
+              {newTask.is_recurring && (
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Repeat</label>
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={newTask.recurrence_type}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, recurrence_type: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    When completed, a new task will be created for the next {newTask.recurrence_type === 'daily' ? 'day' : newTask.recurrence_type === 'weekly' ? 'week' : 'month'}
+                  </p>
+                </div>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button 
                 onClick={handleAddTask} 
@@ -487,7 +577,15 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                 {activeTasks.map((task) => (
                   <div key={task.id} className="p-4 border rounded-lg">
                     <div className="task-content">
-                      <div className="font-medium">{task.title}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{task.title}</span>
+                        {task.is_recurring && (
+                          <Badge variant="secondary" className="text-xs">
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            {task.recurrence_type}
+                          </Badge>
+                        )}
+                      </div>
                       {task.description && (
                         <div className="text-sm text-muted-foreground mt-1">{task.description}</div>
                       )}
