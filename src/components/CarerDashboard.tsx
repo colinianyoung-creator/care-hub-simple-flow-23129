@@ -14,8 +14,9 @@ import { AppointmentsSection } from './sections/AppointmentsSection';
 import { ProfileDialog } from './dialogs/ProfileDialog';
 import { ManageCareTeamDialog } from './dialogs/ManageCareTeamDialog';
 import { FamilySwitcher } from './FamilySwitcher';
+import { AIReportsSection } from './sections/AIReportsSection';
 // Mobile tabs and action menu removed - using accordion for all screens
-import { Clock, CheckSquare, FileText, Pill, Calendar, Users, Utensils, Wallet, Info, CalendarClock, UserPlus } from 'lucide-react';
+import { Clock, CheckSquare, FileText, Pill, Calendar, Users, Utensils, Wallet, Info, CalendarClock, UserPlus, FileBarChart } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -210,6 +211,10 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
 
             <ExpandableDashboardSection id="appointments" title="Appointments" icon={<CalendarClock className="h-5 w-5" />}>
               <AppointmentsSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+
+            <ExpandableDashboardSection id="ai-reports" title="AI Reports" icon={<FileBarChart className="h-5 w-5" />}>
+              <AIReportsSection familyId={familyId} userRole={userRole} careRecipientName={careRecipientNameHint} />
             </ExpandableDashboardSection>
           </div>
         </>

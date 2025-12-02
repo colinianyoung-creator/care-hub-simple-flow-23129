@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Users, FileText, UserPlus, Copy, CheckSquare, Pill, Calendar, Utensils, Wallet } from "lucide-react";
+import { Clock, Users, FileText, UserPlus, Copy, CheckSquare, Pill, Calendar, Utensils, Wallet, FileBarChart } from "lucide-react";
+import { AIReportsSection } from "./sections/AIReportsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HeroBanner } from "@/components/HeroBanner";
@@ -412,6 +413,14 @@ export const DisabledPersonDashboard = ({
             icon={<Calendar className="h-5 w-5" />}
           >
             <AppointmentsSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection
+            id="ai-reports"
+            title="AI Reports"
+            icon={<FileBarChart className="h-5 w-5" />}
+          >
+            <AIReportsSection familyId={familyId} userRole={userRole} />
           </ExpandableDashboardSection>
         </div>
       </div>

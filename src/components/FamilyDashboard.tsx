@@ -10,7 +10,8 @@ import { MoneySection } from './sections/MoneySection';
 import { KeyInformationSection } from './sections/KeyInformationSection';
 import { MedicationsSection } from './sections/MedicationsSection';
 import { AppointmentsSection } from './sections/AppointmentsSection';
-import { Calendar, CheckSquare, FileText, Pill, Users, Clock, Utensils, Wallet, UserPlus } from 'lucide-react';
+import { Calendar, CheckSquare, FileText, Pill, Users, Clock, Utensils, Wallet, UserPlus, FileBarChart } from 'lucide-react';
+import { AIReportsSection } from './sections/AIReportsSection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileDialog } from './dialogs/ProfileDialog';
 import { supabase } from "@/integrations/supabase/client";
@@ -206,6 +207,14 @@ export const FamilyDashboard = ({
             icon={<Calendar className="h-5 w-5" />}
           >
             <AppointmentsSection familyId={familyId} userRole={userRole} />
+          </ExpandableDashboardSection>
+
+          <ExpandableDashboardSection
+            id="ai-reports"
+            title="AI Reports"
+            icon={<FileBarChart className="h-5 w-5" />}
+          >
+            <AIReportsSection familyId={familyId} userRole={userRole} careRecipientName={careRecipientName} />
           </ExpandableDashboardSection>
           </div>
         )}
