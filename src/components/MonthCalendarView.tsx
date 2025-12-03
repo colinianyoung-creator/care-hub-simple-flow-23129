@@ -88,16 +88,16 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
           })
           .map(entry => ({
             id: entry.id,
-            date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-            time: format(new Date(entry.clock_in), 'HH:mm'),
-            endTime: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : null,
+            scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+            start_time: format(new Date(entry.clock_in), 'HH:mm:ss'),
+            end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : null,
             carer_id: entry.user_id,
-            carerName: entry.profiles?.full_name || 'Unknown',
+            carer_name: entry.profiles?.full_name || 'Unknown',
             shift_type: entry.shift_type || 'basic',
             isLeaveRequest: false,
             family_id: entry.family_id,
             family_name: entry.families?.name || 'Unknown',
-            scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd')
+            care_recipient_name: entry.families?.name || 'Unknown'
           }));
         console.log('✅ [MonthCalendarView] Filtered to', filteredShifts.length, 'shifts for current month');
         setShifts(filteredShifts);
