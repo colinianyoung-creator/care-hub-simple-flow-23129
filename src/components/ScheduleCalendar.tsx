@@ -163,6 +163,27 @@ useEffect(() => {
 
   const getShiftsForDay = (day: Date) => {
     const dayString = format(day, 'yyyy-MM-dd');
+    
+    // Use allFamiliesShifts when in all-families mode
+    if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
+      return allFamiliesShifts.filter(shift => {
+        const shiftDate = shift.clock_in ? format(new Date(shift.clock_in), 'yyyy-MM-dd') : shift.scheduled_date;
+        return shiftDate === dayString;
+      }).map(entry => ({
+        id: entry.id,
+        scheduled_date: entry.clock_in ? format(new Date(entry.clock_in), 'yyyy-MM-dd') : entry.scheduled_date,
+        start_time: entry.clock_in ? format(new Date(entry.clock_in), 'HH:mm:ss') : entry.start_time,
+        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : entry.end_time,
+        carer_id: entry.user_id || entry.carer_id,
+        carer_name: entry.carer_name,
+        care_recipient_name: entry.family_name || entry.care_recipient_name,
+        shift_type: entry.shift_type || 'basic',
+        notes: entry.notes,
+        family_id: entry.family_id,
+        status: 'scheduled'
+      }));
+    }
+    
     const shifts = instances.filter(instance => instance.scheduled_date === dayString);
     
     // Include leave requests that are approved (filter out denied ones)
@@ -309,6 +330,8 @@ useEffect(() => {
         onToggleListView={onToggleListView}
         showListView={showListView}
         refreshTrigger={refreshTrigger}
+        viewMode={viewMode}
+        allFamiliesShifts={allFamiliesShifts}
       />
     );
   }
