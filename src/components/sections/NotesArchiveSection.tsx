@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Heart, Frown, Meh, Smile, Laugh, Trash2 } from "lucide-react";
-import { format, subDays, addDays, startOfDay, endOfDay } from 'date-fns';
+import { ChevronLeft, ChevronRight, Heart, Frown, Meh, Smile, Trash2, CalendarIcon } from "lucide-react";
+import { format, subDays, addDays, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 interface CareNote {
   id: string;
@@ -39,20 +41,23 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
   const [notes, setNotes] = useState<CareNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isRangeMode, setIsRangeMode] = useState(false);
+  const [rangeStart, setRangeStart] = useState<Date | undefined>();
+  const [rangeEnd, setRangeEnd] = useState<Date | undefined>();
 
-  const loadNotesForDate = async (date: Date) => {
+  const loadNotesForDate = async (startDate: Date, endDate?: Date) => {
     try {
       if (!familyId) return;
 
-      const startDate = startOfDay(date);
-      const endDate = endOfDay(date);
+      const start = startOfDay(startDate);
+      const end = endOfDay(endDate || startDate);
 
       const { data, error } = await supabase
         .from('care_notes')
         .select('*')
         .eq('family_id', familyId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -99,7 +104,7 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
         .eq('id', noteId);
 
       if (error) throw error;
-      loadNotesForDate(selectedDate);
+      loadNotesForDate(selectedDate, isRangeMode && rangeEnd ? rangeEnd : undefined);
       
       toast({
         title: "Note deleted",
@@ -125,7 +130,6 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
       try {
         setLoading(true);
 
-        // 10s timeout
         const timeoutId = setTimeout(() => {
           if (!cancelled) {
             abortController.abort();
@@ -138,7 +142,11 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
           }
         }, 10000);
 
-        await loadNotesForDate(selectedDate);
+        if (isRangeMode && rangeStart && rangeEnd) {
+          await loadNotesForDate(rangeStart, rangeEnd);
+        } else {
+          await loadNotesForDate(selectedDate);
+        }
 
         clearTimeout(timeoutId);
       } catch (error: any) {
@@ -157,9 +165,9 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
     return () => {
       cancelled = true;
       abortController.abort();
-      setLoading(false); // ✅ Immediate UI reset
+      setLoading(false);
     };
-  }, [familyId, selectedDate]);
+  }, [familyId, selectedDate, isRangeMode, rangeStart, rangeEnd]);
 
   const canDeleteNote = (note: CareNote) => {
     return !!familyId && userRole !== 'family_viewer';
@@ -176,42 +184,113 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
     }
   };
 
-  const goToPreviousDay = () => {
-    setSelectedDate(subDays(selectedDate, 1));
-  };
-
-  const goToNextDay = () => {
-    setSelectedDate(addDays(selectedDate, 1));
-  };
-
+  const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1));
+  const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1));
   const goToToday = () => {
     setSelectedDate(new Date());
+    setIsRangeMode(false);
+    setRangeStart(undefined);
+    setRangeEnd(undefined);
+  };
+
+  const handleQuickRange = (type: 'today' | 'week' | 'month') => {
+    const today = new Date();
+    switch (type) {
+      case 'today':
+        setIsRangeMode(false);
+        setSelectedDate(today);
+        break;
+      case 'week':
+        setIsRangeMode(true);
+        setRangeStart(startOfWeek(today, { weekStartsOn: 1 }));
+        setRangeEnd(endOfWeek(today, { weekStartsOn: 1 }));
+        break;
+      case 'month':
+        setIsRangeMode(true);
+        setRangeStart(startOfMonth(today));
+        setRangeEnd(endOfMonth(today));
+        break;
+    }
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (!date) return;
+    setSelectedDate(date);
+    setIsRangeMode(false);
+    setRangeStart(undefined);
+    setRangeEnd(undefined);
   };
 
   const isToday = selectedDate.toDateString() === new Date().toDateString();
 
+  // Group notes by date when in range mode
+  const groupedNotes = isRangeMode 
+    ? notes.reduce((acc, note) => {
+        const dateKey = format(new Date(note.created_at), 'yyyy-MM-dd');
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(note);
+        return acc;
+      }, {} as Record<string, CareNote[]>)
+    : null;
+
   return (
     <div className="space-y-4">
-      {/* Date Navigation */}
+      {/* Date Navigation with Calendar Picker */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={goToPreviousDay}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="text-center">
-              <CardTitle className="text-lg">
-                {format(selectedDate, 'MMMM d, yyyy')}
-              </CardTitle>
-              {!isToday && (
-                <Button variant="link" size="sm" onClick={goToToday}>
-                  Go to today
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="min-w-[180px] justify-center gap-2">
+                  <CalendarIcon className="h-4 w-4" />
+                  {isRangeMode && rangeStart && rangeEnd ? (
+                    <span className="text-sm">
+                      {format(rangeStart, 'MMM d')} - {format(rangeEnd, 'MMM d, yyyy')}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium">
+                      {format(selectedDate, 'MMMM d, yyyy')}
+                    </span>
+                  )}
                 </Button>
-              )}
-            </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <div className="p-3 border-b space-y-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="ghost" size="sm" onClick={() => handleQuickRange('today')} className="text-xs">
+                      Today
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleQuickRange('week')} className="text-xs">
+                      This Week
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleQuickRange('month')} className="text-xs">
+                      This Month
+                    </Button>
+                  </div>
+                </div>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleCalendarSelect}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
             <Button variant="outline" size="sm" onClick={goToNextDay}>
               <ChevronRight className="h-4 w-4" />
             </Button>
+
+            {!isToday && !isRangeMode && (
+              <Button variant="ghost" size="sm" onClick={goToToday} className="text-xs">
+                Today
+              </Button>
+            )}
           </div>
         </CardHeader>
       </Card>

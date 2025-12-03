@@ -155,13 +155,38 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Use existing userFamilies instead of re-fetching
-      const familyIds = userFamilies.map(f => f.id);
+      // Fetch user's families directly if not already loaded
+      let familyIds = userFamilies.map(f => f.id);
+      
+      if (familyIds.length === 0) {
+        console.log('⏳ userFamilies not loaded yet, fetching directly...');
+        const { data: memberships, error: membershipError } = await supabase
+          .from('user_memberships')
+          .select('family_id, families(id, name)')
+          .eq('user_id', user.id);
+
+        if (membershipError) throw membershipError;
+
+        familyIds = memberships?.map(m => m.family_id) || [];
+        
+        // Also update state for future use
+        setUserFamilies(memberships?.map(m => ({
+          id: m.family_id,
+          name: (m.families as any)?.name || 'Unknown'
+        })) || []);
+      }
       
       if (familyIds.length === 0) {
         console.log('No families found for user');
+        toast({
+          title: "No families found",
+          description: "You are not a member of any families",
+          variant: "destructive"
+        });
         return;
       }
+
+      console.log('📊 Loading shifts for families:', familyIds);
 
       // Get all time_entries assigned to this user across all families
       const { data: allShifts, error: shiftsError } = await supabase
@@ -183,6 +208,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
       if (shiftsError) throw shiftsError;
 
+      console.log('✅ Loaded all-families shifts:', allShifts?.length || 0);
       setAllFamiliesShifts(allShifts || []);
     } catch (error) {
       console.error('Error loading cross-family shifts:', error);
