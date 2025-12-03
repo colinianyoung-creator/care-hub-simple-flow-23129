@@ -70,7 +70,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const monthEnd = endOfMonth(currentMonth);
       
       // If in all-families mode, use pre-loaded data
-      if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
+      if (viewMode === 'all-families') {
         const filteredShifts = allFamiliesShifts
           .filter(shift => {
             const shiftDate = new Date(shift.clock_in);
