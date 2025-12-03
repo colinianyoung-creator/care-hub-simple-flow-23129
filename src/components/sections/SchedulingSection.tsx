@@ -65,6 +65,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const [showRefresh, setShowRefresh] = useState(false);
   const [viewMode, setViewMode] = useState<'single-family' | 'all-families'>('single-family');
   const [allFamiliesShifts, setAllFamiliesShifts] = useState<any[]>([]);
+  const [loadingAllFamilies, setLoadingAllFamilies] = useState(false);
   const [activeTab, setActiveTab] = useState(
     defaultActiveTab || (userRole === 'family_admin' || userRole === 'disabled_person' ? "overview" : "schedule")
   );
@@ -151,9 +152,15 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   };
 
   const loadAllMyShifts = async () => {
+    console.log('📊 [loadAllMyShifts] Starting to load cross-family shifts...');
+    setLoadingAllFamilies(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('❌ [loadAllMyShifts] No user found');
+        setLoadingAllFamilies(false);
+        return;
+      }
 
       // Fetch user's families directly if not already loaded
       let familyIds = userFamilies.map(f => f.id);
@@ -208,15 +215,21 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
       if (shiftsError) throw shiftsError;
 
-      console.log('✅ Loaded all-families shifts:', allShifts?.length || 0);
+      console.log('✅ [loadAllMyShifts] Loaded all-families shifts:', allShifts?.length || 0);
       setAllFamiliesShifts(allShifts || []);
+      toast({
+        title: "Shifts loaded",
+        description: `Loaded ${allShifts?.length || 0} shifts across all your families`,
+      });
     } catch (error) {
-      console.error('Error loading cross-family shifts:', error);
+      console.error('❌ [loadAllMyShifts] Error loading cross-family shifts:', error);
       toast({
         title: "Error loading shifts",
         description: "Could not load your shifts across families",
         variant: "destructive"
       });
+    } finally {
+      setLoadingAllFamilies(false);
     }
   };
 
@@ -1528,6 +1541,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             viewMode={viewMode}
             allFamiliesShifts={allFamiliesShifts}
             currentUserId={currentUserId || undefined}
+            loadingAllFamilies={loadingAllFamilies}
           />
         )}
 

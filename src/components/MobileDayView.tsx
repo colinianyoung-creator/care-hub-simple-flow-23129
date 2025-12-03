@@ -499,7 +499,7 @@ export const MobileDayView = ({
                       {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
                     </span>
                   </div>
-                  <span className="text-xs md:text-sm truncate">{getDisplayName(shift)}</span>
+                  <span className="text-xs md:text-sm truncate">{getBadgeContent(shift)}</span>
                 </div>
               </Badge>
             ))}

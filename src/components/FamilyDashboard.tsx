@@ -119,7 +119,6 @@ export const FamilyDashboard = ({
           subtitle={familyId ? "Manage your family's care with ease" : "Create or join a family to access care features"}
           careRecipientName={familyId && userRole !== 'disabled_person' ? careRecipientName : undefined}
           profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
-          onProfileClick={() => setShowProfileDialog(true)}
         />
 
         {showJoinMessage && (

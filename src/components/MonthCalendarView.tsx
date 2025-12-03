@@ -19,9 +19,10 @@ interface MonthCalendarViewProps {
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
   currentUserId?: string;
+  loadingAllFamilies?: boolean;
 }
 
-export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [], currentUserId }: MonthCalendarViewProps) => {
+export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [], currentUserId, loadingAllFamilies = false }: MonthCalendarViewProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [shifts, setShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         abortController.abort();
       };
     }
-  }, [isOpen, currentMonth, familyId, carersMap, careRecipientNameHint, userRole, viewMode, allFamiliesShifts]);
+  }, [isOpen, currentMonth, familyId, carersMap, careRecipientNameHint, userRole, viewMode, allFamiliesShifts, loadingAllFamilies]);
  
   const loadMonthShifts = async (abortController?: AbortController) => {
     setLoading(true);
@@ -71,6 +72,15 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       
       // If in all-families mode, use pre-loaded data
       if (viewMode === 'all-families') {
+        // If parent is still loading all-families data, show loading
+        if (loadingAllFamilies) {
+          console.log('⏳ [MonthCalendarView] Waiting for all-families data to load...');
+          setLoading(true);
+          clearTimeout(timeoutId);
+          return;
+        }
+        
+        console.log('📊 [MonthCalendarView] Processing all-families data:', allFamiliesShifts.length, 'shifts');
         const filteredShifts = allFamiliesShifts
           .filter(shift => {
             const shiftDate = new Date(shift.clock_in);
@@ -86,8 +96,10 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
             shift_type: entry.shift_type || 'basic',
             isLeaveRequest: false,
             family_id: entry.family_id,
-            family_name: entry.families?.name || 'Unknown'
+            family_name: entry.families?.name || 'Unknown',
+            scheduled_date: format(new Date(entry.clock_in), 'yyyy-MM-dd')
           }));
+        console.log('✅ [MonthCalendarView] Filtered to', filteredShifts.length, 'shifts for current month');
         setShifts(filteredShifts);
         setLoading(false);
         clearTimeout(timeoutId);
