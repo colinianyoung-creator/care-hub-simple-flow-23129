@@ -808,6 +808,7 @@ export type Database = {
           family_id: string
           id: string
           is_archived: boolean | null
+          notes: string | null
           receipt_url: string | null
           transaction_date: string
           type: string
@@ -823,6 +824,7 @@ export type Database = {
           family_id: string
           id?: string
           is_archived?: boolean | null
+          notes?: string | null
           receipt_url?: string | null
           transaction_date?: string
           type: string
@@ -838,6 +840,7 @@ export type Database = {
           family_id?: string
           id?: string
           is_archived?: boolean | null
+          notes?: string | null
           receipt_url?: string | null
           transaction_date?: string
           type?: string
