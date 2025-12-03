@@ -309,20 +309,27 @@ export const MobileDayView = ({
   };
 
   const getBadgeContent = (shift: any) => {
-    if (shift.is_leave_request || shift.shift_type) {
-      const typeLabels: { [key: string]: string } = {
-        'holiday': 'Holiday',
-        'annual_leave': 'Holiday',
-        'sickness': 'Sickness',
-        'sick_leave': 'Sickness',
-        'public_holiday': 'Public Holiday',
-        'cover': 'Cover'
-      };
-      const type = shift.shift_type || shift.type;
-      const label = typeLabels[type] || 'Leave';
-      return `${label} - ${getDisplayName(shift)}`;
+    const type = shift.shift_type || shift.type || 'basic';
+    
+    // For basic shifts, just show the display name without a type prefix
+    if (type === 'basic' && !shift.is_leave_request) {
+      return getDisplayName(shift);
     }
-    return getDisplayName(shift);
+    
+    // For non-basic shifts and leave requests, show type label
+    const typeLabels: { [key: string]: string } = {
+      'holiday': 'Holiday',
+      'annual_leave': 'Holiday',
+      'sickness': 'Sickness',
+      'sick_leave': 'Sickness',
+      'public_holiday': 'Public Holiday',
+      'cover': 'Cover',
+      'training': 'Training',
+      'other': 'Other'
+    };
+    
+    const label = typeLabels[type] || formatShiftType(type);
+    return `${label} - ${getDisplayName(shift)}`;
   };
 
   // Removed - now using shared utility from src/lib/shiftUtils.ts

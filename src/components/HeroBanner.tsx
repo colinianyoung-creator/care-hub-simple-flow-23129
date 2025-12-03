@@ -28,8 +28,8 @@ export const HeroBanner = ({ title, subtitle, children, careRecipientName, profi
       </div>
 
       {/* Profile Picture (Top Right) */}
-      {onProfileClick && (
-        <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-4 right-4 z-20">
+        {onProfileClick ? (
           <Button
             onClick={onProfileClick}
             variant="ghost"
@@ -42,8 +42,14 @@ export const HeroBanner = ({ title, subtitle, children, careRecipientName, profi
               className="h-14 w-14 md:h-20 md:w-20 border-2 border-white/30"
             />
           </Button>
-        </div>
-      )}
+        ) : (
+          <ProfileAvatar 
+            profilePicturePath={profilePictureUrl}
+            fallbackIcon={<User className="h-8 w-8 md:h-10 md:w-10 text-white" />}
+            className="h-14 w-14 md:h-20 md:w-20 border-2 border-white/30"
+          />
+        )}
+      </div>
       
       {/* Content */}
       <div className="relative z-10 space-y-4 pr-20 md:pr-0">
