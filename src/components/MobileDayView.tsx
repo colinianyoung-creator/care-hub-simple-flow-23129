@@ -100,7 +100,7 @@ export const MobileDayView = ({
       const dateStr = format(currentDate, 'yyyy-MM-dd');
 
       // If in all-families mode, use the pre-loaded cross-family data
-      if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
+      if (viewMode === 'all-families') {
         const filteredShifts = allFamiliesShifts
           .filter(shift => {
             const shiftDateStr = format(new Date(shift.clock_in), 'yyyy-MM-dd');
@@ -487,29 +487,21 @@ export const MobileDayView = ({
         ) : (
           <div className="space-y-3">
             {dayShifts.map((shift) => (
-              <React.Fragment key={shift.id}>
-                <Badge 
-                  className={`${getShiftTypeColor(shift.shift_type, shift.is_leave_request)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
-                  onClick={() => handleShiftClick(shift)}
-                >
-                  <div className="flex flex-col gap-1 w-full min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3 w-3 flex-shrink-0" />
-                      <span className="font-medium text-xs md:text-sm truncate">
-                        {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
-                      </span>
-                    </div>
+              <Badge 
+                key={shift.id}
+                className={`${getShiftTypeColor(shift.shift_type, shift.is_leave_request)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
+                onClick={() => handleShiftClick(shift)}
+              >
+                <div className="flex flex-col gap-1 w-full min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3 w-3 flex-shrink-0" />
+                    <span className="font-medium text-xs md:text-sm truncate">
+                      {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
+                    </span>
+                  </div>
                   <span className="text-xs md:text-sm truncate">{getDisplayName(shift)}</span>
-                  </div>
-                </Badge>
-                {shift.notes && 
-                  !['basic', 'cover', 'sickness', 'annual_leave', 'public_holiday', 'training', 'other', 'holiday', 'sick_leave'].includes(shift.notes.toLowerCase()) &&
-                  shift.notes.toLowerCase() !== (shift.shift_type || '').toLowerCase() && (
-                  <div className="text-sm text-muted-foreground p-2 bg-muted rounded ml-1 mt-1">
-                    {shift.notes}
-                  </div>
-                )}
-              </React.Fragment>
+                </div>
+              </Badge>
             ))}
           </div>
         )}
