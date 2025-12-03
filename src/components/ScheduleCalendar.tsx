@@ -175,11 +175,12 @@ useEffect(() => {
         start_time: entry.clock_in ? format(new Date(entry.clock_in), 'HH:mm:ss') : entry.start_time,
         end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : entry.end_time,
         carer_id: entry.user_id || entry.carer_id,
-        carer_name: entry.carer_name,
-        care_recipient_name: entry.family_name || entry.care_recipient_name,
+        carer_name: entry.profiles?.full_name || entry.carer_name || 'Unknown',
+        care_recipient_name: entry.families?.name || entry.care_recipient_name || 'Care Recipient',
         shift_type: entry.shift_type || 'basic',
         notes: entry.notes,
         family_id: entry.family_id,
+        family_name: entry.families?.name || 'Unknown',
         status: 'scheduled'
       }));
     }
