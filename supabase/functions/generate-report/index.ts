@@ -80,14 +80,34 @@ serve(async (req) => {
       return notes.map(note => {
         const parts = [];
         if (note.created_at) parts.push(`Date: ${new Date(note.created_at).toLocaleDateString('en-GB')}`);
+        
+        // New structured fields
         if (note.activity_support) parts.push(`Activity: ${note.activity_support}`);
         if (note.observations) parts.push(`Observations: ${note.observations}`);
         if (note.mood) parts.push(`Mood: ${note.mood}`);
         if (note.eating_drinking) parts.push(`Eating/Drinking: ${note.eating_drinking}`);
+        if (note.eating_drinking_notes) parts.push(`Eating Notes: ${note.eating_drinking_notes}`);
         if (note.bathroom_usage) parts.push(`Bathroom: ${note.bathroom_usage}`);
         if (note.incidents) parts.push(`Incidents: ${note.incidents}`);
         if (note.next_steps) parts.push(`Next Steps: ${note.next_steps}`);
-        return parts.join('\n');
+        if (note.outcome_response) parts.push(`Outcome: ${note.outcome_response}`);
+        if (note.activity_tags && note.activity_tags.length > 0) parts.push(`Tags: ${note.activity_tags.join(', ')}`);
+        
+        // Legacy fields fallback - only use if no new structured data exists
+        const hasStructuredData = note.activity_support || note.observations || note.mood || 
+                                   note.eating_drinking || note.bathroom_usage || note.incidents;
+        if (!hasStructuredData) {
+          if (note.title) parts.push(`Title: ${note.title}`);
+          if (note.content) parts.push(`Content: ${note.content}`);
+        }
+        
+        // If still no meaningful content, try any available text
+        if (parts.length <= 1) {
+          if (note.title && !parts.includes(`Title: ${note.title}`)) parts.push(`Title: ${note.title}`);
+          if (note.content && !parts.includes(`Content: ${note.content}`)) parts.push(`Content: ${note.content}`);
+        }
+        
+        return parts.length > 1 ? parts.join('\n') : 'Note recorded (no details)';
       }).join('\n---\n');
     };
 

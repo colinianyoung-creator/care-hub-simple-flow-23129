@@ -502,7 +502,9 @@ export const MobileDayView = ({
                   <span className="text-xs md:text-sm truncate">{getDisplayName(shift)}</span>
                   </div>
                 </Badge>
-                {shift.notes && (
+                {shift.notes && 
+                  !['basic', 'cover', 'sickness', 'annual_leave', 'public_holiday', 'training', 'other', 'holiday', 'sick_leave'].includes(shift.notes.toLowerCase()) &&
+                  shift.notes.toLowerCase() !== (shift.shift_type || '').toLowerCase() && (
                   <div className="text-sm text-muted-foreground p-2 bg-muted rounded ml-1 mt-1">
                     {shift.notes}
                   </div>

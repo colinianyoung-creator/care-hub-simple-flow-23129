@@ -259,7 +259,15 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
         });
       } else {
         // Insert new entry
-        const { error } = await supabase
+        console.log('💰 Inserting money record:', {
+          family_id: familyId,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          type: 'expense',
+          created_by: formData.paid_by || user.id
+        });
+
+        const { data, error } = await supabase
           .from('money_records')
           .insert([{
             family_id: familyId,
@@ -269,9 +277,20 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
             notes: formData.notes || null,
             receipt_url: formData.receipt_url || null,
             created_by: formData.paid_by || user.id
-          }] as any);
+          }] as any)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Insert error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          throw error;
+        }
+
+        console.log('✅ Insert successful:', data);
 
         toast({
           title: "Expense added",
@@ -281,11 +300,12 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
       handleCancelEdit();
       loadEntries();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving expense:', error);
+      const errorMessage = error?.message || error?.details || 'Failed to save expense';
       toast({
-        title: "Error",
-        description: "Failed to save expense",
+        title: "Error saving expense",
+        description: errorMessage,
         variant: "destructive"
       });
     }
