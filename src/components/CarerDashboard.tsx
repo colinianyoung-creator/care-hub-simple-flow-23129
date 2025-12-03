@@ -177,7 +177,6 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             title={`Welcome back, ${userName}!`}
             subtitle={familyId ? `Managing care for ${familyName}` : "Join a family to start coordinating care"}
             profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
-            onProfileClick={() => setShowProfileDialog(true)}
           />
 
           <div className="space-y-4">

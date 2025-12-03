@@ -255,15 +255,15 @@ const Dashboard = () => {
       setFamilies(memberships || []);
       console.log('✅ Families set:', memberships?.length || 0);
 
-      // Load care recipient picture for hero banner
+      // Load care recipient picture for hero banner - use selected family or first
       if (memberships && memberships.length > 0) {
-        const firstFamilyId = memberships[0].family_id;
+        const targetFamilyId = selectedFamilyId || memberships[0].family_id;
         
         // Query for disabled_person in this family
         const { data: careRecipients } = await supabase
           .from('user_memberships')
           .select('user_id, profiles!inner(profile_picture_url)')
-          .eq('family_id', firstFamilyId)
+          .eq('family_id', targetFamilyId)
           .eq('role', 'disabled_person')
           .limit(1);
         
@@ -275,7 +275,7 @@ const Dashboard = () => {
           const { data: admins } = await supabase
             .from('user_memberships')
             .select('user_id, profiles!inner(profile_picture_url)')
-            .eq('family_id', firstFamilyId)
+            .eq('family_id', targetFamilyId)
             .eq('role', 'family_admin')
             .limit(1);
           
@@ -339,14 +339,51 @@ const Dashboard = () => {
     }
   };
 
+  const loadCareRecipientPicture = async (targetFamilyId: string) => {
+    try {
+      console.log('🖼️ Loading care recipient picture for family:', targetFamilyId);
+      
+      // Query for disabled_person in this family
+      const { data: careRecipients } = await supabase
+        .from('user_memberships')
+        .select('user_id, profiles!inner(profile_picture_url)')
+        .eq('family_id', targetFamilyId)
+        .eq('role', 'disabled_person')
+        .limit(1);
+      
+      if (careRecipients && careRecipients.length > 0) {
+        const careRecipient = careRecipients[0] as any;
+        setCareRecipientPictureUrl(careRecipient.profiles?.profile_picture_url || '');
+        console.log('✅ Set care recipient picture from disabled_person');
+      } else {
+        // Fallback: use family admin's picture if no disabled person
+        const { data: admins } = await supabase
+          .from('user_memberships')
+          .select('user_id, profiles!inner(profile_picture_url)')
+          .eq('family_id', targetFamilyId)
+          .eq('role', 'family_admin')
+          .limit(1);
+        
+        if (admins && admins.length > 0) {
+          const admin = admins[0] as any;
+          setCareRecipientPictureUrl(admin.profiles?.profile_picture_url || '');
+          console.log('✅ Set care recipient picture from family_admin fallback');
+        } else {
+          setCareRecipientPictureUrl('');
+          console.log('⚠️ No care recipient picture found');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading care recipient picture:', error);
+    }
+  };
+
   const handleFamilySelected = async (familyId: string) => {
     console.log('🔄 Switching to family:', familyId);
     setSelectedFamilyId(familyId);
     
-    // Optionally reload user data to ensure fresh data for the new family
-    if (user) {
-      await loadUserData(user.id);
-    }
+    // Load care recipient picture for the newly selected family
+    await loadCareRecipientPicture(familyId);
   };
 
   const handleFirstTimeUser = async (userId: string, profileData: any) => {
