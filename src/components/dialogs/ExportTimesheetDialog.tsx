@@ -245,19 +245,8 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
             }, 0);
         };
         
-        // Calculate hours by shift type from time_entries
-        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic') + 
-          weekShiftInstances
-            .filter(shift => shift.status === 'scheduled' || shift.status === 'completed')
-            .reduce((total, shift) => {
-              if (shift.start_time && shift.end_time) {
-                const start = new Date(`2000-01-01T${shift.start_time}`);
-                const end = new Date(`2000-01-01T${shift.end_time}`);
-                return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-              }
-              return total;
-            }, 0);
-          
+        // Calculate hours by shift type from time_entries ONLY (single source of truth)
+        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic');
         const cover = calculateHoursByShiftType(weekTimeEntries, 'cover');
           
         // Calculate leave hours from time_entries shift_type
@@ -265,18 +254,25 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         let public_holiday = calculateHoursByShiftType(weekTimeEntries, 'public_holiday');
         let sickness = calculateHoursByShiftType(weekTimeEntries, 'sickness');
         
-        // Supplement with leave_requests as fallback (estimate 8 hours per day)
-        annual_leave += weekLeaveRequests
-          .filter(req => req.reason?.toLowerCase().includes('annual'))
-          .reduce((total, req) => total + 8, 0);
-          
-        public_holiday += weekLeaveRequests
-          .filter(req => req.reason?.toLowerCase().includes('holiday') && !req.reason?.toLowerCase().includes('annual'))
-          .reduce((total, req) => total + 8, 0);
-          
-        sickness += weekLeaveRequests
-          .filter(req => req.reason?.toLowerCase().includes('sick'))
-          .reduce((total, req) => total + 8, 0);
+        // Only add leave_requests hours as fallback if NO time_entries exist for that type
+        // This prevents double-counting when shifts are properly recorded
+        if (annual_leave === 0) {
+          annual_leave += weekLeaveRequests
+            .filter(req => req.reason?.toLowerCase().includes('annual'))
+            .reduce((total, req) => total + 8, 0);
+        }
+        
+        if (public_holiday === 0) {
+          public_holiday += weekLeaveRequests
+            .filter(req => req.reason?.toLowerCase().includes('holiday') && !req.reason?.toLowerCase().includes('annual'))
+            .reduce((total, req) => total + 8, 0);
+        }
+        
+        if (sickness === 0) {
+          sickness += weekLeaveRequests
+            .filter(req => req.reason?.toLowerCase().includes('sick'))
+            .reduce((total, req) => total + 8, 0);
+        }
         
         return {
           weekEnding: format(weekEnding, 'dd/MM/yyyy'),
