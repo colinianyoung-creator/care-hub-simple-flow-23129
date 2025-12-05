@@ -26,7 +26,7 @@ export const getShiftTypeColor = (shiftType: string, isLeaveRequest?: boolean): 
 
   switch (shiftType) {
     case 'cover':
-      return 'bg-blue-500 text-white';
+      return 'bg-cyan-500 text-white';
     case 'sickness':
     case 'sick_leave':
       return 'bg-red-500 text-white';
