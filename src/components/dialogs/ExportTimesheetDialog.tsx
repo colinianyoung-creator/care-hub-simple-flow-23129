@@ -209,9 +209,14 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       const weeks = generateSundayWeeks(startDate, endDate);
       
       // Process data into timesheet format
-      const weekData = weeks.map(weekEnding => {
-        const weekStart = new Date(weekEnding);
+      const weekData = weeks.map(weekEndingDate => {
+        // Fix date boundary: set weekEnding to end of day (23:59:59) to include full day
+        const weekEnding = new Date(weekEndingDate);
+        weekEnding.setHours(23, 59, 59, 999);
+        
+        const weekStart = new Date(weekEndingDate);
         weekStart.setDate(weekStart.getDate() - 6); // Sunday to Saturday week
+        weekStart.setHours(0, 0, 0, 0); // Start at beginning of day
         
         // Calculate time entry hours for this week
         const weekTimeEntries = timeEntries?.filter(entry => {
@@ -245,17 +250,45 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
             }, 0);
         };
         
-        // Calculate hours by shift type from time_entries ONLY (single source of truth)
-        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic');
-        const cover = calculateHoursByShiftType(weekTimeEntries, 'cover');
-          
-        // Calculate leave hours from time_entries shift_type
-        let annual_leave = calculateHoursByShiftType(weekTimeEntries, 'annual_leave');
-        let public_holiday = calculateHoursByShiftType(weekTimeEntries, 'public_holiday');
-        let sickness = calculateHoursByShiftType(weekTimeEntries, 'sickness');
+        // Helper function to calculate hours from shift_instances that DON'T have time_entries
+        // This prevents double-counting while capturing scheduled shifts
+        const calculateShiftInstanceHours = (instances: any[], targetType: string) => {
+          return instances
+            .filter(shift => shift.shift_type === targetType)
+            .filter(shift => {
+              // Check if this shift_instance already has a time_entry (avoid double count)
+              const shiftDate = format(new Date(shift.scheduled_date), 'yyyy-MM-dd');
+              const hasTimeEntry = weekTimeEntries.some(entry => {
+                const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+                return entryDate === shiftDate && entry.shift_type === targetType;
+              });
+              return !hasTimeEntry; // Only count if no time_entry exists
+            })
+            .reduce((total, shift) => {
+              if (shift.start_time && shift.end_time) {
+                const start = new Date(`2000-01-01T${shift.start_time}`);
+                const end = new Date(`2000-01-01T${shift.end_time}`);
+                return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+              }
+              return total;
+            }, 0);
+        };
         
-        // Only add leave_requests hours as fallback if NO time_entries exist for that type
-        // This prevents double-counting when shifts are properly recorded
+        // Calculate hours from time_entries + unmatched shift_instances
+        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic') 
+          + calculateShiftInstanceHours(weekShiftInstances, 'basic');
+        const cover = calculateHoursByShiftType(weekTimeEntries, 'cover')
+          + calculateShiftInstanceHours(weekShiftInstances, 'cover');
+          
+        // Calculate leave hours from time_entries + unmatched shift_instances
+        let annual_leave = calculateHoursByShiftType(weekTimeEntries, 'annual_leave')
+          + calculateShiftInstanceHours(weekShiftInstances, 'annual_leave');
+        let public_holiday = calculateHoursByShiftType(weekTimeEntries, 'public_holiday')
+          + calculateShiftInstanceHours(weekShiftInstances, 'public_holiday');
+        let sickness = calculateHoursByShiftType(weekTimeEntries, 'sickness')
+          + calculateShiftInstanceHours(weekShiftInstances, 'sickness');
+        
+        // Only add leave_requests hours as fallback if NO time_entries or shift_instances exist
         if (annual_leave === 0) {
           annual_leave += weekLeaveRequests
             .filter(req => req.reason?.toLowerCase().includes('annual'))
@@ -275,7 +308,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         }
         
         return {
-          weekEnding: format(weekEnding, 'dd/MM/yyyy'),
+          weekEnding: format(weekEndingDate, 'dd/MM/yyyy'),
           basic: Math.round(basic * 100) / 100,
           cover: Math.round(cover * 100) / 100,
           annual_leave: Math.round(annual_leave * 100) / 100,
