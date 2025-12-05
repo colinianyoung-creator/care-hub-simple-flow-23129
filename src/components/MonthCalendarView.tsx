@@ -20,9 +20,10 @@ interface MonthCalendarViewProps {
   allFamiliesShifts?: any[];
   currentUserId?: string;
   loadingAllFamilies?: boolean;
+  selectedCarerId?: string | null;
 }
 
-export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [], currentUserId, loadingAllFamilies = false }: MonthCalendarViewProps) => {
+export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShiftClick, carersMap, careRecipientNameHint, viewMode = 'single-family', allFamiliesShifts = [], currentUserId, loadingAllFamilies = false, selectedCarerId = null }: MonthCalendarViewProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [shifts, setShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -110,7 +111,8 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const monthStartStr = format(monthStart, 'yyyy-MM-dd');
       const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
       
-      let query = supabase
+      // Load time_entries (one-time shifts and clocked shifts)
+      let timeQuery = supabase
         .from('time_entries')
         .select('*')
         .eq('family_id', familyId)
@@ -118,15 +120,28 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         .lte('clock_in', `${monthEndStr}T23:59:59`);
 
       if (userRole === 'carer' && viewMode === 'single-family' && currentUserId) {
-        query = query.eq('user_id', currentUserId);
+        timeQuery = timeQuery.eq('user_id', currentUserId);
       }
 
-      const { data: timeEntries, error: entriesError } = await query;
-
+      const { data: timeEntries, error: entriesError } = await timeQuery;
       if (entriesError) throw entriesError;
 
-      // Get unique carer IDs from time entries
-      const carerIds = [...new Set(timeEntries?.map(entry => entry.user_id).filter(Boolean))] as string[];
+      // Load recurring shifts from shift_instances via RPC
+      const { data: shiftInstancesData, error: instancesError } = await supabase
+        .rpc('get_shift_instances_with_names', {
+          _family_id: familyId,
+          _start_date: monthStartStr,
+          _end_date: monthEndStr
+        });
+      
+      if (instancesError) {
+        console.warn('Error loading shift instances:', instancesError);
+      }
+
+      // Get unique carer IDs from both sources
+      const timeEntryCarerIds = timeEntries?.map(entry => entry.user_id).filter(Boolean) || [];
+      const instanceCarerIds = shiftInstancesData?.map((i: any) => i.carer_id).filter(Boolean) || [];
+      const carerIds = [...new Set([...timeEntryCarerIds, ...instanceCarerIds])] as string[];
       
       // Load carer profiles
       const { data: carerProfiles } = await supabase
@@ -155,9 +170,34 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         family_id: entry.family_id,
         created_at: entry.created_at,
         updated_at: entry.updated_at,
-        shift_type: (entry as any).shift_type || 'basic', // Include shift_type from DB
-        is_leave_request: false
+        shift_type: (entry as any).shift_type || 'basic',
+        is_leave_request: false,
+        is_recurring: false
       })) || [];
+
+      // Transform recurring shifts from shift_instances
+      const recurringShifts = (shiftInstancesData || []).map((instance: any) => ({
+        id: instance.id,
+        shift_assignment_id: instance.shift_assignment_id,
+        shift_instance_id: instance.id,
+        scheduled_date: instance.scheduled_date,
+        start_time: instance.start_time,
+        end_time: instance.end_time,
+        carer_id: instance.carer_id,
+        carer_name: instance.carer_name || newCarers[instance.carer_id] || 'Unknown',
+        status: instance.status || 'scheduled',
+        notes: null,
+        family_id: familyId,
+        shift_type: instance.shift_type || 'basic',
+        is_leave_request: false,
+        is_recurring: true
+      }));
+
+      // Filter out recurring shifts that already have time_entries (avoid duplicates)
+      const existingDates = new Set(transformedShifts.map(s => `${s.carer_id}-${s.scheduled_date}`));
+      const filteredRecurring = recurringShifts.filter((s: any) => 
+        !existingDates.has(`${s.carer_id}-${s.scheduled_date}`)
+      );
 
       // Get approved leave requests for the same period
       const { data: leaveRequests, error: leaveError } = await supabase
@@ -218,8 +258,8 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         }
       }
 
-      // Merge shifts and leave requests
-      const allShifts = [...transformedShifts, ...convertedLeaves];
+      // Merge time_entries, recurring shifts, and leave requests
+      const allShifts = [...transformedShifts, ...filteredRecurring, ...convertedLeaves];
       setShifts(allShifts);
 
       // If no shifts, clear error so we show empty state instead
@@ -258,6 +298,11 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       
       // Filter out denied leave requests
       if (shift.is_leave_request && shift.status === 'denied') {
+        return false;
+      }
+      
+      // Apply carer filter
+      if (selectedCarerId && shift.carer_id !== selectedCarerId) {
         return false;
       }
       

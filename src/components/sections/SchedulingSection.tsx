@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +71,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
     defaultActiveTab || (userRole === 'family_admin' || userRole === 'disabled_person' ? "overview" : "schedule")
   );
   const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
+  const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Sync activeTab with defaultActiveTab prop changes (for pending requests navigation)
@@ -1278,7 +1280,26 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                 />
               )}
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h3 className="text-lg font-semibold">Weekly Schedule</h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-semibold">Weekly Schedule</h3>
+                  {isAdmin && Object.keys(carers).length > 0 && (
+                    <Select 
+                      value={selectedCarerId || 'all'} 
+                      onValueChange={(val) => setSelectedCarerId(val === 'all' ? null : val)}
+                    >
+                      <SelectTrigger className="w-[180px] h-9">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="All Carers" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border z-50">
+                        <SelectItem value="all">All Carers</SelectItem>
+                        {Object.entries(carers).map(([id, name]) => (
+                          <SelectItem key={id} value={id}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button 
                     onClick={() => setShowMonthView(true)} 
@@ -1326,6 +1347,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
               onDeleteShift={onDeleteShift}
               carersMap={carers}
               refreshTrigger={dataVersion}
+              selectedCarerId={selectedCarerId}
             />
           </div>
         </TabsContent>
@@ -1542,6 +1564,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             allFamiliesShifts={allFamiliesShifts}
             currentUserId={currentUserId || undefined}
             loadingAllFamilies={loadingAllFamilies}
+            selectedCarerId={selectedCarerId}
           />
         )}
 

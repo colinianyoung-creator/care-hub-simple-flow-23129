@@ -31,6 +31,7 @@ interface ScheduleCalendarProps {
   allFamiliesShifts?: any[];
   currentUserId?: string;
   refreshTrigger?: number;
+  selectedCarerId?: string | null;
 }
 
 export const ScheduleCalendar = ({ 
@@ -48,7 +49,8 @@ export const ScheduleCalendar = ({
   viewMode = 'single-family',
   allFamiliesShifts = [],
   currentUserId,
-  refreshTrigger = 0
+  refreshTrigger = 0,
+  selectedCarerId = null
 }: ScheduleCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [carers, setCarers] = useState<Record<string, string>>({});
@@ -168,7 +170,10 @@ useEffect(() => {
     if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
       return allFamiliesShifts.filter(shift => {
         const shiftDate = shift.clock_in ? format(new Date(shift.clock_in), 'yyyy-MM-dd') : shift.scheduled_date;
-        return shiftDate === dayString;
+        if (shiftDate !== dayString) return false;
+        // Apply carer filter
+        if (selectedCarerId && (shift.user_id || shift.carer_id) !== selectedCarerId) return false;
+        return true;
       }).map(entry => ({
         id: entry.id,
         scheduled_date: entry.clock_in ? format(new Date(entry.clock_in), 'yyyy-MM-dd') : entry.scheduled_date,
@@ -185,13 +190,22 @@ useEffect(() => {
       }));
     }
     
-    const shifts = instances.filter(instance => instance.scheduled_date === dayString);
+    let shifts = instances.filter(instance => instance.scheduled_date === dayString);
+    
+    // Apply carer filter for single-family mode
+    if (selectedCarerId) {
+      shifts = shifts.filter(shift => shift.carer_id === selectedCarerId);
+    }
     
     // Include leave requests that are approved (filter out denied ones)
-    const leaves = leaveRequests.filter(leave => {
+    let leaves = leaveRequests.filter(leave => {
       const leaveStart = leave.start_date;
       const leaveEnd = leave.end_date;
-      return dayString >= leaveStart && dayString <= leaveEnd && leave.status === 'approved';
+      const isInRange = dayString >= leaveStart && dayString <= leaveEnd && leave.status === 'approved';
+      if (!isInRange) return false;
+      // Apply carer filter
+      if (selectedCarerId && leave.user_id !== selectedCarerId) return false;
+      return true;
     });
     
     // Convert leave requests to shift-like objects for display
