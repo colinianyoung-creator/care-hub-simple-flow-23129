@@ -1477,6 +1477,7 @@ export type Database = {
           id: string
           scheduled_date: string
           shift_assignment_id: string
+          shift_type: string
           start_time: string
           status: Database["public"]["Enums"]["shift_status"]
         }[]
