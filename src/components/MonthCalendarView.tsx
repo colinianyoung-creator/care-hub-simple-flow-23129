@@ -176,7 +176,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       })) || [];
 
       // Transform recurring shifts from shift_instances
-      const recurringShifts = (shiftInstancesData || []).map((instance: any) => ({
+      let recurringShifts = (shiftInstancesData || []).map((instance: any) => ({
         id: instance.id,
         shift_assignment_id: instance.shift_assignment_id,
         shift_instance_id: instance.id,
@@ -192,6 +192,11 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         is_leave_request: false,
         is_recurring: true
       }));
+
+      // For carers in single-family mode, filter recurring shifts to only show their own
+      if (userRole === 'carer' && viewMode === 'single-family' && currentUserId) {
+        recurringShifts = recurringShifts.filter((s: any) => s.carer_id === currentUserId);
+      }
 
       // Filter out recurring shifts that already have time_entries (avoid duplicates)
       const existingDates = new Set(transformedShifts.map(s => `${s.carer_id}-${s.scheduled_date}`));

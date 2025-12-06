@@ -153,7 +153,7 @@ export const MobileDayView = ({
         carer_name: entry.profiles?.full_name || 'Unknown',
         status: 'completed',
         notes: entry.notes,
-        shift_type: 'basic'
+        shift_type: entry.shift_type || 'basic'
       })) || [];
       
       // Load approved leave requests for this day
@@ -245,7 +245,7 @@ export const MobileDayView = ({
         carer_name: entry.profiles?.full_name || 'Unknown',
         status: 'completed',
         notes: entry.notes,
-        shift_type: 'basic'
+        shift_type: entry.shift_type || 'basic'
       })) || [];
 
       // Load approved leave requests for the period
@@ -438,17 +438,18 @@ export const MobileDayView = ({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-center gap-2">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-center gap-1 sm:gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={previousDay}
+            className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <CardTitle className="text-lg">
+          <div className="text-center px-2 flex-1 max-w-[200px]">
+            <CardTitle className="text-base sm:text-lg">
               {format(currentDate, 'EEE, MMM d')}
             </CardTitle>
             {format(currentDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd') && (
@@ -456,7 +457,7 @@ export const MobileDayView = ({
                 variant="ghost"
                 size="sm"
                 onClick={today}
-                className="text-xs text-muted-foreground p-0 h-auto"
+                className="text-xs text-muted-foreground p-0 h-auto mt-1"
               >
                 Today
               </Button>
@@ -466,6 +467,7 @@ export const MobileDayView = ({
             variant="outline"
             size="sm"
             onClick={nextDay}
+            className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -475,8 +477,8 @@ export const MobileDayView = ({
         {loading ? (
           <div className="text-center py-4 text-muted-foreground">Loading...</div>
         ) : dayShifts.length === 0 ? (
-          <div className="text-center py-8 space-y-3">
-            <div className="text-muted-foreground">
+          <div className="text-center py-6 space-y-3">
+            <div className="text-sm text-muted-foreground">
               No shifts scheduled for this day
             </div>
             {canAddShift() && (
@@ -484,7 +486,7 @@ export const MobileDayView = ({
                 variant="outline" 
                 size="sm" 
                 onClick={handleAddShiftClick}
-                className="gap-2"
+                className="gap-2 min-h-[44px]"
               >
                 <Plus className="h-4 w-4" />
                 Add Shift

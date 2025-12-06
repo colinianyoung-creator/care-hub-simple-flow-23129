@@ -73,7 +73,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
         .from('role_change_requests')
         .select(`
           *,
-          profiles:requester_id (full_name)
+          profiles:user_id (full_name)
         `)
         .eq('family_id', familyId)
         .eq('status', 'pending')
