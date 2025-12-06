@@ -12,6 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // Extract and verify JWT token from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid Authorization header');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+
     const { familyId, dateRangeStart, dateRangeEnd, careRecipientName } = await req.json();
 
     console.log('Generate report request:', { familyId, dateRangeStart, dateRangeEnd, careRecipientName });
@@ -27,6 +38,34 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify the user's JWT token and get user info
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      console.error('Invalid token or user not found:', userError?.message);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify user is a member of the requested family
+    const { data: membership, error: membershipError } = await supabase
+      .from('user_memberships')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('family_id', familyId)
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      console.error('User not authorized for this family:', user.id, familyId);
+      return new Response(JSON.stringify({ error: 'Forbidden: You do not have access to this family' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('User authorized:', user.id, 'for family:', familyId);
 
     // Fetch all relevant care data
     const [careNotesResult, bodyLogsResult, dietEntriesResult, marDosesResult, tasksResult] = await Promise.all([
