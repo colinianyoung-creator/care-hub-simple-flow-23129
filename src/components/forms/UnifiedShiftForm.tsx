@@ -89,6 +89,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     { value: 'public_holiday', label: 'Public Holiday' },
     { value: 'other', label: 'Other' }
   ] : [
+    { value: 'basic', label: 'Basic Shift' },
     { value: 'sickness', label: 'Sickness' },
     { value: 'annual_leave', label: 'Annual Leave' },
     { value: 'public_holiday', label: 'Public Holiday' },

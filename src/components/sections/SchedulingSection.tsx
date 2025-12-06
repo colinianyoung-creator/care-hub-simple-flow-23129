@@ -219,10 +219,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
       console.log('✅ [loadAllMyShifts] Loaded all-families shifts:', allShifts?.length || 0);
       setAllFamiliesShifts(allShifts || []);
-      toast({
-        title: "Shifts loaded",
-        description: `Loaded ${allShifts?.length || 0} shifts across all your families`,
-      });
     } catch (error) {
       console.error('❌ [loadAllMyShifts] Error loading cross-family shifts:', error);
       toast({
@@ -1279,16 +1275,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                   familyCount={userFamilies.length}
                 />
               )}
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-semibold">Weekly Schedule</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base sm:text-lg font-semibold">Weekly Schedule</h3>
                   {isAdmin && Object.keys(carers).length > 0 && (
                     <Select 
                       value={selectedCarerId || 'all'} 
                       onValueChange={(val) => setSelectedCarerId(val === 'all' ? null : val)}
                     >
-                      <SelectTrigger className="w-[180px] h-9">
-                        <Filter className="h-4 w-4 mr-2" />
+                      <SelectTrigger className="w-[140px] sm:w-[180px] h-9 text-sm">
+                        <Filter className="h-4 w-4 mr-1 sm:mr-2 flex-shrink-0" />
                         <SelectValue placeholder="All Carers" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border z-50">
@@ -1300,31 +1296,31 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                     </Select>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button 
                     onClick={() => setShowMonthView(true)} 
                     variant="outline"
                     size="sm"
-                    className="h-10 px-3"
+                    className="h-10 px-3 min-h-[44px] text-sm"
                   >
                     Month View
                   </Button>
-            <Button 
-              onClick={() => {
-                const event = new CustomEvent('mobile-toggle-list-view');
-                window.dispatchEvent(event);
-              }}
-              variant="outline"
-              size="sm"
-              className="h-10 px-3 lg:hidden"
-            >
-              {showListView ? 'Day View' : 'List'}
-            </Button>
+                  <Button 
+                    onClick={() => {
+                      const event = new CustomEvent('mobile-toggle-list-view');
+                      window.dispatchEvent(event);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="h-10 px-3 min-h-[44px] lg:hidden text-sm"
+                  >
+                    {showListView ? 'Day View' : 'List'}
+                  </Button>
                 </div>
               </div>
             </div>
             
-            <ScheduleCalendar 
+            <ScheduleCalendar
               key={calendarRefreshKey}
               familyId={familyId} 
               userRole={userRole}
@@ -1403,8 +1399,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                     </div>
                   ) : (
                     filteredRequests.map((request) => (
-                    <div key={request.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg space-y-3 md:space-y-0">
-                      <div className="flex-1">
+                    <div key={request.id} className="flex flex-col p-3 sm:p-4 border rounded-lg space-y-3 overflow-hidden">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           {request.request_source === 'shift_change' ? (
                             <Badge variant="outline" className="w-fit">
@@ -1467,37 +1463,35 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                           </>
                         )}
                       </div>
-                       <div className="flex flex-col md:flex-row gap-2 mt-3 md:mt-0">
+                      <div className="flex flex-wrap gap-2 pt-2 border-t sm:border-0 sm:pt-0">
                         {isAdmin && request.status === 'pending' && (
-                          <>
-                            <div className="flex gap-2 w-full md:w-auto">
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
-                                className="flex-1 md:flex-none text-sm"
-                              >
-                                Approve
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
-                                className="flex-1 md:flex-none text-sm"
-                              >
-                                Deny
-                              </Button>
-                            </div>
-                          </>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
+                              className="flex-1 sm:flex-none text-sm min-h-[44px] sm:min-h-[36px]"
+                            >
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
+                              className="flex-1 sm:flex-none text-sm min-h-[44px] sm:min-h-[36px]"
+                            >
+                              Deny
+                            </Button>
+                          </div>
                         )}
                         {(isCarer || isAdmin) && (
                           <Button 
                             size="sm" 
                             variant="ghost"
                             onClick={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
-                            className="w-full md:w-auto text-sm"
+                            className="w-full sm:w-auto text-sm min-h-[44px] sm:min-h-[36px]"
                           >
-                            <Trash2 className="h-4 w-4 md:mr-1" />
-                            <span className="md:hidden">Delete</span>
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
                           </Button>
                         )}
                       </div>
