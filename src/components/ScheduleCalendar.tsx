@@ -234,7 +234,13 @@ useEffect(() => {
   };
 
   const getDisplayNames = (shift: any) => {
-    // Handle leave requests with type labels
+    // For carers, ALWAYS show care recipient name regardless of shift type
+    if (userRole === 'carer') {
+      const recipientName = shift.care_recipient_name || careRecipientName || 'Care Recipient';
+      return recipientName;
+    }
+
+    // For admins, show type label + carer name for leave/cover types
     if (shift.is_leave_request || shift.shift_type === 'annual_leave' || shift.type === 'annual_leave' || 
         shift.shift_type === 'sickness' || shift.type === 'sickness' ||
         shift.shift_type === 'public_holiday' || shift.type === 'public_holiday' ||
@@ -255,16 +261,9 @@ useEffect(() => {
       return `${label} - ${carerName}`;
     }
     
-    // For basic shifts and other types
-    if (userRole === 'carer') {
-      // Carers see the care recipient's name (check shift data first, then fallback to component state)
-      const recipientName = shift.care_recipient_name || careRecipientName || 'Care Recipient';
-      return recipientName;
-    } else {
-      // Admins/family_viewers see carer's name (no prefix to match month view)
-      const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
-      return carerName;
-    }
+    // For admins with basic shifts, show carer name
+    const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
+    return carerName;
   };
 
   const getCarerColor = (carerId: string) => {
