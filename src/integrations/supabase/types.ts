@@ -1085,14 +1085,22 @@ export type Database = {
       }
       shift_change_requests: {
         Row: {
+          applied_at: string | null
+          applied_by: string | null
+          archived_at: string | null
           created_at: string | null
+          edit_history: Json | null
           family_id: string
           id: string
           new_end_time: string
           new_shift_type: string | null
           new_start_time: string
+          original_shift_snapshot: Json | null
+          parent_request_id: string | null
           reason: string | null
           requested_by: string
+          reverted_at: string | null
+          reverted_by: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string | null
@@ -1100,14 +1108,22 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          archived_at?: string | null
           created_at?: string | null
+          edit_history?: Json | null
           family_id: string
           id?: string
           new_end_time: string
           new_shift_type?: string | null
           new_start_time: string
+          original_shift_snapshot?: Json | null
+          parent_request_id?: string | null
           reason?: string | null
           requested_by: string
+          reverted_at?: string | null
+          reverted_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
@@ -1115,14 +1131,22 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          archived_at?: string | null
           created_at?: string | null
+          edit_history?: Json | null
           family_id?: string
           id?: string
           new_end_time?: string
           new_shift_type?: string | null
           new_start_time?: string
+          original_shift_snapshot?: Json | null
+          parent_request_id?: string | null
           reason?: string | null
           requested_by?: string
+          reverted_at?: string | null
+          reverted_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
@@ -1131,6 +1155,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "shift_change_requests_applied_by_fkey"
+            columns: ["applied_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shift_change_requests_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -1138,8 +1169,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shift_change_requests_parent_request_id_fkey"
+            columns: ["parent_request_id"]
+            isOneToOne: false
+            referencedRelation: "shift_change_requests"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shift_change_requests_requested_by_fkey"
             columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_reverted_by_fkey"
+            columns: ["reverted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1401,6 +1446,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_change_request: {
+        Args: { p_applied_by: string; p_request_id: string }
+        Returns: Json
+      }
+      archive_change_request: {
+        Args: { p_archived_by: string; p_request_id: string }
+        Returns: Json
+      }
       can_add_admin_role: {
         Args: {
           _family_id: string
@@ -1415,6 +1468,10 @@ export type Database = {
       can_manage_family: {
         Args: { _family_id: string; _user_id: string }
         Returns: boolean
+      }
+      deny_change_request: {
+        Args: { p_denied_by: string; p_reason?: string; p_request_id: string }
+        Returns: Json
       }
       ensure_user_profile: { Args: never; Returns: string }
       generate_invite: {
@@ -1536,6 +1593,14 @@ export type Database = {
         Returns: undefined
       }
       redeem_invite: { Args: { _code: string }; Returns: string }
+      revert_change_request: {
+        Args: { p_force?: boolean; p_request_id: string; p_reverted_by: string }
+        Returns: Json
+      }
+      unarchive_change_request: {
+        Args: { p_request_id: string; p_unarchived_by: string }
+        Returns: Json
+      }
       update_own_role_safe: {
         Args: {
           _family_id: string

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2, Filter } from 'lucide-react';
+import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2, Filter, History, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,9 @@ import { ManageCareTeamDialog } from "../dialogs/ManageCareTeamDialog";
 import { ExportTimesheetDialog } from "../dialogs/ExportTimesheetDialog";
 import { ApprovedAbsencesArchive } from "../ApprovedAbsencesArchive";
 import { ShiftViewToggle } from "../ShiftViewToggle";
+import { ChangeRequestCard } from "../ChangeRequestCard";
+import { SnapshotViewerModal } from "../dialogs/SnapshotViewerModal";
+import { ConflictResolutionModal } from "../dialogs/ConflictResolutionModal";
 
 interface SchedulingSectionProps {
   familyId: string | undefined;
@@ -72,6 +75,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   );
   const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
+  const [requestsSubTab, setRequestsSubTab] = useState<'active' | 'history' | 'archive'>('active');
+  const [snapshotModalOpen, setSnapshotModalOpen] = useState(false);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<any>(null);
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
+  const [conflictData, setConflictData] = useState<any>(null);
+  const [conflictRequestId, setConflictRequestId] = useState<string | null>(null);
+  const [isReverting, setIsReverting] = useState(false);
   const { toast } = useToast();
 
   // Sync activeTab with defaultActiveTab prop changes (for pending requests navigation)
@@ -892,42 +902,31 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       if (!user.data.user) throw new Error('Not authenticated');
 
       if (requestType === 'shift_change') {
-        // Get the shift change request details
-        const { data: request, error: fetchError } = await supabase
-          .from('shift_change_requests')
-          .select('*')
-          .eq('id', requestId)
-          .single();
+        if (approved) {
+          // Use the new RPC to apply change atomically with snapshot
+          const { data, error } = await supabase.rpc('apply_change_request', {
+            p_request_id: requestId,
+            p_applied_by: user.data.user.id
+          });
 
-        if (fetchError) throw fetchError;
+          if (error) throw error;
+          
+          const result = data as any;
+          if (!result?.success) {
+            throw new Error(result?.error || 'Failed to apply change');
+          }
+        } else {
+          // Use RPC to deny with audit trail
+          const { data, error } = await supabase.rpc('deny_change_request', {
+            p_request_id: requestId,
+            p_denied_by: user.data.user.id,
+            p_reason: null
+          });
 
-        if (approved && request) {
-          // Update the time_entry with the new times AND shift type
-          const { error: updateError } = await supabase
-            .from('time_entries')
-            .update({
-              clock_in: request.new_start_time,
-              clock_out: request.new_end_time,
-              shift_type: request.new_shift_type || 'basic'
-            })
-            .eq('id', request.time_entry_id);
-
-          if (updateError) throw updateError;
+          if (error) throw error;
         }
-
-        // Update the request status
-        const { error: statusError } = await supabase
-          .from('shift_change_requests')
-          .update({
-            status: approved ? 'approved' : 'denied',
-            reviewed_by: user.data.user.id,
-            reviewed_at: new Date().toISOString()
-          })
-          .eq('id', requestId);
-
-        if (statusError) throw statusError;
       } else {
-        // Just update the leave request status - don't create shift instances
+        // Just update the leave request status
         const { error } = await supabase
           .from('leave_requests')
           .update({ 
@@ -939,9 +938,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       }
 
       toast({
-        title: approved ? "Request approved" : "Request denied",
+        title: approved ? "Request approved & applied" : "Request denied",
         description: approved 
-          ? (requestType === 'shift_change' ? "The shift times have been updated." : "The leave request has been approved.")
+          ? (requestType === 'shift_change' ? "The shift has been updated with original state saved." : "The leave request has been approved.")
           : "The request has been denied.",
       });
 
@@ -954,6 +953,95 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         variant: "destructive",
       });
     }
+  };
+
+  const handleRevertRequest = async (requestId: string, force: boolean = false) => {
+    try {
+      setIsReverting(true);
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.rpc('revert_change_request', {
+        p_request_id: requestId,
+        p_reverted_by: user.data.user.id,
+        p_force: force
+      });
+
+      if (error) throw error;
+
+      const result = data as any;
+      
+      if (!result?.success) {
+        if (result?.error === 'CONFLICT') {
+          // Show conflict modal
+          setConflictData(result.conflicts);
+          setConflictRequestId(requestId);
+          setConflictModalOpen(true);
+          return;
+        }
+        throw new Error(result?.error || 'Failed to revert change');
+      }
+
+      toast({
+        title: "Change reverted",
+        description: "The shift has been restored to its original state.",
+      });
+
+      setConflictModalOpen(false);
+      setConflictData(null);
+      setConflictRequestId(null);
+      await loadSchedulingData();
+    } catch (error) {
+      console.error('Error reverting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revert change request.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReverting(false);
+    }
+  };
+
+  const handleArchiveRequest = async (requestId: string, requestType: 'shift_change' | 'leave') => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Not authenticated');
+
+      if (requestType === 'shift_change') {
+        const { data, error } = await supabase.rpc('archive_change_request', {
+          p_request_id: requestId,
+          p_archived_by: user.data.user.id
+        });
+
+        if (error) throw error;
+      } else {
+        // For leave requests - mark as cancelled (leave_status enum doesn't have 'archived')
+        await supabase
+          .from('leave_requests')
+          .update({ status: 'cancelled' })
+          .eq('id', requestId);
+      }
+
+      toast({
+        title: "Request archived",
+        description: "The request has been moved to the archive.",
+      });
+
+      await loadSchedulingData();
+    } catch (error) {
+      console.error('Error archiving request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive request.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewSnapshot = (snapshot: any) => {
+    setSelectedSnapshot(snapshot);
+    setSnapshotModalOpen(true);
   };
 
   const handleApproveLeaveRequest = async (requestId: string, approved: boolean) => {
@@ -1364,7 +1452,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <CardTitle>Shift Requests</CardTitle>
-                  <CardDescription>Holiday, swap, and sick day requests</CardDescription>
+                  <CardDescription>Manage shift changes, holiday, and sick day requests</CardDescription>
                 </div>
                 {isCarer && canEdit && (
                   <Button 
@@ -1378,128 +1466,100 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {(() => {
-                  // Filter requests based on role
-                  const filteredRequests = isAdmin 
-                    ? requests.filter(r => r.status === 'pending')
-                    : requests.filter(r => {
-                        if (r.status === 'pending') return true;
-                        if (r.status === 'approved' && r.request_source === 'shift_change') {
-                          // Show approved shift change requests until shift date passes
-                          const today = new Date().toISOString().split('T')[0];
-                          return r.new_start_time && r.new_start_time.split('T')[0] >= today;
-                        }
-                        return false;
-                      });
-                  
-                  return filteredRequests.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No pending requests found
-                    </div>
-                  ) : (
-                    filteredRequests.map((request) => (
-                    <div key={request.id} className="flex flex-col p-3 sm:p-4 border rounded-lg space-y-3 overflow-hidden">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          {request.request_source === 'shift_change' ? (
-                            <Badge variant="outline" className="w-fit">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Shift Change
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="w-fit">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              Leave Request
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {request.request_source === 'shift_change' ? (
-                          <>
-                            <div className="font-medium text-sm md:text-base">
-                              {request.requester_name}
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {request.original_start && (
-                                <div className="flex items-center gap-2">
-                                  <span>Original: {format(new Date(request.original_start), 'MMM d, h:mm a')} - {request.original_end ? format(new Date(request.original_end), 'h:mm a') : 'N/A'}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 mt-1">
-                                <span>Requested: {format(new Date(request.new_start_time), 'MMM d, h:mm a')} - {format(new Date(request.new_end_time), 'h:mm a')}</span>
-                                {request.new_shift_type && request.new_shift_type !== 'basic' && (
-                                  <Badge variant="secondary" className="ml-2">
-                                    {request.new_shift_type.replace(/_/g, ' ')}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            {request.status === 'approved' && isCarer && (
-                              <Badge variant="outline" className="mt-2 w-fit bg-green-50 text-green-700 border-green-300">
-                                Approved
-                              </Badge>
-                            )}
-                            {request.reason && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                Reason: {request.reason}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="font-medium capitalize text-sm md:text-base">
-                              {request.request_type ? request.request_type.replace('_', ' ') : 
-                               request.type ? request.type.replace('_', ' ') : 'Leave Request'}
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {request.start_date || request.date} {request.end_date && `- ${request.end_date}`}
-                            </div>
-                            {request.reason && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                Reason: {request.reason}
-                              </div>
-                            )}
-                          </>
-                        )}
+              {/* Sub-tabs for Active, History, Archive */}
+              <Tabs value={requestsSubTab} onValueChange={(v) => setRequestsSubTab(v as 'active' | 'history' | 'archive')} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsTrigger value="active" className="flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">Active</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">Applied</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="archive" className="flex items-center gap-1">
+                    <Archive className="h-4 w-4" />
+                    <span className="hidden sm:inline">Archive</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Active Tab - pending and denied */}
+                <TabsContent value="active" className="space-y-4">
+                  {(() => {
+                    const activeRequests = requests.filter(r => 
+                      r.status === 'pending' || r.status === 'denied' || r.status === 'rejected'
+                    );
+                    
+                    return activeRequests.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No active requests
                       </div>
-                      <div className="flex flex-wrap gap-2 pt-2 border-t sm:border-0 sm:pt-0">
-                        {isAdmin && request.status === 'pending' && (
-                          <div className="flex gap-2 w-full sm:w-auto">
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
-                              className="flex-1 sm:flex-none text-sm min-h-[44px] sm:min-h-[36px]"
-                            >
-                              Approve
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
-                              className="flex-1 sm:flex-none text-sm min-h-[44px] sm:min-h-[36px]"
-                            >
-                              Deny
-                            </Button>
-                          </div>
-                        )}
-                        {(isCarer || isAdmin) && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
-                            className="w-full sm:w-auto text-sm min-h-[44px] sm:min-h-[36px]"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        )}
+                    ) : (
+                      activeRequests.map((request) => (
+                        <ChangeRequestCard
+                          key={request.id}
+                          request={request}
+                          isAdmin={isAdmin}
+                          isCarer={isCarer}
+                          onApprove={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
+                          onDeny={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
+                          onDelete={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
+                        />
+                      ))
+                    );
+                  })()}
+                </TabsContent>
+
+                {/* History Tab - applied and reverted */}
+                <TabsContent value="history" className="space-y-4">
+                  {(() => {
+                    const historyRequests = requests.filter(r => 
+                      r.status === 'applied' || r.status === 'approved' || r.status === 'reverted'
+                    );
+                    
+                    return historyRequests.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No applied changes yet
                       </div>
-                    </div>
-                    ))
-                  );
-                })()}
-              </div>
+                    ) : (
+                      historyRequests.map((request) => (
+                        <ChangeRequestCard
+                          key={request.id}
+                          request={request}
+                          isAdmin={isAdmin}
+                          isCarer={isCarer}
+                          onViewSnapshot={() => handleViewSnapshot(request.original_shift_snapshot)}
+                          onRevert={() => handleRevertRequest(request.id)}
+                          onArchive={() => handleArchiveRequest(request.id, request.request_source || 'leave')}
+                        />
+                      ))
+                    );
+                  })()}
+                </TabsContent>
+
+                {/* Archive Tab - archived */}
+                <TabsContent value="archive" className="space-y-4">
+                  {(() => {
+                    const archivedRequests = requests.filter(r => r.status === 'archived');
+                    
+                    return archivedRequests.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No archived requests
+                      </div>
+                    ) : (
+                      archivedRequests.map((request) => (
+                        <ChangeRequestCard
+                          key={request.id}
+                          request={request}
+                          isAdmin={isAdmin}
+                          isCarer={isCarer}
+                          onViewSnapshot={request.original_shift_snapshot ? () => handleViewSnapshot(request.original_shift_snapshot) : undefined}
+                        />
+                      ))
+                    );
+                  })()}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1602,6 +1662,27 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           onDeleteShift={onDeleteShift}
           careRecipientName={careRecipientNameHint}
           initialDate={editingShift ? editingShift.start_date : createShiftInitialDate}
+        />
+
+        {/* Snapshot Viewer Modal */}
+        <SnapshotViewerModal
+          open={snapshotModalOpen}
+          onOpenChange={setSnapshotModalOpen}
+          snapshot={selectedSnapshot}
+        />
+
+        {/* Conflict Resolution Modal */}
+        <ConflictResolutionModal
+          open={conflictModalOpen}
+          onOpenChange={setConflictModalOpen}
+          conflicts={conflictData}
+          onForceRevert={() => conflictRequestId && handleRevertRequest(conflictRequestId, true)}
+          onCancel={() => {
+            setConflictModalOpen(false);
+            setConflictData(null);
+            setConflictRequestId(null);
+          }}
+          isLoading={isReverting}
         />
 
     </div>
