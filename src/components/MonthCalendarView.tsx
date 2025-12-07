@@ -327,6 +327,12 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
   };
 
   const getShiftDisplayName = (shift: any) => {
+    // For carers, ALWAYS show care recipient name regardless of shift type
+    if (userRole === 'carer') {
+      return shift.care_recipient_name || careRecipientName || 'Care Recipient';
+    }
+
+    // For admins, show type label + carer name for leave types
     if (shift.is_leave_request) {
       const typeLabels: { [key: string]: string } = {
         'holiday': 'Holiday',
@@ -340,15 +346,9 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       return `${label} - ${shift.carer_name || 'Carer'}`;
     }
     
-    if (userRole === 'carer') {
-      // Carers see the care recipient's name (from RPC or hint)
-      const recipientName = shift.care_recipient_name || careRecipientName || 'Care Recipient';
-      return recipientName;
-    } else {
-      // Admins/family_viewers see carer's name
-      const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
-      return carerName;
-    }
+    // For admins with basic/cover shifts, show carer name
+    const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
+    return carerName;
   };
 
   // Removed - now using shared utility from src/lib/shiftUtils.ts
@@ -466,17 +466,20 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                         }`}
                         onClick={() => onShiftClick?.(shift)}
                       >
-                        <div className="flex flex-col w-full gap-0.5 sm:gap-1">
-                          <span className="text-xs font-medium leading-tight hidden sm:block">
-                            {shift.start_time && shift.end_time 
-                              ? `${shift.start_time.slice(0, 5)}-${shift.end_time.slice(0, 5)}`
-                              : 'All day'
-                            }
-                          </span>
-                          <span className="text-xs opacity-90 leading-tight truncate">
-                            {getShiftDisplayName(shift)}
-                          </span>
-                        </div>
+                              <div className="flex flex-col w-full gap-0.5 sm:gap-1">
+                                <span className="text-xs font-medium leading-tight hidden sm:block">
+                                  {shift.start_time && shift.end_time 
+                                    ? `${shift.start_time.slice(0, 5)}-${shift.end_time.slice(0, 5)}`
+                                    : 'All day'
+                                  }
+                                </span>
+                                <span className="text-[10px] font-medium leading-tight hidden sm:block opacity-80">
+                                  {getShiftTypeLabel(shift.shift_type || 'basic')}
+                                </span>
+                                <span className="text-xs opacity-90 leading-tight truncate">
+                                  {getShiftDisplayName(shift)}
+                                </span>
+                              </div>
                       </Badge>
                     ))}
                     {dayShifts.length > (window.innerWidth < 640 ? 1 : 3) && (
