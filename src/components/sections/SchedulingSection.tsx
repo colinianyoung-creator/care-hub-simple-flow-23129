@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, AlertCircle, Edit, Trash2, User, Archive, Plus, List, Download, Loader2, Filter, History, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, Users, AlertCircle, Plus, Download, Loader2, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +17,7 @@ import { ClockInOut } from "../ClockInOut";
 import { MonthCalendarView } from "../MonthCalendarView";
 import { ManageCareTeamDialog } from "../dialogs/ManageCareTeamDialog";
 import { ExportTimesheetDialog } from "../dialogs/ExportTimesheetDialog";
-import { ApprovedAbsencesArchive } from "../ApprovedAbsencesArchive";
+import { LeaveSection } from "./LeaveSection";
 import { ShiftViewToggle } from "../ShiftViewToggle";
 import { ChangeRequestCard } from "../ChangeRequestCard";
 import { SnapshotViewerModal } from "../dialogs/SnapshotViewerModal";
@@ -75,7 +75,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   );
   const [userFamilies, setUserFamilies] = useState<{id: string, name: string}[]>([]);
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
-  const [requestsSubTab, setRequestsSubTab] = useState<'active' | 'history' | 'archive'>('active');
+  // Removed requestsSubTab - Requests tab now shows only pending (+ recently denied for requester)
   const [snapshotModalOpen, setSnapshotModalOpen] = useState(false);
   const [selectedSnapshot, setSelectedSnapshot] = useState<any>(null);
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -860,6 +860,40 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         ...(leaveRequestsData || []).map(r => ({ ...r, request_source: 'leave' }))
       ];
       
+      // Auto-archive denied requests older than 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const oldDeniedRequests = allRequests.filter(r => {
+        if (r.status !== 'denied' && r.status !== 'rejected') return false;
+        const reviewedAt = r.reviewed_at ? new Date(r.reviewed_at) : null;
+        return reviewedAt && reviewedAt < sevenDaysAgo;
+      });
+      
+      // Archive old denied requests in the background
+      if (oldDeniedRequests.length > 0) {
+        console.log(`🗄️ Auto-archiving ${oldDeniedRequests.length} old denied requests`);
+        
+        oldDeniedRequests.forEach(async (request) => {
+          try {
+            if (request.request_source === 'shift_change') {
+              await supabase.rpc('archive_change_request', {
+                p_request_id: request.id,
+                p_archived_by: userId
+              });
+            } else {
+              // For leave requests, delete old denied ones (they can't be archived)
+              await supabase
+                .from('leave_requests')
+                .delete()
+                .eq('id', request.id);
+            }
+          } catch (err) {
+            console.error('Error auto-archiving request:', err);
+          }
+        });
+      }
+      
       setRequests(allRequests);
       setInstances(allShifts);
       
@@ -1272,11 +1306,11 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             )}
           <TabsTrigger value="requests" className="flex items-center justify-center px-1 py-2">
             <AlertCircle className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">Changes</span>
+            <span className="hidden sm:inline ml-2">Requests</span>
           </TabsTrigger>
-          <TabsTrigger value="archive" className="flex items-center justify-center px-1 py-2">
-            <Archive className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">Archive</span>
+          <TabsTrigger value="leave" className="flex items-center justify-center px-1 py-2">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline ml-2">Leave</span>
           </TabsTrigger>
           </TabsList>
 
@@ -1451,8 +1485,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <CardTitle>Shift Requests</CardTitle>
-                  <CardDescription>Manage shift changes, holiday, and sick day requests</CardDescription>
+                  <CardTitle>Pending Requests</CardTitle>
+                  <CardDescription>Review shift change and leave requests</CardDescription>
                 </div>
                 {isCarer && canEdit && (
                   <Button 
@@ -1466,107 +1500,53 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
               </div>
             </CardHeader>
             <CardContent>
-              {/* Sub-tabs for Active, History, Archive */}
-              <Tabs value={requestsSubTab} onValueChange={(v) => setRequestsSubTab(v as 'active' | 'history' | 'archive')} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="active" className="flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Active</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="history" className="flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Applied</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="archive" className="flex items-center gap-1">
-                    <Archive className="h-4 w-4" />
-                    <span className="hidden sm:inline">Archive</span>
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Active Tab - pending and denied */}
-                <TabsContent value="active" className="space-y-4">
-                  {(() => {
-                    const activeRequests = requests.filter(r => 
-                      r.status === 'pending' || r.status === 'denied' || r.status === 'rejected'
-                    );
-                    
-                    return activeRequests.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No active requests
-                      </div>
-                    ) : (
-                      activeRequests.map((request) => (
-                        <ChangeRequestCard
-                          key={request.id}
-                          request={request}
-                          isAdmin={isAdmin}
-                          isCarer={isCarer}
-                          onApprove={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
-                          onDeny={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
-                          onDelete={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
-                        />
-                      ))
-                    );
-                  })()}
-                </TabsContent>
-
-                {/* History Tab - applied and reverted */}
-                <TabsContent value="history" className="space-y-4">
-                  {(() => {
-                    const historyRequests = requests.filter(r => 
-                      r.status === 'applied' || r.status === 'approved' || r.status === 'reverted'
-                    );
-                    
-                    return historyRequests.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No applied changes yet
-                      </div>
-                    ) : (
-                      historyRequests.map((request) => (
-                        <ChangeRequestCard
-                          key={request.id}
-                          request={request}
-                          isAdmin={isAdmin}
-                          isCarer={isCarer}
-                          onViewSnapshot={() => handleViewSnapshot(request.original_shift_snapshot)}
-                          onRevert={() => handleRevertRequest(request.id)}
-                          onArchive={() => handleArchiveRequest(request.id, request.request_source || 'leave')}
-                        />
-                      ))
-                    );
-                  })()}
-                </TabsContent>
-
-                {/* Archive Tab - archived */}
-                <TabsContent value="archive" className="space-y-4">
-                  {(() => {
-                    const archivedRequests = requests.filter(r => r.status === 'archived');
-                    
-                    return archivedRequests.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No archived requests
-                      </div>
-                    ) : (
-                      archivedRequests.map((request) => (
-                        <ChangeRequestCard
-                          key={request.id}
-                          request={request}
-                          isAdmin={isAdmin}
-                          isCarer={isCarer}
-                          onViewSnapshot={request.original_shift_snapshot ? () => handleViewSnapshot(request.original_shift_snapshot) : undefined}
-                        />
-                      ))
-                    );
-                  })()}
-                </TabsContent>
-              </Tabs>
+              {(() => {
+                // Get pending requests for everyone
+                // For carers: also show their own denied requests from last 7 days
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                
+                const visibleRequests = requests.filter(r => {
+                  // All pending requests
+                  if (r.status === 'pending') return true;
+                  
+                  // Denied requests: only show to the requester for 7 days
+                  if (r.status === 'denied' || r.status === 'rejected') {
+                    const isDeniedRecently = r.reviewed_at && new Date(r.reviewed_at) > sevenDaysAgo;
+                    const isOwnRequest = r.requested_by === currentUserId || r.user_id === currentUserId;
+                    return isDeniedRecently && isOwnRequest;
+                  }
+                  
+                  return false;
+                });
+                
+                return visibleRequests.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No pending requests
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {visibleRequests.map((request) => (
+                      <ChangeRequestCard
+                        key={request.id}
+                        request={request}
+                        isAdmin={isAdmin}
+                        isCarer={isCarer}
+                        onApprove={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
+                        onDeny={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
+                        onDelete={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Archive Tab - Approved Absences */}
-        <TabsContent value="archive" className="space-y-6">
-          <ApprovedAbsencesArchive 
+        {/* Leave Tab - Upcoming/Taken */}
+        <TabsContent value="leave" className="space-y-6">
+          <LeaveSection 
             familyId={familyId}
             userRole={userRole}
             currentUserId={currentUserId}
