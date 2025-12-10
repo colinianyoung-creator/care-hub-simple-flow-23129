@@ -12,6 +12,7 @@ import { CalendarDays, Clock, Download, Loader2, Pencil, Trash2, Check } from 'l
 import { supabase } from "@/integrations/supabase/client";
 import { format, isBefore, isAfter, startOfDay } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LeaveSectionProps {
   familyId: string;
@@ -398,7 +399,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
                 No upcoming leave scheduled
               </div>
             ) : (
-              <LeaveTable 
+              <LeaveList 
                 entries={filteredData} 
                 showCarer={isAdmin} 
                 onEdit={handleEditLeaveType}
@@ -414,7 +415,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
                 No leave taken yet
               </div>
             ) : (
-              <LeaveTable 
+              <LeaveList 
                 entries={filteredData} 
                 showCarer={isAdmin} 
                 onEdit={handleEditLeaveType}
@@ -439,8 +440,8 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
   );
 };
 
-// Sub-component for the table
-interface LeaveTableProps {
+// Sub-component props
+interface LeaveListProps {
   entries: LeaveEntry[];
   showCarer: boolean;
   onEdit: (entryId: string, sourceType: 'leave_request' | 'time_entry', newShiftType: string) => void;
@@ -448,30 +449,116 @@ interface LeaveTableProps {
   canEditEntry: (entry: LeaveEntry) => boolean;
 }
 
-const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: LeaveTableProps) => {
-  const leaveTypes = [
-    { value: 'annual_leave', label: 'Annual Leave' },
-    { value: 'sickness', label: 'Sickness' },
-    { value: 'public_holiday', label: 'Public Holiday' }
-  ];
+const leaveTypes = [
+  { value: 'annual_leave', label: 'Annual Leave' },
+  { value: 'sickness', label: 'Sickness' },
+  { value: 'public_holiday', label: 'Public Holiday' }
+];
 
-  const getShiftTypeBadge = (shiftType: string) => {
-    const typeConfig: Record<string, { className: string; label: string }> = {
-      'annual_leave': { className: 'bg-yellow-500 text-white', label: 'Annual Leave' },
-      'sickness': { className: 'bg-red-500 text-white', label: 'Sickness' },
-      'public_holiday': { className: 'bg-purple-500 text-white', label: 'Public Holiday' },
-      'leave': { className: 'bg-muted text-muted-foreground', label: 'Leave' }
-    };
-
-    const config = typeConfig[shiftType] || { className: 'bg-muted', label: shiftType.replace(/_/g, ' ') };
-    
-    return (
-      <Badge className={config.className}>
-        {config.label}
-      </Badge>
-    );
+const getShiftTypeConfig = (shiftType: string) => {
+  const typeConfig: Record<string, { bgClass: string; label: string }> = {
+    'annual_leave': { bgClass: 'bg-yellow-500', label: 'Annual Leave' },
+    'sickness': { bgClass: 'bg-red-500', label: 'Sickness' },
+    'public_holiday': { bgClass: 'bg-purple-500', label: 'Public Holiday' },
+    'leave': { bgClass: 'bg-muted', label: 'Leave' }
   };
+  return typeConfig[shiftType] || { bgClass: 'bg-muted', label: shiftType.replace(/_/g, ' ') };
+};
 
+// Mobile card-based layout
+const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: LeaveListProps) => {
+  return (
+    <div className="space-y-2">
+      {entries.map((entry) => {
+        const canEdit = canEditEntry(entry);
+        const config = getShiftTypeConfig(entry.shift_type);
+        
+        return (
+          <div
+            key={entry.id}
+            className={`${config.bgClass} rounded-lg p-3 text-white`}
+          >
+            <div className="flex justify-between items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">
+                  {entry.carer_name}
+                </div>
+                <Badge className="bg-white/20 text-white text-xs mt-1 border-0">
+                  {config.label}
+                </Badge>
+                <div className="text-xs mt-1.5 opacity-90">
+                  {format(new Date(entry.start_date), 'MMM d, yyyy')}
+                  {entry.start_date !== entry.end_date && (
+                    <span> – {format(new Date(entry.end_date), 'MMM d, yyyy')}</span>
+                  )}
+                </div>
+              </div>
+              {canEdit && (
+                <div className="flex gap-1 shrink-0">
+                  {entry.type === 'time_entry' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="min-h-[44px] min-w-[44px] bg-white/20 hover:bg-white/30 text-white"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {leaveTypes.map((type) => (
+                          <DropdownMenuItem
+                            key={type.value}
+                            onClick={() => onEdit(entry.id, entry.type, type.value)}
+                            className="flex items-center justify-between"
+                          >
+                            {type.label}
+                            {entry.shift_type === type.value && (
+                              <Check className="h-4 w-4 ml-2" />
+                            )}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="min-h-[44px] min-w-[44px] bg-white/20 hover:bg-white/30 text-white"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Leave Entry</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will revert the shift back to a basic shift and remove it from leave tracking. Continue?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(entry.id, entry.type)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Desktop table layout
+const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: LeaveListProps) => {
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -486,6 +573,7 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
         <TableBody>
           {entries.map((entry) => {
             const canEdit = canEditEntry(entry);
+            const config = getShiftTypeConfig(entry.shift_type);
             
             return (
               <TableRow key={entry.id}>
@@ -503,12 +591,13 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
                   <TableCell className="font-medium">{entry.carer_name}</TableCell>
                 )}
                 <TableCell>
-                  {getShiftTypeBadge(entry.shift_type)}
+                  <Badge className={`${config.bgClass} text-white`}>
+                    {config.label}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   {canEdit && (
                     <div className="flex items-center gap-1">
-                      {/* Edit Button - only for time_entry type */}
                       {entry.type === 'time_entry' && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -532,8 +621,6 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
-
-                      {/* Delete Button */}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
@@ -565,4 +652,10 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
       </Table>
     </div>
   );
+};
+
+// Wrapper component that switches between mobile/desktop
+const LeaveList = (props: LeaveListProps) => {
+  const isMobile = useIsMobile();
+  return isMobile ? <LeaveCardList {...props} /> : <LeaveTable {...props} />;
 };
