@@ -10,7 +10,6 @@ import {
   Eye, 
   RotateCcw, 
   Archive,
-  FileEdit,
   History
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -20,6 +19,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { getShiftTypeColor, getShiftTypeLabel } from "@/lib/shiftUtils";
 
 interface ChangeRequestCardProps {
   request: {
@@ -67,6 +68,8 @@ export const ChangeRequestCard = ({
   onArchive,
   onProposeCorrection
 }: ChangeRequestCardProps) => {
+  const isMobile = useIsMobile();
+  
   const getStatusBadge = () => {
     const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string, className?: string }> = {
       'pending': { variant: 'outline', label: 'Pending', className: 'border-yellow-500 text-yellow-700 bg-yellow-50' },
@@ -112,6 +115,138 @@ export const ChangeRequestCard = ({
   const isDenied = request.status === 'denied' || request.status === 'rejected';
   const isArchived = request.status === 'archived';
 
+  // Get the shift type for color coding
+  const getRequestShiftType = () => {
+    if (isShiftChange) {
+      return request.new_shift_type || 'basic';
+    }
+    return request.request_type || request.type || 'annual_leave';
+  };
+
+  // Mobile card layout - badge style matching MobileDayView
+  if (isMobile) {
+    const shiftType = getRequestShiftType();
+    const colorClass = getShiftTypeColor(shiftType);
+    
+    return (
+      <div className={`${colorClass} rounded-lg p-4 space-y-3`}>
+        {/* Header: Name and Status */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-white truncate">
+              {request.requester_name || 'Unknown'}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge className="bg-white/20 text-white text-xs border-0">
+                {isShiftChange ? 'Shift Change' : getShiftTypeLabel(shiftType)}
+              </Badge>
+              {getStatusBadge()}
+            </div>
+          </div>
+        </div>
+
+        {/* Date/Time Info */}
+        <div className="text-white/90 text-sm space-y-1">
+          {isShiftChange ? (
+            <>
+              {request.new_start_time && (
+                <div>
+                  {formatDateTime(request.new_start_time)}
+                  {request.new_end_time && ` - ${format(new Date(request.new_end_time), 'h:mm a')}`}
+                </div>
+              )}
+            </>
+          ) : (
+            <div>
+              {formatDate(request.start_date)}
+              {request.end_date && request.end_date !== request.start_date && ` - ${formatDate(request.end_date)}`}
+            </div>
+          )}
+          {request.reason && (
+            <div className="text-xs text-white/70 truncate">{request.reason}</div>
+          )}
+        </div>
+
+        {/* Actions - touch-friendly */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-white/20">
+          {isPending && isAdmin && (
+            <>
+              <Button 
+                size="sm" 
+                onClick={onApprove}
+                className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Approve
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={onDeny}
+                className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Deny
+              </Button>
+            </>
+          )}
+          
+          {isApplied && request.original_shift_snapshot && (
+            <Button 
+              size="sm" 
+              onClick={onViewSnapshot}
+              className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Original
+            </Button>
+          )}
+          
+          {isApplied && isAdmin && (
+            <>
+              <Button 
+                size="sm" 
+                onClick={onRevert}
+                className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Revert
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={onArchive}
+                className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+              >
+                <Archive className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          
+          {isReverted && isAdmin && (
+            <Button 
+              size="sm" 
+              onClick={onArchive}
+              className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+            >
+              <Archive className="h-4 w-4 mr-1" />
+              Archive
+            </Button>
+          )}
+          
+          {(isPending || isDenied) && (isCarer || isAdmin) && (
+            <Button 
+              size="sm" 
+              onClick={onDelete}
+              className="bg-red-600/50 hover:bg-red-600/70 text-white border-0 min-h-[44px]"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout - original card style
   return (
     <div className="flex flex-col p-3 sm:p-4 border rounded-lg space-y-3 overflow-hidden">
       {/* Header */}
