@@ -1550,6 +1550,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             familyId={familyId}
             userRole={userRole}
             currentUserId={currentUserId}
+            onScheduleRefresh={loadSchedulingData}
           />
         </TabsContent>
       </Tabs>

@@ -4,10 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Clock, Download, Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { CalendarDays, Clock, Download, Loader2, Pencil, Trash2, Check } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { format, isBefore, isAfter, startOfDay } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ interface LeaveSectionProps {
   familyId: string;
   userRole: string;
   currentUserId?: string | null;
+  onScheduleRefresh?: () => void;
 }
 
 interface LeaveEntry {
@@ -30,7 +32,7 @@ interface LeaveEntry {
   status?: string;
 }
 
-export const LeaveSection = ({ familyId, userRole, currentUserId }: LeaveSectionProps) => {
+export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefresh }: LeaveSectionProps) => {
   const [leaveEntries, setLeaveEntries] = useState<LeaveEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'taken'>('upcoming');
@@ -235,6 +237,82 @@ export const LeaveSection = ({ familyId, userRole, currentUserId }: LeaveSection
     });
   };
 
+  const handleEditLeaveType = async (entryId: string, sourceType: 'leave_request' | 'time_entry', newShiftType: string) => {
+    try {
+      const realId = entryId.replace(/^(leave-|time-)/, '');
+
+      if (sourceType === 'time_entry') {
+        const { error } = await supabase
+          .from('time_entries')
+          .update({ shift_type: newShiftType })
+          .eq('id', realId);
+
+        if (error) throw error;
+      }
+      // For leave_request type, we don't change the type as it's just a request record
+
+      toast({
+        title: "Success",
+        description: "Leave type updated"
+      });
+
+      await loadLeaveData();
+      onScheduleRefresh?.();
+    } catch (error) {
+      console.error('Error updating leave type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update leave type",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteLeave = async (entryId: string, sourceType: 'leave_request' | 'time_entry') => {
+    try {
+      const realId = entryId.replace(/^(leave-|time-)/, '');
+
+      if (sourceType === 'time_entry') {
+        // Revert to basic shift
+        const { error } = await supabase
+          .from('time_entries')
+          .update({ shift_type: 'basic' })
+          .eq('id', realId);
+
+        if (error) throw error;
+      } else if (sourceType === 'leave_request') {
+        // Cancel the leave request
+        const { error } = await supabase
+          .from('leave_requests')
+          .update({ status: 'cancelled' })
+          .eq('id', realId);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Leave reverted to basic shift"
+      });
+
+      await loadLeaveData();
+      onScheduleRefresh?.();
+    } catch (error) {
+      console.error('Error deleting leave:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete leave",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const canEditEntry = (entry: LeaveEntry) => {
+    if (userRole === 'family_viewer') return false;
+    if (isAdmin) return true;
+    return entry.carer_id === currentUserId;
+  };
+
   const filteredData = getFilteredLeave();
 
   if (loading) {
@@ -320,7 +398,13 @@ export const LeaveSection = ({ familyId, userRole, currentUserId }: LeaveSection
                 No upcoming leave scheduled
               </div>
             ) : (
-              <LeaveTable entries={filteredData} showCarer={isAdmin} />
+              <LeaveTable 
+                entries={filteredData} 
+                showCarer={isAdmin} 
+                onEdit={handleEditLeaveType}
+                onDelete={handleDeleteLeave}
+                canEditEntry={canEditEntry}
+              />
             )}
           </TabsContent>
 
@@ -330,7 +414,13 @@ export const LeaveSection = ({ familyId, userRole, currentUserId }: LeaveSection
                 No leave taken yet
               </div>
             ) : (
-              <LeaveTable entries={filteredData} showCarer={isAdmin} />
+              <LeaveTable 
+                entries={filteredData} 
+                showCarer={isAdmin} 
+                onEdit={handleEditLeaveType}
+                onDelete={handleDeleteLeave}
+                canEditEntry={canEditEntry}
+              />
             )}
           </TabsContent>
         </Tabs>
@@ -350,7 +440,21 @@ export const LeaveSection = ({ familyId, userRole, currentUserId }: LeaveSection
 };
 
 // Sub-component for the table
-const LeaveTable = ({ entries, showCarer }: { entries: LeaveEntry[]; showCarer: boolean }) => {
+interface LeaveTableProps {
+  entries: LeaveEntry[];
+  showCarer: boolean;
+  onEdit: (entryId: string, sourceType: 'leave_request' | 'time_entry', newShiftType: string) => void;
+  onDelete: (entryId: string, sourceType: 'leave_request' | 'time_entry') => void;
+  canEditEntry: (entry: LeaveEntry) => boolean;
+}
+
+const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: LeaveTableProps) => {
+  const leaveTypes = [
+    { value: 'annual_leave', label: 'Annual Leave' },
+    { value: 'sickness', label: 'Sickness' },
+    { value: 'public_holiday', label: 'Public Holiday' }
+  ];
+
   const getShiftTypeBadge = (shiftType: string) => {
     const typeConfig: Record<string, { className: string; label: string }> = {
       'annual_leave': { className: 'bg-yellow-500 text-white', label: 'Annual Leave' },
@@ -376,33 +480,87 @@ const LeaveTable = ({ entries, showCarer }: { entries: LeaveEntry[]; showCarer: 
             <TableHead>Dates</TableHead>
             {showCarer && <TableHead>Carer</TableHead>}
             <TableHead>Type</TableHead>
-            <TableHead>Reason</TableHead>
+            <TableHead className="w-[100px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {entries.map((entry) => (
-            <TableRow key={entry.id}>
-              <TableCell>
-                <div className="font-medium">
-                  {format(new Date(entry.start_date), 'MMM d, yyyy')}
-                </div>
-                {entry.start_date !== entry.end_date && (
-                  <div className="text-sm text-muted-foreground">
-                    to {format(new Date(entry.end_date), 'MMM d, yyyy')}
+          {entries.map((entry) => {
+            const canEdit = canEditEntry(entry);
+            
+            return (
+              <TableRow key={entry.id}>
+                <TableCell>
+                  <div className="font-medium">
+                    {format(new Date(entry.start_date), 'MMM d, yyyy')}
                   </div>
+                  {entry.start_date !== entry.end_date && (
+                    <div className="text-sm text-muted-foreground">
+                      to {format(new Date(entry.end_date), 'MMM d, yyyy')}
+                    </div>
+                  )}
+                </TableCell>
+                {showCarer && (
+                  <TableCell className="font-medium">{entry.carer_name}</TableCell>
                 )}
-              </TableCell>
-              {showCarer && (
-                <TableCell className="font-medium">{entry.carer_name}</TableCell>
-              )}
-              <TableCell>
-                {getShiftTypeBadge(entry.shift_type)}
-              </TableCell>
-              <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                {entry.reason || '—'}
-              </TableCell>
-            </TableRow>
-          ))}
+                <TableCell>
+                  {getShiftTypeBadge(entry.shift_type)}
+                </TableCell>
+                <TableCell>
+                  {canEdit && (
+                    <div className="flex items-center gap-1">
+                      {/* Edit Button - only for time_entry type */}
+                      {entry.type === 'time_entry' && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {leaveTypes.map((type) => (
+                              <DropdownMenuItem
+                                key={type.value}
+                                onClick={() => onEdit(entry.id, entry.type, type.value)}
+                                className="flex items-center justify-between"
+                              >
+                                {type.label}
+                                {entry.shift_type === type.value && (
+                                  <Check className="h-4 w-4 ml-2" />
+                                )}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+
+                      {/* Delete Button */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Leave Entry</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will revert the shift back to a basic shift and remove it from leave tracking. Continue?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(entry.id, entry.type)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
