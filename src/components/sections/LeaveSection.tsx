@@ -440,20 +440,21 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
   );
 };
 
-// Sub-component props
-interface LeaveListProps {
-  entries: LeaveEntry[];
-  showCarer: boolean;
-  onEdit: (entryId: string, sourceType: 'leave_request' | 'time_entry', newShiftType: string) => void;
-  onDelete: (entryId: string, sourceType: 'leave_request' | 'time_entry') => void;
-  canEditEntry: (entry: LeaveEntry) => boolean;
-}
-
-const leaveTypes = [
+// Leave type options for edit dropdown
+const leaveTypeOptions = [
   { value: 'annual_leave', label: 'Annual Leave' },
   { value: 'sickness', label: 'Sickness' },
   { value: 'public_holiday', label: 'Public Holiday' }
 ];
+
+// Sub-component props
+interface LeaveListProps {
+  entries: LeaveEntry[];
+  showCarer?: boolean;
+  onEdit: (entryId: string, sourceType: 'leave_request' | 'time_entry', newShiftType: string) => void;
+  onDelete: (entryId: string, sourceType: 'leave_request' | 'time_entry') => void;
+  canEditEntry: (entry: LeaveEntry) => boolean;
+}
 
 const getShiftTypeConfig = (shiftType: string) => {
   const typeConfig: Record<string, { bgClass: string; label: string }> = {
@@ -465,7 +466,7 @@ const getShiftTypeConfig = (shiftType: string) => {
   return typeConfig[shiftType] || { bgClass: 'bg-muted', label: shiftType.replace(/_/g, ' ') };
 };
 
-// Mobile card-based layout
+// Mobile card-based layout - compact sizing
 const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: LeaveListProps) => {
   return (
     <div className="space-y-2">
@@ -476,38 +477,38 @@ const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: L
         return (
           <div
             key={entry.id}
-            className={`${config.bgClass} rounded-lg p-3 text-white`}
+            className={`${config.bgClass} rounded-lg p-2 text-white`}
           >
-            <div className="flex justify-between items-start gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">
-                  {entry.carer_name}
-                </div>
-                <Badge className="bg-white/20 text-white text-xs mt-1 border-0">
-                  {config.label}
-                </Badge>
-                <div className="text-xs mt-1.5 opacity-90">
-                  {format(new Date(entry.start_date), 'MMM d, yyyy')}
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                {showCarer && (
+                  <span className="font-medium text-xs truncate">
+                    {entry.carer_name}
+                  </span>
+                )}
+                <span className="text-[10px] font-medium">{config.label}</span>
+                <span className="text-[10px] opacity-90">
+                  {format(new Date(entry.start_date), 'MMM d')}
                   {entry.start_date !== entry.end_date && (
-                    <span> – {format(new Date(entry.end_date), 'MMM d, yyyy')}</span>
+                    <span> – {format(new Date(entry.end_date), 'MMM d')}</span>
                   )}
-                </div>
+                </span>
               </div>
               {canEdit && (
-                <div className="flex gap-1 shrink-0">
+                <div className="flex flex-col gap-1 shrink-0">
                   {entry.type === 'time_entry' && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="min-h-[44px] min-w-[44px] bg-white/20 hover:bg-white/30 text-white"
+                          className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {leaveTypes.map((type) => (
+                        {leaveTypeOptions.map((type) => (
                           <DropdownMenuItem
                             key={type.value}
                             onClick={() => onEdit(entry.id, entry.type, type.value)}
@@ -527,9 +528,9 @@ const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: L
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="min-h-[44px] min-w-[44px] bg-white/20 hover:bg-white/30 text-white"
+                        className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -606,7 +607,7 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {leaveTypes.map((type) => (
+                            {leaveTypeOptions.map((type) => (
                               <DropdownMenuItem
                                 key={type.value}
                                 onClick={() => onEdit(entry.id, entry.type, type.value)}
