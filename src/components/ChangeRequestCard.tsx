@@ -134,9 +134,9 @@ export const ChangeRequestCard = ({
                        ((isPending || isDenied) && (isCarer || isAdmin));
     
     return (
-      <div className={`${colorClass} rounded-lg p-2 text-white`}>
+      <div className={`${colorClass} rounded-lg p-2 text-white overflow-hidden`}>
         {/* Row 1: Content */}
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-0.5 min-w-0">
           <span className="font-medium text-xs truncate">
             {request.requester_name || 'Unknown'}
           </span>
@@ -157,9 +157,11 @@ export const ChangeRequestCard = ({
         
         {/* Row 2: Status + Actions */}
         {hasActions && (
-          <div className="flex items-center justify-between gap-2 pt-1.5 mt-1.5 border-t border-white/20">
-            {getStatusBadge()}
-            <div className="flex gap-1">
+          <div className="flex items-center justify-between gap-1 pt-1.5 mt-1.5 border-t border-white/20 min-w-0">
+            <div className="flex-shrink-0">
+              {getStatusBadge()}
+            </div>
+            <div className="flex gap-1 flex-shrink-0">
               {isPending && isAdmin && (
                 <>
                   <Button 
