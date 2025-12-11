@@ -123,124 +123,106 @@ export const ChangeRequestCard = ({
     return request.request_type || request.type || 'annual_leave';
   };
 
-  // Mobile card layout - badge style matching MobileDayView
+  // Mobile card layout - compact badge style matching MobileDayView
   if (isMobile) {
     const shiftType = getRequestShiftType();
     const colorClass = getShiftTypeColor(shiftType);
     
     return (
-      <div className={`${colorClass} rounded-lg p-4 space-y-3`}>
-        {/* Header: Name and Status */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-white truncate">
+      <div className={`${colorClass} rounded-lg p-2 text-white`}>
+        <div className="flex justify-between items-center gap-2">
+          {/* Content */}
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+            <span className="font-medium text-xs truncate">
               {request.requester_name || 'Unknown'}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge className="bg-white/20 text-white text-xs border-0">
-                {isShiftChange ? 'Shift Change' : getShiftTypeLabel(shiftType)}
-              </Badge>
-              {getStatusBadge()}
-            </div>
-          </div>
-        </div>
-
-        {/* Date/Time Info */}
-        <div className="text-white/90 text-sm space-y-1">
-          {isShiftChange ? (
-            <>
-              {request.new_start_time && (
-                <div>
-                  {formatDateTime(request.new_start_time)}
-                  {request.new_end_time && ` - ${format(new Date(request.new_end_time), 'h:mm a')}`}
-                </div>
+            </span>
+            <span className="text-[10px] font-medium">
+              {isShiftChange ? 'Shift Change' : getShiftTypeLabel(shiftType)}
+            </span>
+            <span className="text-[10px] opacity-90">
+              {isShiftChange ? (
+                request.new_start_time ? formatDateTime(request.new_start_time) : 'N/A'
+              ) : (
+                <>
+                  {formatDate(request.start_date)}
+                  {request.end_date && request.end_date !== request.start_date && ` – ${formatDate(request.end_date)}`}
+                </>
               )}
-            </>
-          ) : (
-            <div>
-              {formatDate(request.start_date)}
-              {request.end_date && request.end_date !== request.start_date && ` - ${formatDate(request.end_date)}`}
-            </div>
-          )}
-          {request.reason && (
-            <div className="text-xs text-white/70 truncate">{request.reason}</div>
-          )}
-        </div>
-
-        {/* Actions - touch-friendly */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-white/20">
-          {isPending && isAdmin && (
-            <>
-              <Button 
-                size="sm" 
-                onClick={onApprove}
-                className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Approve
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={onDeny}
-                className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Deny
-              </Button>
-            </>
-          )}
+            </span>
+          </div>
           
-          {isApplied && request.original_shift_snapshot && (
-            <Button 
-              size="sm" 
-              onClick={onViewSnapshot}
-              className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              Original
-            </Button>
-          )}
-          
-          {isApplied && isAdmin && (
-            <>
+          {/* Status + Actions */}
+          <div className="flex items-center gap-1 shrink-0">
+            {getStatusBadge()}
+            
+            {isPending && isAdmin && (
+              <>
+                <Button 
+                  size="icon" 
+                  onClick={onApprove}
+                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
+                >
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  onClick={onDeny}
+                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+            
+            {isApplied && request.original_shift_snapshot && (
               <Button 
-                size="sm" 
-                onClick={onRevert}
-                className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+                size="icon" 
+                onClick={onViewSnapshot}
+                className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
               >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Revert
+                <Eye className="h-3 w-3" />
               </Button>
+            )}
+            
+            {isApplied && isAdmin && (
+              <>
+                <Button 
+                  size="icon" 
+                  onClick={onRevert}
+                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  onClick={onArchive}
+                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
+                >
+                  <Archive className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+            
+            {isReverted && isAdmin && (
               <Button 
-                size="sm" 
+                size="icon" 
                 onClick={onArchive}
-                className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
+                className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
               >
-                <Archive className="h-4 w-4" />
+                <Archive className="h-3 w-3" />
               </Button>
-            </>
-          )}
-          
-          {isReverted && isAdmin && (
-            <Button 
-              size="sm" 
-              onClick={onArchive}
-              className="bg-white/20 hover:bg-white/30 text-white border-0 min-h-[44px]"
-            >
-              <Archive className="h-4 w-4 mr-1" />
-              Archive
-            </Button>
-          )}
-          
-          {(isPending || isDenied) && (isCarer || isAdmin) && (
-            <Button 
-              size="sm" 
-              onClick={onDelete}
-              className="bg-red-600/50 hover:bg-red-600/70 text-white border-0 min-h-[44px]"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+            )}
+            
+            {(isPending || isDenied) && (isCarer || isAdmin) && (
+              <Button 
+                size="icon" 
+                onClick={onDelete}
+                className="h-8 w-8 bg-red-600/50 hover:bg-red-600/70 text-white border-0"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );

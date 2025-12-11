@@ -494,21 +494,22 @@ export const MobileDayView = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {dayShifts.map((shift) => (
               <Badge 
                 key={shift.id}
-                className={`${getShiftTypeColor(shift.shift_type, shift.is_leave_request)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
+                className={`${getShiftTypeColor(shift.shift_type, shift.is_leave_request)} text-xs cursor-pointer p-2 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
                 onClick={() => handleShiftClick(shift)}
               >
-                <div className="flex flex-col gap-1 w-full min-w-0">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-0.5 w-full min-w-0">
+                  <div className="flex items-center gap-1.5">
                     <Clock className="h-3 w-3 flex-shrink-0" />
-                    <span className="font-medium text-xs md:text-sm truncate">
+                    <span className="font-medium text-xs truncate">
                       {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
                     </span>
                   </div>
-                  <span className="text-xs md:text-sm truncate">{getBadgeContent(shift)}</span>
+                  <span className="text-[10px] font-medium truncate">{getShiftTypeLabel(shift.shift_type || 'basic')}</span>
+                  <span className="text-[10px] opacity-90 truncate">{getDisplayName(shift)}</span>
                 </div>
               </Badge>
             ))}
