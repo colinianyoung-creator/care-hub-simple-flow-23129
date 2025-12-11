@@ -123,107 +123,113 @@ export const ChangeRequestCard = ({
     return request.request_type || request.type || 'annual_leave';
   };
 
-  // Mobile card layout - compact badge style matching MobileDayView
+  // Mobile card layout - two-row structure (content above, actions below)
   if (isMobile) {
     const shiftType = getRequestShiftType();
     const colorClass = getShiftTypeColor(shiftType);
     
+    const hasActions = (isPending && isAdmin) || 
+                       (isApplied && (request.original_shift_snapshot || isAdmin)) || 
+                       (isReverted && isAdmin) || 
+                       ((isPending || isDenied) && (isCarer || isAdmin));
+    
     return (
       <div className={`${colorClass} rounded-lg p-2 text-white`}>
-        <div className="flex justify-between items-center gap-2">
-          {/* Content */}
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            <span className="font-medium text-xs truncate">
-              {request.requester_name || 'Unknown'}
-            </span>
-            <span className="text-[10px] font-medium">
-              {isShiftChange ? 'Shift Change' : getShiftTypeLabel(shiftType)}
-            </span>
-            <span className="text-[10px] opacity-90">
-              {isShiftChange ? (
-                request.new_start_time ? formatDateTime(request.new_start_time) : 'N/A'
-              ) : (
-                <>
-                  {formatDate(request.start_date)}
-                  {request.end_date && request.end_date !== request.start_date && ` – ${formatDate(request.end_date)}`}
-                </>
-              )}
-            </span>
-          </div>
-          
-          {/* Status + Actions */}
-          <div className="flex items-center gap-1 shrink-0">
-            {getStatusBadge()}
-            
-            {isPending && isAdmin && (
+        {/* Row 1: Content */}
+        <div className="flex flex-col gap-0.5">
+          <span className="font-medium text-xs truncate">
+            {request.requester_name || 'Unknown'}
+          </span>
+          <span className="text-[10px] font-medium">
+            {isShiftChange ? 'Shift Change' : getShiftTypeLabel(shiftType)}
+          </span>
+          <span className="text-[10px] opacity-90">
+            {isShiftChange ? (
+              request.new_start_time ? formatDateTime(request.new_start_time) : 'N/A'
+            ) : (
               <>
-                <Button 
-                  size="icon" 
-                  onClick={onApprove}
-                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
-                >
-                  <Check className="h-3 w-3" />
-                </Button>
-                <Button 
-                  size="icon" 
-                  onClick={onDeny}
-                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                {formatDate(request.start_date)}
+                {request.end_date && request.end_date !== request.start_date && ` – ${formatDate(request.end_date)}`}
               </>
             )}
-            
-            {isApplied && request.original_shift_snapshot && (
-              <Button 
-                size="icon" 
-                onClick={onViewSnapshot}
-                className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
-              >
-                <Eye className="h-3 w-3" />
-              </Button>
-            )}
-            
-            {isApplied && isAdmin && (
-              <>
+          </span>
+        </div>
+        
+        {/* Row 2: Status + Actions */}
+        {hasActions && (
+          <div className="flex items-center justify-between gap-2 pt-1.5 mt-1.5 border-t border-white/20">
+            {getStatusBadge()}
+            <div className="flex gap-1">
+              {isPending && isAdmin && (
+                <>
+                  <Button 
+                    size="icon" 
+                    onClick={onApprove}
+                    className="h-7 w-7 bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    <Check className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    onClick={onDeny}
+                    className="h-7 w-7 bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+              
+              {isApplied && request.original_shift_snapshot && (
                 <Button 
                   size="icon" 
-                  onClick={onRevert}
-                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
+                  onClick={onViewSnapshot}
+                  className="h-7 w-7 bg-white/20 hover:bg-white/30 text-white border-0"
                 >
-                  <RotateCcw className="h-3 w-3" />
+                  <Eye className="h-3 w-3" />
                 </Button>
+              )}
+              
+              {isApplied && isAdmin && (
+                <>
+                  <Button 
+                    size="icon" 
+                    onClick={onRevert}
+                    className="h-7 w-7 bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    onClick={onArchive}
+                    className="h-7 w-7 bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    <Archive className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+              
+              {isReverted && isAdmin && (
                 <Button 
                   size="icon" 
                   onClick={onArchive}
-                  className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
+                  className="h-7 w-7 bg-white/20 hover:bg-white/30 text-white border-0"
                 >
                   <Archive className="h-3 w-3" />
                 </Button>
-              </>
-            )}
-            
-            {isReverted && isAdmin && (
-              <Button 
-                size="icon" 
-                onClick={onArchive}
-                className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-0"
-              >
-                <Archive className="h-3 w-3" />
-              </Button>
-            )}
-            
-            {(isPending || isDenied) && (isCarer || isAdmin) && (
-              <Button 
-                size="icon" 
-                onClick={onDelete}
-                className="h-8 w-8 bg-red-600/50 hover:bg-red-600/70 text-white border-0"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
+              )}
+              
+              {(isPending || isDenied) && (isCarer || isAdmin) && (
+                <Button 
+                  size="icon" 
+                  onClick={onDelete}
+                  className="h-7 w-7 bg-red-600/50 hover:bg-red-600/70 text-white border-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
