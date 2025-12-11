@@ -42,7 +42,10 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
     type: 'all-types'
   });
   const [carers, setCarers] = useState<Array<{ id: string; name: string }>>([]);
+  const [upcomingLimit, setUpcomingLimit] = useState(10);
+  const [takenLimit, setTakenLimit] = useState(10);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
   const isCarer = userRole === 'carer';
@@ -159,7 +162,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
     }
   };
 
-  const getFilteredLeave = () => {
+  const getFilteredLeave = (applyLimit = true) => {
     const today = startOfDay(new Date());
     let filtered = [...leaveEntries];
 
@@ -169,11 +172,15 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
         const startDate = new Date(entry.start_date);
         return isAfter(startDate, today) || format(startDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
       });
+      // Sort upcoming by start date ascending (soonest first)
+      filtered.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
     } else {
       filtered = filtered.filter(entry => {
         const endDate = new Date(entry.end_date);
         return isBefore(endDate, today);
       });
+      // Sort taken by start date descending (most recent first)
+      filtered.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
     }
 
     // Filter by carer
@@ -186,7 +193,13 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
       filtered = filtered.filter(entry => entry.shift_type === filters.type);
     }
 
-    return filtered;
+    // Apply limit for pagination
+    if (applyLimit) {
+      const limit = activeTab === 'upcoming' ? upcomingLimit : takenLimit;
+      return { entries: filtered.slice(0, limit), total: filtered.length };
+    }
+
+    return { entries: filtered, total: filtered.length };
   };
 
   const getShiftTypeBadge = (shiftType: string) => {
@@ -207,7 +220,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
   };
 
   const exportToCSV = () => {
-    const data = getFilteredLeave();
+    const { entries: data } = getFilteredLeave(false);
     if (data.length === 0) return;
 
     const headers = ['Start Date', 'End Date', 'Carer', 'Type', 'Reason'];
@@ -314,8 +327,6 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
     return entry.carer_id === currentUserId;
   };
 
-  const filteredData = getFilteredLeave();
-
   if (loading) {
     return (
       <Card>
@@ -342,11 +353,11 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="upcoming" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>Upcoming</span>
+              {!isMobile && <span>Upcoming</span>}
             </TabsTrigger>
             <TabsTrigger value="taken" className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
-              <span>Taken</span>
+              {!isMobile && <span>Taken</span>}
             </TabsTrigger>
           </TabsList>
 
@@ -394,40 +405,70 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
           </div>
 
           <TabsContent value="upcoming" className="mt-4">
-            {filteredData.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No upcoming leave scheduled
-              </div>
-            ) : (
-              <LeaveList 
-                entries={filteredData} 
-                showCarer={isAdmin} 
-                onEdit={handleEditLeaveType}
-                onDelete={handleDeleteLeave}
-                canEditEntry={canEditEntry}
-              />
-            )}
+            {(() => {
+              const { entries, total } = getFilteredLeave();
+              return entries.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No upcoming leave scheduled
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <LeaveList 
+                    entries={entries} 
+                    showCarer={isAdmin} 
+                    onEdit={handleEditLeaveType}
+                    onDelete={handleDeleteLeave}
+                    canEditEntry={canEditEntry}
+                  />
+                  {entries.length < total && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setUpcomingLimit(prev => prev + 10)}
+                    >
+                      Load more ({total - entries.length} remaining)
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="taken" className="mt-4">
-            {filteredData.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No leave taken yet
-              </div>
-            ) : (
-              <LeaveList 
-                entries={filteredData} 
-                showCarer={isAdmin} 
-                onEdit={handleEditLeaveType}
-                onDelete={handleDeleteLeave}
-                canEditEntry={canEditEntry}
-              />
-            )}
+            {(() => {
+              const { entries, total } = getFilteredLeave();
+              return entries.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No leave taken yet
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <LeaveList 
+                    entries={entries} 
+                    showCarer={isAdmin} 
+                    onEdit={handleEditLeaveType}
+                    onDelete={handleDeleteLeave}
+                    canEditEntry={canEditEntry}
+                  />
+                  {entries.length < total && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setTakenLimit(prev => prev + 10)}
+                    >
+                      Load older ({total - entries.length} remaining)
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
 
         {/* Export Button */}
-        {isAdmin && filteredData.length > 0 && (
+        {isAdmin && getFilteredLeave(false).entries.length > 0 && (
           <div className="pt-2">
             <Button onClick={exportToCSV} variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
