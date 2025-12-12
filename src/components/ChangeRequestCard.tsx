@@ -134,14 +134,19 @@ export const ChangeRequestCard = ({
                        ((isPending || isDenied) && (isCarer || isAdmin));
     
     return (
-      <div className={`${colorClass} rounded-lg p-2 text-white overflow-hidden`}>
+      <div className={`${colorClass} rounded-lg p-2 text-white overflow-hidden relative`}>
+        {/* Status badge - top right corner */}
+        <div className="absolute top-1.5 right-1.5">
+          {getStatusBadge()}
+        </div>
+        
         {/* Row 1: Content */}
-        <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex flex-col gap-0.5 min-w-0 pr-16">
           <span className="font-medium text-xs truncate">
             {request.requester_name || 'Unknown'}
           </span>
           <span className="text-[10px] font-medium">
-            {isShiftChange ? 'Shift Change' : getShiftTypeLabel(shiftType)}
+            {getShiftTypeLabel(shiftType)}
           </span>
           <span className="text-[10px] opacity-90">
             {isShiftChange ? (
@@ -155,13 +160,10 @@ export const ChangeRequestCard = ({
           </span>
         </div>
         
-        {/* Row 2: Status + Actions */}
+        {/* Row 2: Actions only - right aligned */}
         {hasActions && (
-          <div className="flex items-center justify-between gap-1 pt-1.5 mt-1.5 border-t border-white/20 min-w-0">
-            <div className="flex-shrink-0">
-              {getStatusBadge()}
-            </div>
-            <div className="flex gap-1 flex-shrink-0">
+          <div className="flex items-center justify-end gap-1 pt-1.5 mt-1.5 border-t border-white/20">
+            <div className="flex gap-1">
               {isPending && isAdmin && (
                 <>
                   <Button 
