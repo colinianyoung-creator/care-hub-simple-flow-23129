@@ -6,7 +6,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Heart, Frown, Meh, Smile, Trash2, CalendarIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ChevronLeft, ChevronRight, Heart, Frown, Meh, Smile, Trash2, CalendarIcon, RotateCcw } from "lucide-react";
 import { format, subDays, addDays, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 interface CareNote {
@@ -38,6 +39,7 @@ interface NotesArchiveSectionProps {
 
 export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: NotesArchiveSectionProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [notes, setNotes] = useState<CareNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -238,22 +240,22 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
       {/* Date Navigation with Calendar Picker */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
+          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={goToPreviousDay}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="min-w-[180px] justify-center gap-2">
-                  <CalendarIcon className="h-4 w-4" />
+                <Button variant="outline" className={isMobile ? "min-w-[100px] px-2 justify-center gap-1" : "min-w-[180px] justify-center gap-2"}>
+                  <CalendarIcon className="h-4 w-4 flex-shrink-0" />
                   {isRangeMode && rangeStart && rangeEnd ? (
-                    <span className="text-sm">
-                      {format(rangeStart, 'MMM d')} - {format(rangeEnd, 'MMM d, yyyy')}
+                    <span className="text-xs sm:text-sm truncate">
+                      {format(rangeStart, 'MMM d')} - {format(rangeEnd, isMobile ? 'MMM d' : 'MMM d, yyyy')}
                     </span>
                   ) : (
-                    <span className="text-sm font-medium">
-                      {format(selectedDate, 'MMMM d, yyyy')}
+                    <span className="text-xs sm:text-sm font-medium truncate">
+                      {format(selectedDate, isMobile ? 'MMM d' : 'MMMM d, yyyy')}
                     </span>
                   )}
                 </Button>
@@ -282,13 +284,13 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
               </PopoverContent>
             </Popover>
 
-            <Button variant="outline" size="sm" onClick={goToNextDay}>
+            <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={goToNextDay}>
               <ChevronRight className="h-4 w-4" />
             </Button>
 
             {!isToday && !isRangeMode && (
-              <Button variant="ghost" size="sm" onClick={goToToday} className="text-xs">
-                Today
+              <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={goToToday}>
+                <RotateCcw className="h-4 w-4" />
               </Button>
             )}
           </div>

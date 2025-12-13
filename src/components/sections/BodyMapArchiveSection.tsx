@@ -2,58 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronLeft, ChevronRight, CalendarIcon, Trash2, Image as ImageIcon, RotateCcw } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-import { ImageViewer } from '@/components/ui/ImageViewer';
+import { ChevronLeft, ChevronRight, CalendarIcon, RotateCcw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, endOfDay, subDays, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import type { Tables } from "@/integrations/supabase/types";
 
-interface DietEntry {
-  id: string;
-  meal_type: string;
-  description: string;
-  portion_left: string | null;
-  notes: string | null;
-  photo_url: string | null;
-  created_at: string;
-  entry_date: string;
-  created_by: string;
+type BodyLog = Tables<'body_logs'> & {
   profiles?: {
     full_name: string | null;
-  };
+  } | null;
+};
+
+interface BodyMapArchiveSectionProps {
+  familyId: string;
+  userRole: string;
+  onUnarchive?: () => void;
 }
 
-interface DietArchiveSectionProps {
-  familyId: string | null;
-  userRole?: string;
-  currentUserId?: string;
-}
-
-export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
+export const BodyMapArchiveSection: React.FC<BodyMapArchiveSectionProps> = ({
   familyId,
   userRole,
-  currentUserId
+  onUnarchive
 }) => {
-  // Early return if no family ID
-  if (!familyId) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-muted-foreground">
-            No family selected. Please join or create a family first.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [entries, setEntries] = useState<DietEntry[]>([]);
+  const [entries, setEntries] = useState<BodyLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [isRangeMode, setIsRangeMode] = useState(false);
   const [rangeStart, setRangeStart] = useState<Date | undefined>();
   const [rangeEnd, setRangeEnd] = useState<Date | undefined>();
@@ -97,17 +76,42 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
         }
       }, 10000);
 
+      const start = startOfDay(startDate);
+      const end = endOfDay(endDate);
+
       const { data, error } = await supabase
-        .from('diet_entries')
-        .select('*, profiles:created_by(full_name)')
+        .from('body_logs')
+        .select('*')
         .eq('family_id', familyId)
-        .gte('entry_date', format(startDate, 'yyyy-MM-dd'))
-        .lte('entry_date', format(endDate, 'yyyy-MM-dd'))
-        .order('entry_date', { ascending: false })
+        .eq('is_archived', true)
+        .gte('incident_datetime', start.toISOString())
+        .lte('incident_datetime', end.toISOString())
+        .order('incident_datetime', { ascending: false })
         .abortSignal(signal);
 
       if (error) throw error;
-      setEntries(data as any || []);
+
+      // Get unique author IDs
+      const authorIds = [...new Set(data?.map(log => log.created_by) || [])];
+
+      // Fetch profiles for all authors
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', authorIds);
+
+      // Create a map of profile data
+      const profilesMap = new Map(
+        profilesData?.map(profile => [profile.id, profile]) || []
+      );
+
+      // Merge profiles with logs
+      const logsWithProfiles = data?.map(log => ({
+        ...log,
+        profiles: profilesMap.get(log.created_by) || null
+      })) || [];
+
+      setEntries(logsWithProfiles);
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         toast({
@@ -122,36 +126,36 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
     }
   };
 
-  const handleDeleteEntry = async (entryId: string) => {
+  const handleUnarchive = async (logId: string) => {
     try {
       const { error } = await supabase
-        .from('diet_entries')
-        .delete()
-        .eq('id', entryId);
+        .from('body_logs')
+        .update({ is_archived: false })
+        .eq('id', logId);
 
       if (error) throw error;
 
       toast({
-        title: 'Entry deleted',
-        description: 'Diet entry has been deleted successfully.',
+        title: 'Log Restored',
+        description: 'The injury log has been restored to active status.',
       });
 
+      // Reload entries
       if (isRangeMode && rangeStart && rangeEnd) {
         loadEntriesForDate(rangeStart, rangeEnd);
       } else {
         loadEntriesForDate(selectedDate, selectedDate);
       }
+      
+      // Notify parent to reload active logs
+      onUnarchive?.();
     } catch (error: any) {
       toast({
-        title: 'Error deleting entry',
+        title: 'Error restoring log',
         description: error.message,
         variant: 'destructive',
       });
     }
-  };
-
-  const canDeleteEntry = (entry: DietEntry) => {
-    return currentUserId && entry.created_by === currentUserId && userRole !== 'family_viewer';
   };
 
   const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1));
@@ -193,71 +197,74 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
 
   const isToday = startOfDay(selectedDate).getTime() === startOfDay(new Date()).getTime();
 
-  // Group entries by date and meal type
-  const groupEntriesByDateAndMeal = (entries: DietEntry[]) => {
-    const byDate: Record<string, Record<string, DietEntry[]>> = {};
-    entries.forEach(entry => {
-      const dateKey = entry.entry_date;
-      const mealType = entry.meal_type || 'other';
-      if (!byDate[dateKey]) byDate[dateKey] = {};
-      if (!byDate[dateKey][mealType]) byDate[dateKey][mealType] = [];
-      byDate[dateKey][mealType].push(entry);
-    });
-    return byDate;
-  };
-
+  // Group entries by date when in range mode
   const groupedEntries = isRangeMode 
-    ? groupEntriesByDateAndMeal(entries)
-    : null;
-
-  const singleDayGrouped = !isRangeMode 
     ? entries.reduce((acc, entry) => {
-        const mealType = entry.meal_type || 'other';
-        if (!acc[mealType]) acc[mealType] = [];
-        acc[mealType].push(entry);
+        const dateKey = format(new Date(entry.incident_datetime), 'yyyy-MM-dd');
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(entry);
         return acc;
-      }, {} as Record<string, DietEntry[]>)
+      }, {} as Record<string, BodyLog[]>)
     : null;
 
-  const mealTypes = ['breakfast', 'lunch', 'dinner', 'snacks', 'drinks', 'other'];
-
-  const renderEntryCard = (entry: DietEntry) => (
+  const renderEntryCard = (entry: BodyLog) => (
     <Card key={entry.id}>
-      <CardContent className="pt-4">
+      <CardContent className="p-4">
         <div className="flex justify-between items-start gap-4">
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{entry.description}</span>
-              {entry.photo_url && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewingImage(entry.photo_url)}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-              )}
+          <div className="space-y-2 flex-1">
+            {/* Timestamp and View */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+              <p className="text-sm font-medium">
+                {format(new Date(entry.incident_datetime), 'MMM d, yyyy')} at {format(new Date(entry.incident_datetime), 'h:mm a')}
+              </p>
+              <Badge variant="outline" className="w-fit">
+                {entry.view_type === 'front' ? '🧍 Front' : '🧍‍♂️ Back'}
+              </Badge>
             </div>
-            {entry.portion_left && (
+
+            {/* Author */}
+            <p className="text-xs text-muted-foreground">
+              Logged by: {entry.profiles?.full_name || 'Unknown User'}
+            </p>
+
+            {/* Body Location and Severity */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="font-semibold text-sm">{entry.body_location}</div>
+              <Badge 
+                variant={
+                  entry.type_severity.includes('Severe') || 
+                  entry.type_severity.includes('Stage 3') || 
+                  entry.type_severity.includes('Stage 4') || 
+                  entry.type_severity.includes('3rd degree') 
+                    ? 'destructive'
+                    : entry.type_severity.includes('Moderate') || 
+                      entry.type_severity.includes('Stage 2') || 
+                      entry.type_severity.includes('2nd degree')
+                    ? 'default'
+                    : 'secondary'
+                }
+              >
+                {entry.type_severity}
+              </Badge>
+            </div>
+
+            {/* Description */}
+            {entry.description && (
               <p className="text-sm text-muted-foreground">
-                Portion left: {entry.portion_left}
+                {entry.description}
               </p>
             )}
-            {entry.notes && (
-              <p className="text-sm text-muted-foreground">{entry.notes}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {format(new Date(entry.created_at), 'h:mm a')} by{' '}
-              {entry.profiles?.full_name || 'Unknown'}
-            </p>
           </div>
-          {canDeleteEntry(entry) && (
+
+          {/* Unarchive button */}
+          {userRole !== 'family_viewer' && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDeleteEntry(entry.id)}
+              onClick={() => handleUnarchive(entry.id)}
             >
-              <Trash2 className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Restore
             </Button>
           )}
         </div>
@@ -267,6 +274,7 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Date Navigation */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
@@ -326,63 +334,33 @@ export const DietArchiveSection: React.FC<DietArchiveSectionProps> = ({
         </CardHeader>
       </Card>
 
+      {/* Entries */}
       {loading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading entries...</div>
+        <div className="text-center py-8 text-muted-foreground">Loading archived entries...</div>
       ) : entries.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          No diet entries for this {isRangeMode ? 'period' : 'date'}.
+          No archived body map entries for this {isRangeMode ? 'period' : 'date'}.
         </div>
       ) : isRangeMode && groupedEntries ? (
         <div className="space-y-6">
           {Object.entries(groupedEntries)
             .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-            .map(([date, mealGroups]) => (
+            .map(([date, dateEntries]) => (
               <div key={date}>
                 <h3 className="text-sm font-semibold mb-3 text-muted-foreground border-b pb-1">
                   {format(new Date(date), 'EEEE, MMMM d, yyyy')}
                 </h3>
-                <div className="space-y-4">
-                  {mealTypes.map((mealType) => {
-                    const mealEntries = mealGroups[mealType];
-                    if (!mealEntries || mealEntries.length === 0) return null;
-
-                    return (
-                      <div key={mealType}>
-                        <h4 className="text-sm font-medium capitalize mb-2">{mealType}</h4>
-                        <div className="space-y-3">
-                          {mealEntries.map(renderEntryCard)}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-3">
+                  {dateEntries.map(renderEntryCard)}
                 </div>
               </div>
             ))}
         </div>
-      ) : singleDayGrouped ? (
-        <div className="space-y-6">
-          {mealTypes.map((mealType) => {
-            const mealEntries = singleDayGrouped[mealType];
-            if (!mealEntries || mealEntries.length === 0) return null;
-
-            return (
-              <div key={mealType}>
-                <h3 className="text-lg font-semibold capitalize mb-3">{mealType}</h3>
-                <div className="space-y-3">
-                  {mealEntries.map(renderEntryCard)}
-                </div>
-              </div>
-            );
-          })}
+      ) : (
+        <div className="space-y-3">
+          {entries.map(renderEntryCard)}
         </div>
-      ) : null}
-
-      <ImageViewer
-        imageUrl={viewingImage}
-        isOpen={!!viewingImage}
-        onClose={() => setViewingImage(null)}
-        alt="Diet entry photo"
-      />
+      )}
     </div>
   );
 };
