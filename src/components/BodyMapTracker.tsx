@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Info, Archive, RotateCcw } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Loader2, Info, Archive, RotateCcw, ChevronRight } from "lucide-react";
 import { BodyMap } from "@/components/BodyMap";
 import { BodyLogForm } from "@/components/forms/BodyLogForm";
 import { BodyMapArchiveSection } from "@/components/sections/BodyMapArchiveSection";
@@ -29,6 +30,7 @@ interface BodyMapTrackerProps {
 
 export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<'active' | 'archive'>('active');
   const [viewType, setViewType] = useState<'front' | 'back'>('front');
   const [bodyLogs, setBodyLogs] = useState<BodyLog[]>([]);
@@ -293,7 +295,7 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
                 <CardTitle className="text-base font-semibold">Injury Log Entries</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+              <div className="space-y-2">
                   {bodyLogs.map((log) => (
                     <Card 
                       key={log.id} 
@@ -303,58 +305,98 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
                         setShowLogForm(true);
                       }}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="space-y-2 flex-1">
-                            {/* Timestamp and Author */}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                              <p className="text-sm font-medium">
-                                {format(new Date(log.incident_datetime), 'MMM d, yyyy')} at {format(new Date(log.incident_datetime), 'h:mm a')}
+                      <CardContent className={isMobile ? "p-3" : "p-4"}>
+                        {isMobile ? (
+                          /* Mobile: Condensed two-row layout */
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              {/* Row 1: Body part, severity, date */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-sm truncate">{log.body_location}</span>
+                                <Badge 
+                                  variant={
+                                    log.type_severity.includes('Severe') || 
+                                    log.type_severity.includes('Stage 3') || 
+                                    log.type_severity.includes('Stage 4') || 
+                                    log.type_severity.includes('3rd degree') 
+                                      ? 'destructive'
+                                      : log.type_severity.includes('Moderate') || 
+                                        log.type_severity.includes('Stage 2') || 
+                                        log.type_severity.includes('2nd degree')
+                                      ? 'default'
+                                      : 'secondary'
+                                  }
+                                  className="text-xs px-1.5 py-0"
+                                >
+                                  {log.type_severity}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">
+                                  {format(new Date(log.incident_datetime), 'MMM d')}
+                                </span>
+                              </div>
+                              {/* Row 2: Description */}
+                              {log.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                                  {log.description}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          </div>
+                        ) : (
+                          /* Desktop: Full layout */
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="space-y-2 flex-1">
+                              {/* Timestamp and View */}
+                              <div className="flex flex-row items-center gap-3">
+                                <p className="text-sm font-medium">
+                                  {format(new Date(log.incident_datetime), 'MMM d, yyyy')} at {format(new Date(log.incident_datetime), 'h:mm a')}
+                                </p>
+                                <Badge variant="outline" className="w-fit">
+                                  {log.view_type === 'front' ? '🧍 Front' : '🧍‍♂️ Back'}
+                                </Badge>
+                              </div>
+
+                              {/* Author */}
+                              <p className="text-xs text-muted-foreground">
+                                Logged by: {log.profiles?.full_name || 'Unknown User'}
                               </p>
-                              <Badge variant="outline" className="w-fit">
-                                {log.view_type === 'front' ? '🧍 Front' : '🧍‍♂️ Back'}
-                              </Badge>
+
+                              {/* Body Location and Severity */}
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <div className="font-semibold text-sm">{log.body_location}</div>
+                                <Badge 
+                                  variant={
+                                    log.type_severity.includes('Severe') || 
+                                    log.type_severity.includes('Stage 3') || 
+                                    log.type_severity.includes('Stage 4') || 
+                                    log.type_severity.includes('3rd degree') 
+                                      ? 'destructive'
+                                      : log.type_severity.includes('Moderate') || 
+                                        log.type_severity.includes('Stage 2') || 
+                                        log.type_severity.includes('2nd degree')
+                                      ? 'default'
+                                      : 'secondary'
+                                  }
+                                >
+                                  {log.type_severity}
+                                </Badge>
+                              </div>
+
+                              {/* Description */}
+                              {log.description && (
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {log.description}
+                                </p>
+                              )}
                             </div>
 
-                            {/* Author */}
-                            <p className="text-xs text-muted-foreground">
-                              Logged by: {log.profiles?.full_name || 'Unknown User'}
-                            </p>
-
-                            {/* Body Location and Severity */}
-                            <div className="flex flex-wrap gap-2 items-center">
-                              <div className="font-semibold text-sm">{log.body_location}</div>
-                              <Badge 
-                                variant={
-                                  log.type_severity.includes('Severe') || 
-                                  log.type_severity.includes('Stage 3') || 
-                                  log.type_severity.includes('Stage 4') || 
-                                  log.type_severity.includes('3rd degree') 
-                                    ? 'destructive'
-                                    : log.type_severity.includes('Moderate') || 
-                                      log.type_severity.includes('Stage 2') || 
-                                      log.type_severity.includes('2nd degree')
-                                    ? 'default'
-                                    : 'secondary'
-                                }
-                              >
-                                {log.type_severity}
-                              </Badge>
+                            {/* Click to expand hint */}
+                            <div className="text-xs text-muted-foreground whitespace-nowrap">
+                              Click to view/edit
                             </div>
-
-                            {/* Description */}
-                            {log.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {log.description}
-                              </p>
-                            )}
                           </div>
-
-                          {/* Click to expand hint */}
-                          <div className="text-xs text-muted-foreground whitespace-nowrap">
-                            Click to view/edit
-                          </div>
-                        </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
