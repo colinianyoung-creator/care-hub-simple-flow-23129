@@ -2,15 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Copy, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
 
 interface ManageCareTeamDialogProps {
   isOpen: boolean;
@@ -20,14 +20,27 @@ interface ManageCareTeamDialogProps {
 
 type UserRole = 'disabled_person' | 'family_admin' | 'family_viewer' | 'carer' | 'manager';
 
+interface PlaceholderCarer {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  is_linked: boolean;
+  linked_user_id: string | null;
+  created_at: string;
+}
+
 export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTeamDialogProps) => {
   const [members, setMembers] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
+  const [placeholderCarers, setPlaceholderCarers] = useState<PlaceholderCarer[]>([]);
   const [loading, setLoading] = useState(false);
   const [inviteRole, setInviteRole] = useState<UserRole>('carer');
   const [newInviteCode, setNewInviteCode] = useState('');
   const [roleChangeRequests, setRoleChangeRequests] = useState<any[]>([]);
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
+  const [showAddPlaceholderDialog, setShowAddPlaceholderDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,8 +78,18 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
 
       if (invitesError) throw invitesError;
 
+      // Load placeholder carers
+      const { data: placeholderData, error: placeholderError } = await supabase
+        .from('placeholder_carers')
+        .select('*')
+        .eq('family_id', familyId)
+        .order('created_at', { ascending: false });
+
+      if (placeholderError) throw placeholderError;
+
       setMembers(membersData || []);
       setInvites(invitesData || []);
+      setPlaceholderCarers(placeholderData || []);
 
       // Load role change requests
       const { data: requestsData, error: requestsError } = await supabase
@@ -181,6 +204,35 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
     }
   };
 
+  const removePlaceholderCarer = async (placeholderId: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove ${name}? Any assigned shifts will need to be reassigned.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('placeholder_carers')
+        .delete()
+        .eq('id', placeholderId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Carer Removed",
+        description: `${name} has been removed`,
+      });
+
+      loadTeamData();
+    } catch (error) {
+      console.error('Error removing placeholder carer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove carer",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleApproveRoleChange = async (requestId: string, requesterId: string, newRole: UserRole) => {
     setProcessingRequest(requestId);
     try {
@@ -274,235 +326,357 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
     }
   };
 
+  const unlinkedPlaceholders = placeholderCarers.filter(p => !p.is_linked);
+  const linkedPlaceholders = placeholderCarers.filter(p => p.is_linked);
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Manage Care Team
-          </DialogTitle>
-          <DialogDescription>
-            Add new team members and manage existing ones
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Manage Care Team
+            </DialogTitle>
+            <DialogDescription>
+              Add new team members and manage existing ones
+            </DialogDescription>
+          </DialogHeader>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Loading...</div>
-          </div>
-        ) : (
-          <Tabs defaultValue="members" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
-              <TabsTrigger value="invites">Invites ({invites.length})</TabsTrigger>
-              <TabsTrigger value="requests">
-                Requests
-                {roleChangeRequests.length > 0 && (
-                  <Badge variant="destructive" className="ml-1">{roleChangeRequests.length}</Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading...</div>
+            </div>
+          ) : (
+            <Tabs defaultValue="members" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
+                <TabsTrigger value="pending">
+                  Pending ({unlinkedPlaceholders.length})
+                </TabsTrigger>
+                <TabsTrigger value="invites">Invites ({invites.length})</TabsTrigger>
+                <TabsTrigger value="requests">
+                  Requests
+                  {roleChangeRequests.length > 0 && (
+                    <Badge variant="destructive" className="ml-1">{roleChangeRequests.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="members" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Team Members</CardTitle>
-                  <CardDescription>People who are part of this care team</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            {member.profiles?.full_name || 'Unnamed User'}
-                          </div>
-                          {member.profiles?.contact_email && (
-                            <div className="text-sm text-muted-foreground">
-                              {member.profiles.contact_email}
+              <TabsContent value="members" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Current Team Members</CardTitle>
+                    <CardDescription>People who are part of this care team</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {members.map((member) => (
+                        <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {member.profiles?.full_name || 'Unnamed User'}
                             </div>
-                          )}
-                          <div className="text-xs text-muted-foreground opacity-75">
-                            Contact info may be masked for privacy
+                            {member.profiles?.contact_email && (
+                              <div className="text-sm text-muted-foreground">
+                                {member.profiles.contact_email}
+                              </div>
+                            )}
+                            <div className="text-xs text-muted-foreground opacity-75">
+                              Contact info may be masked for privacy
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={getRoleBadgeVariant(member.role)}>
+                              {member.role ? (member.role as string).replace('_', ' ') : 'Unknown Role'}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removeMember(member.id, member.profiles?.full_name || 'Unnamed User')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getRoleBadgeVariant(member.role)}>
-                            {member.role ? (member.role as string).replace('_', ' ') : 'Unknown Role'}
-                          </Badge>
+                      ))}
+                      {members.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No team members yet
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="pending" className="space-y-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Ghost className="h-5 w-5" />
+                        Pending Carers
+                      </CardTitle>
+                      <CardDescription>Carers who haven't signed up yet</CardDescription>
+                    </div>
+                    <Button onClick={() => setShowAddPlaceholderDialog(true)} size="sm">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add Carer
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {unlinkedPlaceholders.map((placeholder) => (
+                        <div key={placeholder.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                          <div className="flex-1">
+                            <div className="font-medium flex items-center gap-2">
+                              {placeholder.full_name}
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Awaiting signup
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
+                              {placeholder.email && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {placeholder.email}
+                                </span>
+                              )}
+                              {placeholder.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {placeholder.phone}
+                                </span>
+                              )}
+                            </div>
+                            {placeholder.notes && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {placeholder.notes}
+                              </div>
+                            )}
+                          </div>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => removeMember(member.id, member.profiles?.full_name || 'Unnamed User')}
+                            onClick={() => removePlaceholderCarer(placeholder.id, placeholder.full_name)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="invites" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <UserPlus className="h-5 w-5" />
-                    Generate New Invite
-                  </CardTitle>
-                  <CardDescription>Create an invite code for a new team member</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as UserRole)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="carer">Carer</SelectItem>
-                        <SelectItem value="family_admin">Family Admin</SelectItem>
-                        <SelectItem value="family_viewer">Family Viewer</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button onClick={generateInvite} className="w-full">
-                    Generate Invite Code
-                  </Button>
-
-                  {newInviteCode && (
-                    <div className="p-3 bg-muted rounded-lg space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">New Invite Code:</div>
-                          <div className="font-mono text-lg">{newInviteCode}</div>
+                      ))}
+                      {unlinkedPlaceholders.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Ghost className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>No pending carers</p>
+                          <p className="text-sm">Add carers who haven't signed up yet</p>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => copyToClipboard(newInviteCode)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {(inviteRole === 'family_admin' || inviteRole === 'disabled_person') && (
-                        <p className="text-xs text-muted-foreground">
-                          ⚠️ This will add a co-admin to your care space who will share full administrative access with you. Neither admin can remove or demote the other.
-                        </p>
                       )}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pending Invites</CardTitle>
-                  <CardDescription>Invite codes that haven't been used yet</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {invites.map((invite) => (
-                      <div key={invite.id} className="flex items-center justify-between p-3 border rounded-lg">
-                       <div className="flex-1">
-                         <div className="font-medium font-mono">{invite.code}</div>
-                         <div className="text-sm text-muted-foreground">
-                           Role: {invite.role ? (invite.role as string).replace('_', ' ') : 'Unknown Role'} • 
-                           Created: {new Date(invite.created_at).toLocaleDateString()} •
-                           Expires: {new Date(invite.expires_at).toLocaleDateString()}
-                         </div>
-                       </div>
-                       <div className="flex gap-2">
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => copyToClipboard(invite.code)}
-                         >
-                           <Copy className="h-4 w-4" />
-                         </Button>
-                         <Button
-                           size="sm"
-                           variant="destructive"
-                           onClick={() => revokeInvite(invite.id)}
-                         >
-                           <Trash2 className="h-4 w-4" />
-                         </Button>
-                       </div>
-                      </div>
-                    ))}
-                    {invites.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No pending invites
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="requests" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Role Change Requests</CardTitle>
-                  <CardDescription>Review and approve role change requests from team members</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {roleChangeRequests.map((request) => (
-                      <div key={request.id} className="flex flex-col p-3 border rounded-lg space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {request.profiles?.full_name || 'Unknown User'}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Requesting: {request.current_role_type.replace('_', ' ')} → {request.requested_role_type.replace('_', ' ')}
-                            </div>
-                            {request.reason && (
-                              <div className="text-sm mt-1 p-2 bg-muted rounded">
-                                <span className="font-medium">Reason:</span> {request.reason}
+                {linkedPlaceholders.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Link className="h-5 w-5" />
+                        Recently Linked
+                      </CardTitle>
+                      <CardDescription>Carers who have signed up and been linked</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {linkedPlaceholders.map((placeholder) => (
+                          <div key={placeholder.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="font-medium flex items-center gap-2">
+                                {placeholder.full_name}
+                                <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-200">
+                                  <Link className="h-3 w-3 mr-1" />
+                                  Linked
+                                </Badge>
                               </div>
-                            )}
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Requested: {new Date(request.created_at).toLocaleString()}
+                              {placeholder.email && (
+                                <div className="text-sm text-muted-foreground">
+                                  {placeholder.email}
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDenyRoleChange(request.id)}
-                            disabled={processingRequest === request.id}
-                          >
-                            Deny
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleApproveRoleChange(request.id, request.requester_id, request.requested_role_type)}
-                            disabled={processingRequest === request.id}
-                          >
-                            Approve
-                          </Button>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                    {roleChangeRequests.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No pending role change requests
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              <TabsContent value="invites" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5" />
+                      Generate New Invite
+                    </CardTitle>
+                    <CardDescription>Create an invite code for a new team member</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Role</Label>
+                      <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as UserRole)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="carer">Carer</SelectItem>
+                          <SelectItem value="family_admin">Family Admin</SelectItem>
+                          <SelectItem value="family_viewer">Family Viewer</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button onClick={generateInvite} className="w-full">
+                      Generate Invite Code
+                    </Button>
+
+                    {newInviteCode && (
+                      <div className="p-3 bg-muted rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">New Invite Code:</div>
+                            <div className="font-mono text-lg">{newInviteCode}</div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => copyToClipboard(newInviteCode)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {(inviteRole === 'family_admin' || inviteRole === 'disabled_person') && (
+                          <p className="text-xs text-muted-foreground">
+                            ⚠️ This will add a co-admin to your care space who will share full administrative access with you. Neither admin can remove or demote the other.
+                          </p>
+                        )}
                       </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
-      </DialogContent>
-    </Dialog>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Invites</CardTitle>
+                    <CardDescription>Invite codes that haven't been used yet</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {invites.map((invite) => (
+                        <div key={invite.id} className="flex items-center justify-between p-3 border rounded-lg">
+                         <div className="flex-1">
+                           <div className="font-medium font-mono">{invite.code}</div>
+                           <div className="text-sm text-muted-foreground">
+                             Role: {invite.role ? (invite.role as string).replace('_', ' ') : 'Unknown Role'} • 
+                             Created: {new Date(invite.created_at).toLocaleDateString()} •
+                             Expires: {new Date(invite.expires_at).toLocaleDateString()}
+                           </div>
+                         </div>
+                         <div className="flex gap-2">
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => copyToClipboard(invite.code)}
+                           >
+                             <Copy className="h-4 w-4" />
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="destructive"
+                             onClick={() => revokeInvite(invite.id)}
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>
+                        </div>
+                      ))}
+                      {invites.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No pending invites
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="requests" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Role Change Requests</CardTitle>
+                    <CardDescription>Review and approve role change requests from team members</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {roleChangeRequests.map((request) => (
+                        <div key={request.id} className="flex flex-col p-3 border rounded-lg space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium">
+                                {request.profiles?.full_name || 'Unknown User'}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Requesting: {request.from_role?.replace('_', ' ')} → {request.requested_role?.replace('_', ' ')}
+                              </div>
+                              {request.reason && (
+                                <div className="text-sm mt-1 p-2 bg-muted rounded">
+                                  <span className="font-medium">Reason:</span> {request.reason}
+                                </div>
+                              )}
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Requested: {new Date(request.created_at).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDenyRoleChange(request.id)}
+                              disabled={processingRequest === request.id}
+                            >
+                              Deny
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveRoleChange(request.id, request.user_id, request.requested_role)}
+                              disabled={processingRequest === request.id}
+                            >
+                              {processingRequest === request.id ? 'Processing...' : 'Approve'}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {roleChangeRequests.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No pending role change requests
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AddPlaceholderCarerDialog
+        isOpen={showAddPlaceholderDialog}
+        onClose={() => setShowAddPlaceholderDialog(false)}
+        familyId={familyId}
+        onSuccess={loadTeamData}
+      />
+    </>
   );
 };
