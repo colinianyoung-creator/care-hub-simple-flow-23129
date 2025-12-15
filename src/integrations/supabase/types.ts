@@ -870,6 +870,70 @@ export type Database = {
           },
         ]
       }
+      placeholder_carers: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          email: string | null
+          family_id: string
+          full_name: string
+          id: string
+          is_linked: boolean | null
+          linked_user_id: string | null
+          notes: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          email?: string | null
+          family_id: string
+          full_name: string
+          id?: string
+          is_linked?: boolean | null
+          linked_user_id?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          email?: string | null
+          family_id?: string
+          full_name?: string
+          id?: string
+          is_linked?: boolean | null
+          linked_user_id?: string | null
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "placeholder_carers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "placeholder_carers_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "placeholder_carers_linked_user_id_fkey"
+            columns: ["linked_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           care_recipient_name: string | null
@@ -1034,6 +1098,7 @@ export type Database = {
           id: string
           is_recurring: boolean | null
           notes: string | null
+          placeholder_carer_id: string | null
           shift_type: string | null
           start_time: string
           updated_at: string
@@ -1048,6 +1113,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
+          placeholder_carer_id?: string | null
           shift_type?: string | null
           start_time: string
           updated_at?: string
@@ -1062,6 +1128,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
+          placeholder_carer_id?: string | null
           shift_type?: string | null
           start_time?: string
           updated_at?: string
@@ -1079,6 +1146,13 @@ export type Database = {
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_assignments_placeholder_carer_id_fkey"
+            columns: ["placeholder_carer_id"]
+            isOneToOne: false
+            referencedRelation: "placeholder_carers"
             referencedColumns: ["id"]
           },
         ]
@@ -1582,6 +1656,10 @@ export type Database = {
       is_protected_admin: {
         Args: { _family_id: string; _user_id: string }
         Returns: boolean
+      }
+      link_placeholder_carer: {
+        Args: { _email: string; _user_id: string }
+        Returns: number
       }
       mark_dose: {
         Args: {
