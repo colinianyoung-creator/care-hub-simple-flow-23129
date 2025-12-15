@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import heroImage from '@/assets/hero-care-team.jpg';
+import heroImage from '@/assets/diverse-care-team.jpg';
 
 const HeroSection = () => {
   return (
@@ -48,9 +48,6 @@ const HeroSection = () => {
               </Link>
             </div>
             
-            <p className="text-sm text-muted-foreground">
-              No credit card required • Free to get started
-            </p>
           </div>
           
           {/* Hero Image */}
