@@ -112,10 +112,11 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     }
   }, [open, editShiftData, initialDate]);
 
-  // Load carers
+  // Load carers (registered + placeholder)
   useEffect(() => {
     const loadCarers = async () => {
       try {
+        // Fetch registered carers
         const { data: carerMemberships, error } = await supabase
           .from('user_memberships')
           .select('user_id')
@@ -126,6 +127,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
 
         const carerIds = (carerMemberships || []).map(m => m.user_id);
         
+        let registeredCarers: any[] = [];
         if (carerIds.length > 0) {
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
@@ -134,15 +136,34 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
 
           if (profileError) throw profileError;
 
-          const carersWithProfiles = (profiles || []).map(profile => ({
+          registeredCarers = (profiles || []).map(profile => ({
             user_id: profile.id,
             profiles: {
               full_name: profile.full_name || 'Unnamed Carer'
-            }
+            },
+            is_placeholder: false
           }));
-
-          setCarers(carersWithProfiles);
         }
+
+        // Fetch placeholder carers (not yet linked)
+        const { data: placeholderCarers, error: placeholderError } = await supabase
+          .from('placeholder_carers')
+          .select('id, full_name')
+          .eq('family_id', familyId)
+          .eq('is_linked', false);
+
+        if (placeholderError) throw placeholderError;
+
+        const placeholders = (placeholderCarers || []).map(pc => ({
+          user_id: `placeholder_${pc.id}`,
+          placeholder_id: pc.id,
+          profiles: {
+            full_name: `${pc.full_name} (pending)`
+          },
+          is_placeholder: true
+        }));
+
+        setCarers([...registeredCarers, ...placeholders]);
       } catch (error) {
         console.error('Error loading carers:', error);
       }
@@ -306,12 +327,19 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           const endTime = `${String(endHour).padStart(2, '0')}:00`;
           
           for (const dayOfWeek of selectedDays) {
+            // Check if selected carer is a placeholder
+            const selectedCarer = carers.find(c => c.user_id === formData.carer_id);
+            const isPlaceholder = selectedCarer?.is_placeholder;
+            const actualCarerId = isPlaceholder ? null : formData.carer_id;
+            const placeholderCarerId = isPlaceholder ? selectedCarer.placeholder_id : null;
+
             // Create shift_assignment
             const { data: assignment, error: assignmentError } = await supabase
               .from('shift_assignments')
               .insert({
                 family_id: familyId,
-                carer_id: formData.carer_id || null,
+                carer_id: actualCarerId,
+                placeholder_carer_id: placeholderCarerId,
                 day_of_week: dayOfWeek,
                 start_time: startTime,
                 end_time: endTime,
@@ -380,6 +408,19 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             }
           } else if (!isEditingLeaveRequest) {
             // Admin creating new shift(s)
+            
+            // Check if selected carer is a placeholder - can't assign to one-time shifts
+            const selectedCarer = carers.find(c => c.user_id === formData.carer_id);
+            if (selectedCarer?.is_placeholder) {
+              toast({
+                title: "Cannot Assign Pending Carer",
+                description: "Pending carers can only be assigned to recurring shifts. Use the 'Make Recurring' option or wait for the carer to register.",
+                variant: "destructive",
+              });
+              setLoading(false);
+              return;
+            }
+            
             const startHour = 9;
             const hours = parseInt(formData.hours) || 8;
             const endHour = startHour + hours;
