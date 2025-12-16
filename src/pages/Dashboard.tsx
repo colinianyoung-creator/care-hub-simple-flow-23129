@@ -1,9 +1,9 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
 import { useToast } from "@/hooks/use-toast";
+import Footer from "@/components/Footer";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -472,29 +472,34 @@ const Dashboard = () => {
     : families[0];
 
   return (
-    <RoleBasedDashboard
-      user={user}
-      currentFamily={currentFamily}
-      onSignOut={handleSignOut}
-      userRole={userRole}
-      userName={userName}
-      profilePictureUrl={profilePictureUrl}
-      careRecipientPictureUrl={careRecipientPictureUrl}
-      currentFamilyId={currentFamilyId}
-      onProfileUpdate={async () => {
-        // Only refresh profile picture URL, not all data
-        try {
-          const { data: profile } = await supabase.rpc('get_profile_safe') as any;
-          const profileData = profile?.[0];
-          if (profileData?.profile_picture_url) {
-            setProfilePictureUrl(profileData.profile_picture_url);
-          }
-        } catch (error) {
-          console.error('Error refreshing profile picture:', error);
-        }
-      }}
-      onFamilySelected={handleFamilySelected}
-    />
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1">
+        <RoleBasedDashboard
+          user={user}
+          currentFamily={currentFamily}
+          onSignOut={handleSignOut}
+          userRole={userRole}
+          userName={userName}
+          profilePictureUrl={profilePictureUrl}
+          careRecipientPictureUrl={careRecipientPictureUrl}
+          currentFamilyId={currentFamilyId}
+          onProfileUpdate={async () => {
+            // Only refresh profile picture URL, not all data
+            try {
+              const { data: profile } = await supabase.rpc('get_profile_safe') as any;
+              const profileData = profile?.[0];
+              if (profileData?.profile_picture_url) {
+                setProfilePictureUrl(profileData.profile_picture_url);
+              }
+            } catch (error) {
+              console.error('Error refreshing profile picture:', error);
+            }
+          }}
+          onFamilySelected={handleFamilySelected}
+        />
+      </div>
+      <Footer />
+    </div>
   );
 };
 

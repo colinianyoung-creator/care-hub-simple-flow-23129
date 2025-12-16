@@ -174,6 +174,21 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     }
   }, [familyId, open]);
 
+  // Auto-populate day of week when start date is selected for recurring shifts
+  useEffect(() => {
+    if (isRecurring && formData.start_date && !editShiftData) {
+      const date = new Date(formData.start_date);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Add this day to selectedDays if not already present
+      setSelectedDays(prev => {
+        if (!prev.includes(dayOfWeek)) {
+          return [...prev, dayOfWeek];
+        }
+        return prev;
+      });
+    }
+  }, [formData.start_date, isRecurring, editShiftData]);
+
   const handleDayToggle = (day: number, checked: boolean) => {
     setSelectedDays(prev => 
       checked ? [...prev, day] : prev.filter(d => d !== day)

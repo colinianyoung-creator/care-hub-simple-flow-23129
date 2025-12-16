@@ -143,17 +143,36 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const instanceCarerIds = shiftInstancesData?.map((i: any) => i.carer_id).filter(Boolean) || [];
       const carerIds = [...new Set([...timeEntryCarerIds, ...instanceCarerIds])] as string[];
       
+      // Get placeholder carer IDs
+      const placeholderCarerIds = shiftInstancesData
+        ?.map((i: any) => i.placeholder_carer_id)
+        .filter(Boolean) || [];
+      
       // Load carer profiles
-      const { data: carerProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', carerIds);
-
-      // Build carer map
       const newCarers: Record<string, string> = {};
-      carerProfiles?.forEach(profile => {
-        newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
-      });
+      if (carerIds.length > 0) {
+        const { data: carerProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', carerIds);
+
+        carerProfiles?.forEach(profile => {
+          newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
+        });
+      }
+      
+      // Load placeholder carer names
+      if (placeholderCarerIds.length > 0) {
+        const { data: placeholderCarers } = await supabase
+          .from('placeholder_carers')
+          .select('id, full_name')
+          .in('id', [...new Set(placeholderCarerIds)]);
+
+        placeholderCarers?.forEach(pc => {
+          newCarers[`placeholder_${pc.id}`] = `${pc.full_name} (pending)`;
+        });
+      }
+      
       setCarers(newCarers);
 
       // Transform time_entries to shift instances format
@@ -332,6 +351,18 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       return shift.care_recipient_name || careRecipientName || 'Care Recipient';
     }
 
+    // Helper to get carer name (including placeholder carers)
+    const getCarerDisplayName = () => {
+      if (shift.carer_name) return shift.carer_name;
+      if (shift.carer_id && carers[shift.carer_id]) return carers[shift.carer_id];
+      if (shift.placeholder_carer_id) {
+        const placeholderKey = `placeholder_${shift.placeholder_carer_id}`;
+        if (carers[placeholderKey]) return carers[placeholderKey];
+        return shift.placeholder_carer_name ? `${shift.placeholder_carer_name} (pending)` : 'Pending Carer';
+      }
+      return 'Unassigned';
+    };
+
     // For admins, show type label + carer name for leave types
     if (shift.is_leave_request) {
       const typeLabels: { [key: string]: string } = {
@@ -343,12 +374,11 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         'cover': 'Cover'
       };
       const label = typeLabels[shift.shift_type] || 'Leave';
-      return `${label} - ${shift.carer_name || 'Carer'}`;
+      return `${label} - ${getCarerDisplayName()}`;
     }
     
     // For admins with basic/cover shifts, show carer name
-    const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
-    return carerName;
+    return getCarerDisplayName();
   };
 
   // Removed - now using shared utility from src/lib/shiftUtils.ts

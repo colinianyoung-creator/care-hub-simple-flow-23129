@@ -92,18 +92,36 @@ useEffect(() => {
         // Get unique carer IDs from instances prop
         const carerIds = [...new Set(instances.map(entry => entry.carer_id).filter(Boolean))] as string[];
         
+        // Get unique placeholder carer IDs from instances prop
+        const placeholderCarerIds = [...new Set(instances.map(entry => entry.placeholder_carer_id).filter(Boolean))] as string[];
+        
         // Load carer profiles if not provided
         if (!carersMap || Object.keys(carersMap).length === 0) {
-          const { data: carerProfiles } = await supabase
-            .from('profiles')
-            .select('id, full_name')
-            .in('id', carerIds);
-
-          // Build carer map
           const newCarers: Record<string, string> = {};
-          carerProfiles?.forEach(profile => {
-            newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
-          });
+          
+          if (carerIds.length > 0) {
+            const { data: carerProfiles } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', carerIds);
+
+            carerProfiles?.forEach(profile => {
+              newCarers[profile.id] = profile.full_name || 'Unnamed Carer';
+            });
+          }
+          
+          // Load placeholder carer names
+          if (placeholderCarerIds.length > 0) {
+            const { data: placeholderCarers } = await supabase
+              .from('placeholder_carers')
+              .select('id, full_name')
+              .in('id', placeholderCarerIds);
+
+            placeholderCarers?.forEach(pc => {
+              newCarers[`placeholder_${pc.id}`] = `${pc.full_name} (pending)`;
+            });
+          }
+          
           setCarers(newCarers);
         }
 
@@ -240,6 +258,18 @@ useEffect(() => {
       return recipientName;
     }
 
+    // Helper to get carer name (including placeholder carers)
+    const getCarerDisplayName = () => {
+      if (shift.carer_name) return shift.carer_name;
+      if (shift.carer_id && carers[shift.carer_id]) return carers[shift.carer_id];
+      if (shift.placeholder_carer_id) {
+        const placeholderKey = `placeholder_${shift.placeholder_carer_id}`;
+        if (carers[placeholderKey]) return carers[placeholderKey];
+        return shift.placeholder_carer_name ? `${shift.placeholder_carer_name} (pending)` : 'Pending Carer';
+      }
+      return 'Unassigned';
+    };
+
     // For admins, show type label + carer name for leave/cover types
     if (shift.is_leave_request || shift.shift_type === 'annual_leave' || shift.type === 'annual_leave' || 
         shift.shift_type === 'sickness' || shift.type === 'sickness' ||
@@ -257,13 +287,11 @@ useEffect(() => {
       
       const shiftType = shift.shift_type || shift.type;
       const label = typeLabels[shiftType] || getShiftTypeLabel(shiftType);
-      const carerName = shift.carer_name || carers[shift.carer_id] || 'Carer';
-      return `${label} - ${carerName}`;
+      return `${label} - ${getCarerDisplayName()}`;
     }
     
     // For admins with basic shifts, show carer name
-    const carerName = shift.carer_name || carers[shift.carer_id] || 'Unassigned';
-    return carerName;
+    return getCarerDisplayName();
   };
 
   const getCarerColor = (carerId: string) => {
