@@ -18,6 +18,7 @@ import { MonthCalendarView } from "../MonthCalendarView";
 import { ManageCareTeamDialog } from "../dialogs/ManageCareTeamDialog";
 import { ExportTimesheetDialog } from "../dialogs/ExportTimesheetDialog";
 import { LeaveSection } from "./LeaveSection";
+import { InviteMembersButton } from "../InviteMembersButton";
 import { ShiftViewToggle } from "../ShiftViewToggle";
 import { ChangeRequestCard } from "../ChangeRequestCard";
 import { SnapshotViewerModal } from "../dialogs/SnapshotViewerModal";
@@ -752,11 +753,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             id,
             family_id,
             carer_id,
+            placeholder_carer_id,
             start_time,
             end_time,
             shift_type,
             notes,
             profiles!shift_assignments_carer_id_fkey (
+              full_name
+            ),
+            placeholder_carers!shift_assignments_placeholder_carer_id_fkey (
+              id,
               full_name
             )
           )
@@ -778,6 +784,13 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       // Transform shift_instances to calendar format
       const recurringShifts = (shiftInstancesData || []).map((instance: any) => {
         const assignment = instance.shift_assignments;
+        // Get carer name - prefer real carer, fallback to placeholder
+        const carerName = assignment.carer_id 
+          ? (assignment.profiles?.full_name || 'Unknown')
+          : assignment.placeholder_carer_id
+            ? `${assignment.placeholder_carers?.full_name || 'Unknown'} (pending)`
+            : 'Unassigned';
+        
         return {
           id: instance.id,
           shift_assignment_id: assignment.id,
@@ -786,7 +799,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           start_time: assignment.start_time,
           end_time: assignment.end_time,
           carer_id: assignment.carer_id,
-          carer_name: assignment.profiles?.full_name || 'Unknown',
+          placeholder_carer_id: assignment.placeholder_carer_id,
+          carer_name: carerName,
+          placeholder_carer_name: assignment.placeholder_carers?.full_name,
           care_recipient_name: null, // Recurring shifts will rely on careRecipientNameHint prop
           status: instance.status,
           notes: assignment.notes,
@@ -1348,14 +1363,11 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                         <Plus className="h-5 w-5" />
                         <span className="text-sm">Add Shift</span>
                       </Button>
-                      <Button 
-                        onClick={() => setShowCareTeamDialog(true)} 
+                      <InviteMembersButton 
+                        familyId={familyId}
                         variant="outline"
                         className="h-16 flex flex-col items-center justify-center gap-2"
-                      >
-                        <Users className="h-5 w-5" />
-                        <span className="text-sm">Invite Member</span>
-                      </Button>
+                      />
                     </div>
                   </div>
 
