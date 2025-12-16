@@ -1,7 +1,6 @@
-import { Heart, Shield, Users, User, UserPlus } from "lucide-react";
+import { Heart, Shield, Users, User } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
-import { InviteMembersButton } from '@/components/InviteMembersButton';
 
 interface HeroBannerProps {
   title: string;
@@ -10,11 +9,9 @@ interface HeroBannerProps {
   careRecipientName?: string;
   profilePictureUrl?: string;
   onProfileClick?: () => void;
-  familyId?: string;
-  showInviteButton?: boolean;
 }
 
-export const HeroBanner = ({ title, subtitle, children, careRecipientName, profilePictureUrl, onProfileClick, familyId, showInviteButton }: HeroBannerProps) => {
+export const HeroBanner = ({ title, subtitle, children, careRecipientName, profilePictureUrl, onProfileClick }: HeroBannerProps) => {
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-care-primary via-care-primary/90 to-care-accent rounded-2xl p-6 md:p-8 text-white shadow-elevated">
       {/* Background pattern */}
@@ -65,13 +62,6 @@ export const HeroBanner = ({ title, subtitle, children, careRecipientName, profi
             <p className="text-base md:text-xl text-white/90 mt-2 font-medium">{subtitle}</p>
           )}
         </div>
-        
-        {/* Invite Button for admins */}
-        {showInviteButton && familyId && (
-          <div className="pt-4">
-            <InviteMembersButton familyId={familyId} />
-          </div>
-        )}
         
         {children && (
           <div className="pt-4">

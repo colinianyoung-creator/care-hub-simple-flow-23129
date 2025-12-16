@@ -308,7 +308,7 @@ export const MobileDayView = ({
       if (shift.placeholder_carer_id) {
         const placeholderKey = `placeholder_${shift.placeholder_carer_id}`;
         if (carersMap?.[placeholderKey]) return carersMap[placeholderKey];
-        return shift.placeholder_carer_name ? `${shift.placeholder_carer_name} (pending)` : 'Pending Carer';
+        return shift.placeholder_carer_name || 'Pending Carer';
       }
       return shift.carer_name || carersMap?.[shift.carer_id] || 'Unassigned';
     }

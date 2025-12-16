@@ -118,7 +118,7 @@ useEffect(() => {
               .in('id', placeholderCarerIds);
 
             placeholderCarers?.forEach(pc => {
-              newCarers[`placeholder_${pc.id}`] = `${pc.full_name} (pending)`;
+              newCarers[`placeholder_${pc.id}`] = pc.full_name;
             });
           }
           
@@ -265,7 +265,7 @@ useEffect(() => {
       if (shift.placeholder_carer_id) {
         const placeholderKey = `placeholder_${shift.placeholder_carer_id}`;
         if (carers[placeholderKey]) return carers[placeholderKey];
-        return shift.placeholder_carer_name ? `${shift.placeholder_carer_name} (pending)` : 'Pending Carer';
+        return shift.placeholder_carer_name || 'Pending Carer';
       }
       return 'Unassigned';
     };

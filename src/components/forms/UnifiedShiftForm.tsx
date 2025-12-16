@@ -158,7 +158,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           user_id: `placeholder_${pc.id}`,
           placeholder_id: pc.id,
           profiles: {
-            full_name: `${pc.full_name} (pending)`
+            full_name: pc.full_name
           },
           is_placeholder: true
         }));
