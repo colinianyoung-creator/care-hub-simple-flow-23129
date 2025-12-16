@@ -155,6 +155,45 @@ export const MobileDayView = ({
         notes: entry.notes,
         shift_type: entry.shift_type || 'basic'
       })) || [];
+
+      // Load recurring shift instances for this day via RPC
+      const { data: shiftInstancesData, error: instancesError } = await supabase
+        .rpc('get_shift_instances_with_names', {
+          _family_id: familyId,
+          _start_date: dateStr,
+          _end_date: dateStr
+        });
+
+      if (instancesError) {
+        console.warn('Error loading shift instances:', instancesError);
+      }
+
+      // Transform recurring shifts to shift format
+      const recurringShifts = (shiftInstancesData || []).map((instance: any) => ({
+        id: instance.id,
+        shift_assignment_id: instance.shift_assignment_id,
+        shift_instance_id: instance.id,
+        scheduled_date: instance.scheduled_date,
+        start_time: instance.start_time,
+        end_time: instance.end_time,
+        carer_id: instance.carer_id,
+        placeholder_carer_id: instance.placeholder_carer_id,
+        carer_name: instance.carer_name || 'Unknown',
+        placeholder_carer_name: instance.placeholder_carer_name,
+        status: instance.status || 'scheduled',
+        notes: null,
+        shift_type: instance.shift_type || 'basic',
+        is_recurring: true
+      }));
+
+      // Filter out recurring shifts that already have time_entries (avoid duplicates)
+      const existingDates = new Set(shiftData.map(s => `${s.carer_id}-${s.scheduled_date}`));
+      const filteredRecurring = recurringShifts.filter((s: any) => 
+        !existingDates.has(`${s.carer_id}-${s.scheduled_date}`)
+      );
+
+      // Merge time_entries with recurring shifts
+      const allShifts = [...shiftData, ...filteredRecurring];
       
       // Load approved leave requests for this day
       const { data: leaveData, error: leaveError } = await supabase
@@ -195,7 +234,7 @@ export const MobileDayView = ({
 
       // Apply override logic: remove basic shifts for carers with approved leave
       const carersWithLeave = new Set(leaveShifts.map(leave => leave.carer_id));
-      const filteredShifts = shiftData?.filter(shift => !carersWithLeave.has(shift.carer_id)) || [];
+      const filteredShifts = allShifts?.filter(shift => !carersWithLeave.has(shift.carer_id)) || [];
 
       setDayShifts([...filteredShifts, ...leaveShifts]);
       console.log(`📱 Day View: Loaded ${filteredShifts.length + leaveShifts.length} shifts for ${dateStr}`);

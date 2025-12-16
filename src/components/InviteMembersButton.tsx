@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserPlus, Copy, Check, Mail, PenLine } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface InviteMembersButtonProps {
   familyId: string;
@@ -24,6 +25,7 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Manual add carer state
   const [fullName, setFullName] = useState('');
@@ -169,8 +171,10 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
         onClick={() => setShowDialog(true)}
         data-invite-button
       >
-        <UserPlus className="h-4 w-4 mr-2" />
-        Invite/Add Members
+        <UserPlus className="h-4 w-4 flex-shrink-0" />
+        <span className={isMobile ? "sr-only" : "ml-2"}>
+          {isMobile ? "" : "Invite/Add Members"}
+        </span>
       </Button>
 
       <Dialog open={showDialog} onOpenChange={handleClose}>

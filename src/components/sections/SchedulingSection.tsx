@@ -788,7 +788,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         const carerName = assignment.carer_id 
           ? (assignment.profiles?.full_name || 'Unknown')
           : assignment.placeholder_carer_id
-            ? `${assignment.placeholder_carers?.full_name || 'Unknown'} (pending)`
+            ? (assignment.placeholder_carers?.full_name || 'Unknown')
             : 'Unassigned';
         
         return {
