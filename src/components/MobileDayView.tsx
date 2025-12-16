@@ -304,6 +304,12 @@ export const MobileDayView = ({
     if (userRole === 'carer') {
       return shift.care_recipient_name || careRecipientNameHint || 'Care Recipient';
     } else {
+      // Check for placeholder carer
+      if (shift.placeholder_carer_id) {
+        const placeholderKey = `placeholder_${shift.placeholder_carer_id}`;
+        if (carersMap?.[placeholderKey]) return carersMap[placeholderKey];
+        return shift.placeholder_carer_name ? `${shift.placeholder_carer_name} (pending)` : 'Pending Carer';
+      }
       return shift.carer_name || carersMap?.[shift.carer_id] || 'Unassigned';
     }
   };

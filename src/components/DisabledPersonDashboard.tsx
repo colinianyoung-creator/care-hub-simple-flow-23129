@@ -213,6 +213,8 @@ export const DisabledPersonDashboard = ({
         title={userFirstName ? `Welcome back, ${userFirstName}` : `Welcome back, there`}
         subtitle={familyId ? "Your care coordination hub" : "Create your family to get started"}
         profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
+        familyId={familyId}
+        showInviteButton={!!familyId}
       />
 
         {!familyId && (
