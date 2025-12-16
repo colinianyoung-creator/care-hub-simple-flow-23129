@@ -11,6 +11,7 @@ import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone } from '
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
+import { InviteMembersButton } from '@/components/InviteMembersButton';
 
 interface ManageCareTeamDialogProps {
   isOpen: boolean;
@@ -343,6 +344,11 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
             </DialogDescription>
           </DialogHeader>
 
+          {/* Invite/Add Members Button at Top */}
+          <div className="py-2">
+            <InviteMembersButton familyId={familyId} className="w-full" />
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">Loading...</div>
@@ -350,7 +356,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
           ) : (
             <Tabs defaultValue="members" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
+                <TabsTrigger value="members">Members ({members.length + unlinkedPlaceholders.length})</TabsTrigger>
                 <TabsTrigger value="pending">
                   Pending ({unlinkedPlaceholders.length})
                 </TabsTrigger>
@@ -371,6 +377,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
+                      {/* Registered Members */}
                       {members.map((member) => (
                         <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex-1">
@@ -400,7 +407,47 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                           </div>
                         </div>
                       ))}
-                      {members.length === 0 && (
+                      
+                      {/* Placeholder Carers (Awaiting Signup) */}
+                      {unlinkedPlaceholders.map((placeholder) => (
+                        <div key={placeholder.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                          <div className="flex-1">
+                            <div className="font-medium flex items-center gap-2">
+                              {placeholder.full_name}
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Awaiting signup
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
+                              {placeholder.email && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {placeholder.email}
+                                </span>
+                              )}
+                              {placeholder.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {placeholder.phone}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">carer</Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removePlaceholderCarer(placeholder.id, placeholder.full_name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {members.length === 0 && unlinkedPlaceholders.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
                           No team members yet
                         </div>
