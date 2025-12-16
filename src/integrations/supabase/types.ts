@@ -1606,6 +1606,8 @@ export type Database = {
           carer_name: string
           end_time: string
           id: string
+          placeholder_carer_id: string
+          placeholder_carer_name: string
           scheduled_date: string
           shift_assignment_id: string
           shift_type: string
