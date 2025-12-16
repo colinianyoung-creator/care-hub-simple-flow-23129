@@ -108,6 +108,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
 
   const loadCarers = async () => {
     try {
+      // Load registered carers
       const { data: familyMembers } = await supabase
         .from('user_memberships')
         .select(`
@@ -118,12 +119,25 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         .eq('family_id', familyId)
         .eq('role', 'carer');
 
-      const carers = familyMembers?.map(m => ({
+      const registeredCarers = familyMembers?.map(m => ({
         user_id: m.user_id,
         full_name: m.profiles?.full_name || 'Unnamed Carer'
       })) || [];
 
-      setAvailableCarers(carers);
+      // Load placeholder carers (unlinked only)
+      const { data: placeholderCarers } = await supabase
+        .from('placeholder_carers')
+        .select('id, full_name')
+        .eq('family_id', familyId)
+        .eq('is_linked', false);
+
+      const placeholders = placeholderCarers?.map(pc => ({
+        user_id: `placeholder_${pc.id}`,
+        full_name: `${pc.full_name} (awaiting signup)`
+      })) || [];
+
+      const allCarers = [...registeredCarers, ...placeholders];
+      setAvailableCarers(allCarers);
 
       // Set default selected carer
       const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person' || userRole === 'manager';
@@ -131,15 +145,15 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         // Non-admin: select current user if they're a carer
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const currentUserCarer = carers.find(c => c.user_id === user.id);
+          const currentUserCarer = registeredCarers.find(c => c.user_id === user.id);
           if (currentUserCarer) {
             setSelectedCarerId(currentUserCarer.user_id);
           }
         }
       } else {
-        // Admin: select first available carer
-        if (carers.length > 0) {
-          setSelectedCarerId(carers[0].user_id);
+        // Admin: select first available carer (prefer registered)
+        if (allCarers.length > 0) {
+          setSelectedCarerId(allCarers[0].user_id);
         }
       }
     } catch (error) {
