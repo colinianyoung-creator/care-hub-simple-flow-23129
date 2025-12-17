@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, List, Calendar as CalendarIcon, Clock, Plus } from 'lucide-react';
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, RotateCcw } from 'lucide-react';
 import { format, addDays, subDays, startOfDay } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { formatShiftType } from "@/lib/textUtils";
 import { getShiftTypeColor, getShiftTypeLabel } from '@/lib/shiftUtils';
 import { cn } from '@/lib/utils';
-
+import { useIsMobile } from "@/hooks/use-mobile";
 interface MobileDayViewProps {
   familyId: string;
   userRole: string;
@@ -481,41 +483,64 @@ export const MobileDayView = ({
     );
   }
 
+  const isMobile = useIsMobile();
+  const isToday = format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-center gap-1 sm:gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={previousDay}
-            className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
+            className="h-8 w-8 sm:h-9 sm:w-9"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center px-2 flex-1 max-w-[200px]">
-            <CardTitle className="text-base sm:text-lg">
-              {format(currentDate, 'EEE, MMM d')}
-            </CardTitle>
-            {format(currentDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={today}
-                className="text-xs text-muted-foreground p-0 h-auto mt-1"
-              >
-                Today
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn(
+                "justify-center gap-1 sm:gap-2",
+                isMobile ? "min-w-[100px] px-2" : "min-w-[180px]"
+              )}>
+                <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">
+                  {format(currentDate, isMobile ? 'MMM d' : 'EEE, MMM d')}
+                </span>
               </Button>
-            )}
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <div className="p-3 border-b">
+                <Button variant="ghost" size="sm" onClick={today} className="text-xs">
+                  Today
+                </Button>
+              </div>
+              <Calendar
+                mode="single"
+                selected={currentDate}
+                onSelect={(date) => date && setCurrentDate(date)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={nextDay}
-            className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
+            className="h-8 w-8 sm:h-9 sm:w-9"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+          
+          {!isToday && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={today}>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
