@@ -42,6 +42,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
   const [roleChangeRequests, setRoleChangeRequests] = useState<any[]>([]);
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
   const [showAddPlaceholderDialog, setShowAddPlaceholderDialog] = useState(false);
+  const [generatingInviteFor, setGeneratingInviteFor] = useState<string | null>(null);
+  const [placeholderInviteCodes, setPlaceholderInviteCodes] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -141,6 +143,44 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
         variant: "destructive",
       });
     }
+  };
+
+  const generateInviteForPlaceholder = async (placeholderId: string, placeholderName: string) => {
+    setGeneratingInviteFor(placeholderId);
+    try {
+      const { data, error } = await supabase.rpc('generate_invite', {
+        _family_id: familyId,
+        _role: 'carer' as const,
+        _placeholder_carer_id: placeholderId
+      });
+
+      if (error) throw error;
+
+      setPlaceholderInviteCodes(prev => ({ ...prev, [placeholderId]: data }));
+      toast({
+        title: "Invite Generated",
+        description: `Invite code created for ${placeholderName}. When they sign up with this code, their shifts will be automatically transferred.`,
+      });
+
+      loadTeamData();
+    } catch (error) {
+      console.error('Error generating invite for placeholder:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate invite",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingInviteFor(null);
+    }
+  };
+
+  const copyPlaceholderInvite = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Copied",
+      description: "Invite code copied to clipboard",
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -475,42 +515,70 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                   <CardContent>
                     <div className="space-y-3">
                       {unlinkedPlaceholders.map((placeholder) => (
-                        <div key={placeholder.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                          <div className="flex-1">
-                            <div className="font-medium flex items-center gap-2">
-                              {placeholder.full_name}
-                              <Badge variant="outline" className="text-xs">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Awaiting signup
-                              </Badge>
-                            </div>
-                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
-                              {placeholder.email && (
-                                <span className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {placeholder.email}
-                                </span>
-                              )}
-                              {placeholder.phone && (
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {placeholder.phone}
-                                </span>
-                              )}
-                            </div>
-                            {placeholder.notes && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {placeholder.notes}
+                        <div key={placeholder.id} className="p-3 border rounded-lg bg-muted/30 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium flex items-center gap-2">
+                                {placeholder.full_name}
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Awaiting signup
+                                </Badge>
                               </div>
-                            )}
+                              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
+                                {placeholder.email && (
+                                  <span className="flex items-center gap-1">
+                                    <Mail className="h-3 w-3" />
+                                    {placeholder.email}
+                                  </span>
+                                )}
+                                {placeholder.phone && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="h-3 w-3" />
+                                    {placeholder.phone}
+                                  </span>
+                                )}
+                              </div>
+                              {placeholder.notes && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {placeholder.notes}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => generateInviteForPlaceholder(placeholder.id, placeholder.full_name)}
+                                disabled={generatingInviteFor === placeholder.id}
+                                title="Generate invite code"
+                              >
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => removePlaceholderCarer(placeholder.id, placeholder.full_name)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => removePlaceholderCarer(placeholder.id, placeholder.full_name)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          
+                          {/* Show generated invite code inline */}
+                          {placeholderInviteCodes[placeholder.id] && (
+                            <div className="flex items-center gap-2 p-2 bg-background rounded border">
+                              <span className="text-sm text-muted-foreground">Invite code:</span>
+                              <code className="font-mono font-bold">{placeholderInviteCodes[placeholder.id]}</code>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => copyToClipboard(placeholderInviteCodes[placeholder.id])}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ))}
                       {unlinkedPlaceholders.length === 0 && (

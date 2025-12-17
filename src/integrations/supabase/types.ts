@@ -383,6 +383,7 @@ export type Database = {
           expires_at: string
           family_id: string
           id: string
+          placeholder_carer_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           used_at: string | null
           used_by: string | null
@@ -394,6 +395,7 @@ export type Database = {
           expires_at: string
           family_id: string
           id?: string
+          placeholder_carer_id?: string | null
           role: Database["public"]["Enums"]["app_role"]
           used_at?: string | null
           used_by?: string | null
@@ -405,6 +407,7 @@ export type Database = {
           expires_at?: string
           family_id?: string
           id?: string
+          placeholder_carer_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           used_at?: string | null
           used_by?: string | null
@@ -422,6 +425,13 @@ export type Database = {
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_codes_placeholder_carer_id_fkey"
+            columns: ["placeholder_carer_id"]
+            isOneToOne: false
+            referencedRelation: "placeholder_carers"
             referencedColumns: ["id"]
           },
           {
@@ -1552,6 +1562,7 @@ export type Database = {
         Args: {
           _expires_days?: number
           _family_id: string
+          _placeholder_carer_id?: string
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: string

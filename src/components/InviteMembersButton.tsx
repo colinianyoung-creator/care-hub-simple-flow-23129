@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserPlus, Copy, Check, Mail, PenLine } from 'lucide-react';
+import { UserPlus, Copy, Check, Mail, PenLine, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,6 +16,13 @@ interface InviteMembersButtonProps {
   familyId: string;
   variant?: 'default' | 'outline';
   className?: string;
+}
+
+interface PlaceholderCarer {
+  id: string;
+  full_name: string;
+  email: string | null;
+  is_linked: boolean;
 }
 
 export const InviteMembersButton = ({ familyId, variant = 'default', className }: InviteMembersButtonProps) => {
@@ -33,6 +40,34 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [isAddingCarer, setIsAddingCarer] = useState(false);
+
+  // Invite pending carer state
+  const [placeholderCarers, setPlaceholderCarers] = useState<PlaceholderCarer[]>([]);
+  const [selectedPlaceholder, setSelectedPlaceholder] = useState<string>('');
+  const [placeholderInviteCode, setPlaceholderInviteCode] = useState<string>('');
+  const [isGeneratingPlaceholder, setIsGeneratingPlaceholder] = useState(false);
+
+  useEffect(() => {
+    if (showDialog && familyId) {
+      loadPlaceholderCarers();
+    }
+  }, [showDialog, familyId]);
+
+  const loadPlaceholderCarers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('placeholder_carers')
+        .select('id, full_name, email, is_linked')
+        .eq('family_id', familyId)
+        .eq('is_linked', false)
+        .order('full_name');
+
+      if (error) throw error;
+      setPlaceholderCarers(data || []);
+    } catch (error) {
+      console.error('Error loading placeholder carers:', error);
+    }
+  };
 
   const generateInviteCode = async () => {
     if (!familyId) {
@@ -89,8 +124,46 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
     }
   };
 
-  const copyInviteCode = async () => {
-    await navigator.clipboard.writeText(generatedCode);
+  const generateInviteForPlaceholder = async () => {
+    if (!selectedPlaceholder) {
+      toast({
+        title: "Error",
+        description: "Please select a pending carer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingPlaceholder(true);
+    try {
+      const { data, error } = await supabase.rpc('generate_invite', {
+        _family_id: familyId,
+        _role: 'carer' as const,
+        _placeholder_carer_id: selectedPlaceholder
+      });
+
+      if (error) throw error;
+
+      setPlaceholderInviteCode(data);
+      const placeholderName = placeholderCarers.find(p => p.id === selectedPlaceholder)?.full_name;
+      toast({
+        title: "Invite Generated",
+        description: `Invite code created for ${placeholderName}. Their shifts will transfer automatically when they sign up.`,
+      });
+    } catch (error: any) {
+      console.error('Error generating placeholder invite:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate invite",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPlaceholder(false);
+    }
+  };
+
+  const copyInviteCode = async (code: string) => {
+    await navigator.clipboard.writeText(code);
     setCopied(true);
     toast({
       title: "Copied!",
@@ -134,11 +207,12 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
           : "You can assign them to shifts right away.",
       });
 
-      // Reset form
+      // Reset form and reload placeholders
       setFullName('');
       setEmail('');
       setPhone('');
       setNotes('');
+      loadPlaceholderCarers();
       handleClose();
     } catch (error: any) {
       console.error('Error adding placeholder carer:', error);
@@ -161,6 +235,8 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
     setEmail('');
     setPhone('');
     setNotes('');
+    setSelectedPlaceholder('');
+    setPlaceholderInviteCode('');
   };
 
   return (
@@ -184,20 +260,25 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
           </DialogHeader>
           
           <Tabs defaultValue="invite" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="invite" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="invite" className="flex items-center gap-1 px-2">
                 <Mail className="h-4 w-4" />
-                <span className="hidden sm:inline">Invite with Code</span>
-                <span className="sm:hidden">Invite</span>
+                <span className="hidden sm:inline text-xs">Invite</span>
               </TabsTrigger>
-              <TabsTrigger value="manual" className="flex items-center gap-2">
+              <TabsTrigger value="pending" className="flex items-center gap-1 px-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Pending</span>
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="flex items-center gap-1 px-2">
                 <PenLine className="h-4 w-4" />
-                <span className="hidden sm:inline">Add Manually</span>
-                <span className="sm:hidden">Add</span>
+                <span className="hidden sm:inline text-xs">Add</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="invite" className="space-y-4 mt-4">
+              <p className="text-sm text-muted-foreground">
+                Generate an invite code for someone to join your care team.
+              </p>
               <div>
                 <Label className="text-sm font-medium mb-2 block">Select Role</Label>
                 <Select value={selectedRole} onValueChange={setSelectedRole}>
@@ -231,7 +312,7 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
                       </div>
                       <Button
                         variant="outline"
-                        onClick={copyInviteCode}
+                        onClick={() => copyInviteCode(generatedCode)}
                         className="w-full"
                       >
                         {copied ? (
@@ -249,6 +330,82 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
                     </div>
                   </CardContent>
                 </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="pending" className="space-y-4 mt-4">
+              <p className="text-sm text-muted-foreground">
+                Generate a linked invite for a pending carer. When they sign up, their existing shifts will transfer automatically.
+              </p>
+              
+              {placeholderCarers.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No pending carers</p>
+                  <p className="text-sm">Use the "Add" tab to add carers first</p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Select Pending Carer</Label>
+                    <Select value={selectedPlaceholder} onValueChange={setSelectedPlaceholder}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a carer..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {placeholderCarers.map((carer) => (
+                          <SelectItem key={carer.id} value={carer.id}>
+                            {carer.full_name}
+                            {carer.email && <span className="text-muted-foreground ml-2">({carer.email})</span>}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {!placeholderInviteCode ? (
+                    <Button 
+                      onClick={generateInviteForPlaceholder} 
+                      disabled={isGeneratingPlaceholder || !selectedPlaceholder}
+                      className="w-full"
+                    >
+                      {isGeneratingPlaceholder ? 'Generating...' : 'Generate Linked Invite'}
+                    </Button>
+                  ) : (
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-center space-y-3">
+                          <p className="text-sm text-muted-foreground">
+                            Invite for {placeholderCarers.find(p => p.id === selectedPlaceholder)?.full_name}:
+                          </p>
+                          <div className="text-2xl font-mono font-bold tracking-wider">
+                            {placeholderInviteCode}
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => copyInviteCode(placeholderInviteCode)}
+                            className="w-full"
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="h-4 w-4 mr-2" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-2" />
+                                Copy Code
+                              </>
+                            )}
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            Their shifts will transfer when they sign up
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
               )}
             </TabsContent>
 
