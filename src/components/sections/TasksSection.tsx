@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeError } from "@/lib/errorHandler";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { addDays, addWeeks, addMonths, format } from 'date-fns';
+import { addDays, addWeeks, addMonths, format, nextMonday, startOfMonth, addMonths as addMonthsFns } from 'date-fns';
 
 // Helper function to calculate next due date for recurring tasks
 const calculateNextDueDate = (currentDueDate: string | null, recurrenceType: string): string => {
@@ -25,6 +25,38 @@ const calculateNextDueDate = (currentDueDate: string | null, recurrenceType: str
       return format(addMonths(baseDate, 1), 'yyyy-MM-dd');
     default:
       return format(addDays(baseDate, 1), 'yyyy-MM-dd');
+  }
+};
+
+// Helper function to calculate when the next recurring task should become visible
+const calculateNextVisibleFrom = (recurrenceType: string): string => {
+  const today = new Date();
+  
+  switch (recurrenceType) {
+    case 'daily':
+      return format(addDays(today, 1), 'yyyy-MM-dd');
+    case 'weekly':
+      // Next Monday
+      return format(nextMonday(today), 'yyyy-MM-dd');
+    case 'monthly':
+      // 1st of next month
+      return format(startOfMonth(addMonthsFns(today, 1)), 'yyyy-MM-dd');
+    default:
+      return format(addDays(today, 1), 'yyyy-MM-dd');
+  }
+};
+
+// Get user-friendly label for when task will appear
+const getVisibleFromLabel = (recurrenceType: string): string => {
+  switch (recurrenceType) {
+    case 'daily':
+      return 'tomorrow';
+    case 'weekly':
+      return 'next Monday';
+    case 'monthly':
+      return '1st of next month';
+    default:
+      return 'tomorrow';
   }
 };
 
@@ -139,11 +171,14 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         return;
       }
       
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('family_id', familyId)
         .eq('is_archived', false)
+        .lte('visible_from', today) // Only show tasks that are visible today or earlier
         .order('created_at', { ascending: false })
         .abortSignal(signal);
 
@@ -207,47 +242,58 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
       
-      // Only admins skip review (archive immediately)
-      const skipReview = userRole === 'family_admin' || 
-                         userRole === 'disabled_person';
+      // For recurring tasks, always archive immediately and create hidden next instance
+      // For non-recurring, only admins skip review
+      const isRecurring = task.is_recurring && task.recurrence_type;
+      const skipReview = isRecurring || userRole === 'family_admin' || userRole === 'disabled_person';
       
-      // If recurring task, create next instance before completing
-      if (task.is_recurring && task.recurrence_type) {
+      // If recurring task, use the safe function to create next instance
+      if (isRecurring) {
         const nextDueDate = calculateNextDueDate(task.due_date, task.recurrence_type);
+        const nextVisibleFrom = calculateNextVisibleFrom(task.recurrence_type);
         
-        const { error: insertError } = await supabase
-          .from('tasks')
-          .insert([{
-            family_id: familyId,
-            title: task.title,
-            description: task.description,
-            due_date: nextDueDate,
-            assigned_to: task.assigned_to,
-            created_by: currentUserId,
-            is_recurring: true,
-            recurrence_type: task.recurrence_type,
-            parent_task_id: task.parent_task_id || task.id // Link to original template
-          }]);
+        // Call the safe RPC function that includes duplicate check
+        const { data: result, error: rpcError } = await supabase.rpc(
+          'create_recurring_task_instance',
+          {
+            _parent_task_id: task.parent_task_id || task.id,
+            _family_id: familyId,
+            _title: task.title,
+            _description: task.description,
+            _assigned_to: task.assigned_to,
+            _created_by: currentUserId,
+            _recurrence_type: task.recurrence_type,
+            _next_due_date: nextDueDate,
+            _visible_from: nextVisibleFrom
+          }
+        );
         
-        if (insertError) {
-          console.error('Error creating next recurring task:', insertError);
+        if (rpcError) {
+          console.error('Error creating next recurring task:', rpcError);
+        } else if (result) {
+          const typedResult = result as { success: boolean; reason?: string; visible_from?: string };
+          if (!typedResult.success) {
+            console.log('Skipped creating duplicate:', typedResult.reason);
+          } else {
+            console.log('Created next instance, visible from:', typedResult.visible_from);
+          }
         }
       }
       
-      // Mark current task complete
+      // Mark current task complete and archive (recurring always archives)
       const { error } = await supabase
         .from('tasks')
         .update({ 
           completed: true,
-          is_archived: skipReview // Archive immediately if admin completes it
+          is_archived: skipReview
         })
         .eq('id', taskId);
 
       if (error) throw error;
       await loadTasks();
 
-      const toastMessage = task.is_recurring 
-        ? `Task completed. Next occurrence scheduled for ${task.recurrence_type === 'daily' ? 'tomorrow' : task.recurrence_type === 'weekly' ? 'next week' : 'next month'}.`
+      const toastMessage = isRecurring 
+        ? `Task completed! Next occurrence will appear ${getVisibleFromLabel(task.recurrence_type)}.`
         : skipReview ? "Task moved to Done tab" : "Task sent for review";
 
       toast({
@@ -356,6 +402,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     }
 
     try {
+      const today = format(new Date(), 'yyyy-MM-dd');
       const { error } = await supabase
         .from('tasks')
         .insert([{
@@ -366,7 +413,8 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
           assigned_to: newTask.assigned_to || null,
           created_by: currentUserId,
           is_recurring: newTask.is_recurring,
-          recurrence_type: newTask.is_recurring ? newTask.recurrence_type : null
+          recurrence_type: newTask.is_recurring ? newTask.recurrence_type : null,
+          visible_from: today
         }]);
 
       if (error) throw error;

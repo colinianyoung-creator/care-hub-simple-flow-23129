@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.auto-archive-body-logs]
 verify_jwt = false
+
+[functions.auto-rollover-tasks]
+verify_jwt = false
