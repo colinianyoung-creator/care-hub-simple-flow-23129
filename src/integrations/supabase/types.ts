@@ -1350,6 +1350,7 @@ export type Database = {
           recurrence_type: string | null
           title: string
           updated_at: string
+          visible_from: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -1367,6 +1368,7 @@ export type Database = {
           recurrence_type?: string | null
           title: string
           updated_at?: string
+          visible_from?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -1384,6 +1386,7 @@ export type Database = {
           recurrence_type?: string | null
           title?: string
           updated_at?: string
+          visible_from?: string | null
         }
         Relationships: [
           {
@@ -1553,6 +1556,20 @@ export type Database = {
         Args: { _family_id: string; _user_id: string }
         Returns: boolean
       }
+      create_recurring_task_instance: {
+        Args: {
+          _assigned_to: string
+          _created_by: string
+          _description: string
+          _family_id: string
+          _next_due_date: string
+          _parent_task_id: string
+          _recurrence_type: string
+          _title: string
+          _visible_from: string
+        }
+        Returns: Json
+      }
       deny_change_request: {
         Args: { p_denied_by: string; p_reason?: string; p_request_id: string }
         Returns: Json
@@ -1595,6 +1612,11 @@ export type Database = {
           scheduled_time: string
           status: string
         }[]
+      }
+      get_next_monday: { Args: { from_date?: string }; Returns: string }
+      get_next_visible_from_date: {
+        Args: { from_date?: string; recurrence_type: string }
+        Returns: string
       }
       get_profile_safe: {
         Args: never
