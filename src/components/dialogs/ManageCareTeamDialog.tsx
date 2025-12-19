@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
 import { InviteMembersButton } from '@/components/InviteMembersButton';
+import { BulkDeleteShiftsDialog } from './BulkDeleteShiftsDialog';
 
 interface ManageCareTeamDialogProps {
   isOpen: boolean;
@@ -44,6 +45,11 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
   const [showAddPlaceholderDialog, setShowAddPlaceholderDialog] = useState(false);
   const [generatingInviteFor, setGeneratingInviteFor] = useState<string | null>(null);
   const [placeholderInviteCodes, setPlaceholderInviteCodes] = useState<Record<string, string>>({});
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    mode: 'carer' | 'placeholder';
+    id: string;
+    name: string;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -440,6 +446,18 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                             <Button
                               size="sm"
                               variant="outline"
+                              title="Clear all shifts"
+                              onClick={() => setBulkDeleteTarget({
+                                mode: 'carer',
+                                id: member.user_id,
+                                name: member.profiles?.full_name || 'Unnamed User'
+                              })}
+                            >
+                              <Calendar className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => removeMember(member.id, member.profiles?.full_name || 'Unnamed User')}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -476,6 +494,18 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary">carer</Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Clear all shifts"
+                              onClick={() => setBulkDeleteTarget({
+                                mode: 'placeholder',
+                                id: placeholder.id,
+                                name: placeholder.full_name
+                              })}
+                            >
+                              <Calendar className="h-4 w-4" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -792,6 +822,18 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
         familyId={familyId}
         onSuccess={loadTeamData}
       />
+
+      {bulkDeleteTarget && (
+        <BulkDeleteShiftsDialog
+          isOpen={!!bulkDeleteTarget}
+          onClose={() => setBulkDeleteTarget(null)}
+          familyId={familyId}
+          mode={bulkDeleteTarget.mode}
+          carerId={bulkDeleteTarget.id}
+          carerName={bulkDeleteTarget.name}
+          onSuccess={loadTeamData}
+        />
+      )}
     </>
   );
 };
