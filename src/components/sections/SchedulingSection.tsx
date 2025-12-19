@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, AlertCircle, Plus, Download, Loader2, Filter } from 'lucide-react';
+import { Calendar, Clock, Users, AlertCircle, Plus, Download, Loader2, Filter, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BulkDeleteShiftsDialog } from "../dialogs/BulkDeleteShiftsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays } from 'date-fns';
@@ -83,6 +84,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const [conflictData, setConflictData] = useState<any>(null);
   const [conflictRequestId, setConflictRequestId] = useState<string | null>(null);
   const [isReverting, setIsReverting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const { toast } = useToast();
 
   // Sync activeTab with defaultActiveTab prop changes (for pending requests navigation)
@@ -1334,7 +1336,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             <>
               <div className="space-y-4">
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                       <Button 
                         onClick={() => setShowMonthView(true)} 
                         variant="outline"
@@ -1368,6 +1370,14 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                         variant="outline"
                         className="h-16 flex flex-col items-center justify-center gap-2"
                       />
+                      <Button 
+                        onClick={() => setShowBulkDeleteDialog(true)} 
+                        variant="outline"
+                        className="h-16 flex flex-col items-center justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                        <span className="text-sm">Clear All</span>
+                      </Button>
                     </div>
                   </div>
 
@@ -1676,6 +1686,14 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             setConflictRequestId(null);
           }}
           isLoading={isReverting}
+        />
+
+        <BulkDeleteShiftsDialog
+          isOpen={showBulkDeleteDialog}
+          onClose={() => setShowBulkDeleteDialog(false)}
+          familyId={familyId}
+          mode="all"
+          onSuccess={() => loadSchedulingData()}
         />
 
     </div>
