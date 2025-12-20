@@ -244,7 +244,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       
       // For recurring tasks, always archive immediately and create hidden next instance
       // For non-recurring, only admins skip review
-      const isRecurring = task.is_recurring && task.recurrence_type;
+      const isRecurring = !!(task.is_recurring && task.recurrence_type);
       const skipReview = isRecurring || userRole === 'family_admin' || userRole === 'disabled_person';
       
       // If recurring task, use the safe function to create next instance
