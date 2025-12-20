@@ -1629,6 +1629,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           isOpen={showCareTeamDialog} 
           onClose={() => setShowCareTeamDialog(false)}
           familyId={familyId}
+          onScheduleChange={() => loadSchedulingData()}
         />
         
 
