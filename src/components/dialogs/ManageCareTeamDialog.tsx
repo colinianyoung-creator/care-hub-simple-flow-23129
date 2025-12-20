@@ -18,6 +18,7 @@ interface ManageCareTeamDialogProps {
   isOpen: boolean;
   onClose: () => void;
   familyId: string;
+  onScheduleChange?: () => void;
 }
 
 type UserRole = 'disabled_person' | 'family_admin' | 'family_viewer' | 'carer' | 'manager';
@@ -33,7 +34,7 @@ interface PlaceholderCarer {
   created_at: string;
 }
 
-export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTeamDialogProps) => {
+export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChange }: ManageCareTeamDialogProps) => {
   const [members, setMembers] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
   const [placeholderCarers, setPlaceholderCarers] = useState<PlaceholderCarer[]>([]);
@@ -831,7 +832,10 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId }: ManageCareTe
           mode={bulkDeleteTarget.mode}
           carerId={bulkDeleteTarget.id}
           carerName={bulkDeleteTarget.name}
-          onSuccess={loadTeamData}
+          onSuccess={() => {
+            loadTeamData();
+            onScheduleChange?.();
+          }}
         />
       )}
     </>
