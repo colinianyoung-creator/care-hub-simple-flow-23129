@@ -5,12 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle, Clock, AlertTriangle, RotateCcw, Trash2, Plus, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle, Clock, RotateCcw, Trash2, Plus, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeError } from "@/lib/errorHandler";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { addDays, addWeeks, addMonths, format, nextMonday, startOfMonth, addMonths as addMonthsFns } from 'date-fns';
+import { addDays, addWeeks, addMonths, format, nextMonday, startOfMonth, addMonths as addMonthsFns, subDays } from 'date-fns';
 
 // Helper function to calculate next due date for recurring tasks
 const calculateNextDueDate = (currentDueDate: string | null, recurrenceType: string): string => {
@@ -163,6 +162,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
 
   const canEdit = userRole !== 'family_viewer';
+  const isAdmin = userRole === 'family_admin' || userRole === 'disabled_person';
 
   const loadTasks = async (signal?: AbortSignal) => {
     try {
@@ -172,25 +172,42 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       }
       
       const today = format(new Date(), 'yyyy-MM-dd');
+      const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
       
-      const { data, error } = await supabase
+      // Fetch active tasks (not completed, visible today)
+      const { data: activeTasks, error: activeError } = await supabase
         .from('tasks')
         .select('*')
         .eq('family_id', familyId)
+        .eq('completed', false)
         .eq('is_archived', false)
-        .lte('visible_from', today) // Only show tasks that are visible today or earlier
+        .lte('visible_from', today)
         .order('created_at', { ascending: false })
         .abortSignal(signal);
 
-      if (error) throw error;
+      if (activeError) throw activeError;
 
-      if (!error && data?.length === 0) {
+      // Fetch completed tasks from last 7 days (for Done tab)
+      const { data: completedTasks, error: completedError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('family_id', familyId)
+        .eq('completed', true)
+        .gte('updated_at', sevenDaysAgo)
+        .order('updated_at', { ascending: false })
+        .abortSignal(signal);
+
+      if (completedError) throw completedError;
+
+      const allTasks = [...(activeTasks || []), ...(completedTasks || [])];
+
+      if (allTasks.length === 0) {
         console.warn("⚠️ [TasksSection] Empty result - likely RLS restriction or sync delay");
       }
 
       // Get profile names for users using safe profile lookup
       const tasksWithProfiles = await Promise.all(
-        (data || []).map(async (task) => {
+        allTasks.map(async (task) => {
           let assignedProfile = null;
           let createdProfile = null;
 
@@ -242,12 +259,9 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
       
-      // For recurring tasks, always archive immediately and create hidden next instance
-      // For non-recurring, only admins skip review
       const isRecurring = !!(task.is_recurring && task.recurrence_type);
-      const skipReview = isRecurring || userRole === 'family_admin' || userRole === 'disabled_person';
       
-      // If recurring task, use the safe function to create next instance
+      // If recurring task, create next instance
       if (isRecurring) {
         const nextDueDate = calculateNextDueDate(task.due_date, task.recurrence_type);
         const nextVisibleFrom = calculateNextVisibleFrom(task.recurrence_type);
@@ -280,12 +294,12 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
         }
       }
       
-      // Mark current task complete and archive (recurring always archives)
+      // Mark current task complete - keep is_archived false so it shows in Done tab
       const { error } = await supabase
         .from('tasks')
         .update({ 
           completed: true,
-          is_archived: skipReview
+          is_archived: false
         })
         .eq('id', taskId);
 
@@ -294,7 +308,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       const toastMessage = isRecurring 
         ? `Task completed! Next occurrence will appear ${getVisibleFromLabel(task.recurrence_type)}.`
-        : skipReview ? "Task moved to Done tab" : "Task sent for review";
+        : "Task moved to Done tab";
 
       toast({
         title: "Task completed",
@@ -310,36 +324,13 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
     }
   };
 
-  const approveTask = async (taskId: string) => {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ is_archived: true })
-        .eq('id', taskId);
-
-      if (error) throw error;
-      await loadTasks();
-
-      toast({
-        title: "Task approved",
-        description: "Task has been approved and archived"
-      });
-    } catch (error) {
-      console.error('Error approving task:', error);
-      toast({
-        title: "Error",
-        description: "Failed to approve task",
-        variant: "destructive"
-      });
-    }
-  };
-
   const reopenTask = async (taskId: string) => {
     try {
       const { error } = await supabase
         .from('tasks')
         .update({ 
-          completed: false
+          completed: false,
+          is_archived: false
         })
         .eq('id', taskId);
 
@@ -347,9 +338,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       toast({
         title: "Task Reopened",
-        description: userRole === 'carer' 
-          ? "Task reopened. Family admin will be notified."
-          : "Task has been reopened",
+        description: "Task has been moved back to Active",
       });
 
       loadTasks();
@@ -447,8 +436,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
   };
 
   const activeTasks = tasks.filter(task => !task.completed);
-  const awaitingReviewTasks = tasks.filter(task => task.completed && !task.is_archived);
-  const completedTasks = tasks.filter(task => task.completed && task.is_archived);
+  const doneTasks = tasks.filter(task => task.completed);
 
   if (!familyId) {
     return (
@@ -590,23 +578,16 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
       {!showAddForm && (
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="active" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
               <Clock className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Active</span>
               <span>({activeTasks.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="review" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
-              <AlertTriangle className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">
-                {userRole === 'carer' ? 'Awaiting Review' : 'Review'}
-              </span>
-              <span>({awaitingReviewTasks.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
+            <TabsTrigger value="done" className="flex items-center gap-1 text-xs md:text-sm px-2 py-2">
               <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
               <span className="hidden sm:inline">Done</span>
-              <span>({completedTasks.length})</span>
+              <span>({doneTasks.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -680,112 +661,67 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="review" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tasks Awaiting Review</CardTitle>
-                <CardDescription>
-                  {userRole === 'carer' 
-                    ? 'Tasks you completed that are awaiting admin approval'
-                    : 'Tasks marked as complete by carers, awaiting your approval'
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {awaitingReviewTasks.map((task) => (
-                    <div key={task.id} className="p-4 border rounded-lg bg-yellow-50">
-                      <div className="task-content">
-                        <div className="font-medium">{task.title}</div>
+        <TabsContent value="done" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Completed Tasks</CardTitle>
+              <CardDescription>Tasks completed in the last 7 days (auto-deleted after 7 days)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {doneTasks.map((task) => (
+                  <div key={task.id} className="p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-muted-foreground line-through">{task.title}</span>
+                          {task.is_recurring && (
+                            <Badge variant="secondary" className="text-xs">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              {task.recurrence_type}
+                            </Badge>
+                          )}
+                        </div>
                         {task.description && (
                           <div className="text-sm text-muted-foreground mt-1">{task.description}</div>
                         )}
                         <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          {task.assigned_profile && (
-                            <span>Completed by: {task.assigned_profile.full_name}</span>
-                          )}
-                          {task.completed_at && (
-                            <span>Completed: {new Date(task.completed_at).toLocaleDateString()}</span>
+                          {task.updated_at && (
+                            <span>Completed: {new Date(task.updated_at).toLocaleDateString()}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2 flex-wrap mt-2">
-                        {/* Admin buttons: Approve + Re-open */}
-                        {canEdit && (userRole === 'family_admin' || userRole === 'disabled_person') && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              onClick={() => approveTask(task.id)}
-                              className="bg-green-500 hover:bg-green-600 h-auto px-2 py-1 text-xs"
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Approve
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => reopenTask(task.id)}
-                              className="h-auto px-2 py-1 text-xs"
-                            >
-                              <RotateCcw className="h-3 w-3 mr-1" />
-                              Re-open
-                            </Button>
-                          </>
-                        )}
-                        
-                        {/* Carer button: Re-open only */}
-                        {canEdit && userRole === 'carer' && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => reopenTask(task.id)}
-                            className="h-auto px-2 py-1 text-xs"
-                          >
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                            Re-open
-                          </Button>
-                        )}
+                      <Badge variant="outline" className="ml-2">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Done
+                      </Badge>
+                    </div>
+                    {/* Admin actions: Re-open and Delete */}
+                    {isAdmin && (
+                      <div className="flex gap-2 flex-wrap mt-3 pt-3 border-t">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => reopenTask(task.id)}
+                          className="h-auto px-2 py-1 text-xs"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Re-open
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => deleteTask(task.id)}
+                          className="h-auto px-2 py-1 text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
                       </div>
-                    </div>
-                  ))}
-                  {awaitingReviewTasks.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No tasks awaiting review
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Tasks</CardTitle>
-              <CardDescription>Recently completed tasks</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {completedTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                    <div className="flex-1">
-                      <div className="font-medium text-muted-foreground">{task.title}</div>
-                      {task.description && (
-                        <div className="text-sm text-muted-foreground mt-1">{task.description}</div>
-                      )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        {task.completed_at && (
-                          <span>Completed: {new Date(task.completed_at).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-                    <Badge variant="outline">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Complete
-                    </Badge>
+                    )}
                   </div>
                 ))}
-                {completedTasks.length === 0 && (
+                {doneTasks.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     No completed tasks
                   </div>

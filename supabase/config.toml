@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.auto-rollover-tasks]
 verify_jwt = false
+
+[functions.auto-cleanup-tasks]
+verify_jwt = false
