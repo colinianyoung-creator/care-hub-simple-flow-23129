@@ -187,24 +187,29 @@ useEffect(() => {
     // Use allFamiliesShifts when in all-families mode
     if (viewMode === 'all-families' && allFamiliesShifts.length > 0) {
       return allFamiliesShifts.filter(shift => {
-        const shiftDate = shift.clock_in ? format(new Date(shift.clock_in), 'yyyy-MM-dd') : shift.scheduled_date;
+        // Handle both time_entry format (clock_in) and shift_instance format (scheduled_date)
+        const shiftDate = shift.clock_in 
+          ? format(new Date(shift.clock_in), 'yyyy-MM-dd') 
+          : shift.scheduled_date;
         if (shiftDate !== dayString) return false;
         // Apply carer filter
         if (selectedCarerId && (shift.user_id || shift.carer_id) !== selectedCarerId) return false;
         return true;
       }).map(entry => ({
         id: entry.id,
-        scheduled_date: entry.clock_in ? format(new Date(entry.clock_in), 'yyyy-MM-dd') : entry.scheduled_date,
-        start_time: entry.clock_in ? format(new Date(entry.clock_in), 'HH:mm:ss') : entry.start_time,
-        end_time: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : entry.end_time,
-        carer_id: entry.user_id || entry.carer_id,
-        carer_name: entry.profiles?.full_name || entry.carer_name || 'Unknown',
-        care_recipient_name: entry.families?.name || entry.care_recipient_name || 'Care Recipient',
+        scheduled_date: entry.scheduled_date || (entry.clock_in ? format(new Date(entry.clock_in), 'yyyy-MM-dd') : null),
+        start_time: entry.start_time || (entry.clock_in ? format(new Date(entry.clock_in), 'HH:mm:ss') : null),
+        end_time: entry.end_time || (entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm:ss') : null),
+        carer_id: entry.carer_id || entry.user_id,
+        carer_name: entry.carer_name || entry.profiles?.full_name || 'Unknown',
+        care_recipient_name: entry.family_name || entry.families?.name || 'Care Recipient',
         shift_type: entry.shift_type || 'basic',
         notes: entry.notes,
         family_id: entry.family_id,
-        family_name: entry.families?.name || 'Unknown',
-        status: 'scheduled'
+        family_name: entry.family_name || entry.families?.name || 'Unknown',
+        status: entry.status || 'scheduled',
+        shift_assignment_id: entry.shift_assignment_id,
+        shift_instance_id: entry.shift_instance_id
       }));
     }
     

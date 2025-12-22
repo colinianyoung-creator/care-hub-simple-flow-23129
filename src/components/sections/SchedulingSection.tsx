@@ -179,6 +179,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
       // Fetch user's families directly if not already loaded
       let familyIds = userFamilies.map(f => f.id);
+      let familyMap: Record<string, string> = {};
       
       if (familyIds.length === 0) {
         console.log('⏳ userFamilies not loaded yet, fetching directly...');
@@ -191,11 +192,21 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
         familyIds = memberships?.map(m => m.family_id) || [];
         
+        // Build family name map
+        memberships?.forEach(m => {
+          familyMap[m.family_id] = (m.families as any)?.name || 'Unknown';
+        });
+        
         // Also update state for future use
         setUserFamilies(memberships?.map(m => ({
           id: m.family_id,
           name: (m.families as any)?.name || 'Unknown'
         })) || []);
+      } else {
+        // Build family name map from existing state
+        userFamilies.forEach(f => {
+          familyMap[f.id] = f.name;
+        });
       }
       
       if (familyIds.length === 0) {
@@ -208,30 +219,59 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         return;
       }
 
-      console.log('📊 Loading shifts for families:', familyIds);
+      console.log('📊 Loading shift_instances for families:', familyIds);
 
-      // Get all time_entries assigned to this user across all families
-      const { data: allShifts, error: shiftsError } = await supabase
-        .from('time_entries')
+      // Calculate date range (3 months ago to 1 year ahead)
+      const threeMonthsAgo = format(addDays(new Date(), -90), 'yyyy-MM-dd');
+      const oneYearFromNow = format(addDays(new Date(), 365), 'yyyy-MM-dd');
+
+      // Get all shift_instances where user is the assigned carer across all families
+      const { data: allInstances, error: instancesError } = await supabase
+        .from('shift_instances')
         .select(`
           *,
-          families (
+          shift_assignments!inner (
             id,
-            name
-          ),
-          profiles!time_entries_user_id_fkey (
-            id,
-            full_name
+            family_id,
+            carer_id,
+            start_time,
+            end_time,
+            shift_type,
+            notes
           )
         `)
-        .eq('user_id', user.id)
-        .in('family_id', familyIds)
-        .order('clock_in', { ascending: true });
+        .eq('shift_assignments.carer_id', user.id)
+        .in('shift_assignments.family_id', familyIds)
+        .gte('scheduled_date', threeMonthsAgo)
+        .lte('scheduled_date', oneYearFromNow)
+        .order('scheduled_date', { ascending: true });
 
-      if (shiftsError) throw shiftsError;
+      if (instancesError) throw instancesError;
 
-      console.log('✅ [loadAllMyShifts] Loaded all-families shifts:', allShifts?.length || 0);
-      setAllFamiliesShifts(allShifts || []);
+      console.log('✅ [loadAllMyShifts] Loaded shift_instances:', allInstances?.length || 0);
+
+      // Transform shift_instances to the format expected by the calendar
+      const transformedShifts = (allInstances || []).map(instance => {
+        const assignment = instance.shift_assignments as any;
+        return {
+          id: instance.id,
+          scheduled_date: instance.scheduled_date,
+          start_time: assignment.start_time,
+          end_time: assignment.end_time,
+          carer_id: assignment.carer_id,
+          carer_name: user.user_metadata?.full_name || 'You',
+          shift_type: assignment.shift_type || 'basic',
+          notes: instance.notes || assignment.notes,
+          status: instance.status || 'scheduled',
+          family_id: assignment.family_id,
+          family_name: familyMap[assignment.family_id] || 'Unknown',
+          shift_assignment_id: assignment.id,
+          shift_instance_id: instance.id
+        };
+      });
+
+      console.log('✅ [loadAllMyShifts] Transformed shifts:', transformedShifts.length);
+      setAllFamiliesShifts(transformedShifts);
     } catch (error) {
       console.error('❌ [loadAllMyShifts] Error loading cross-family shifts:', error);
       toast({
