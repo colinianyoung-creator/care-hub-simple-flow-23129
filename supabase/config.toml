@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.auto-cleanup-tasks]
 verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-invite-email]
+verify_jwt = false
