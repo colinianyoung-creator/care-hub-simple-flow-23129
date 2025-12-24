@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserPlus, Copy, Check, Mail, PenLine, Users } from 'lucide-react';
+import { UserPlus, Copy, Check, Mail, PenLine, Users, Send, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,6 +24,14 @@ interface PlaceholderCarer {
   email: string | null;
   is_linked: boolean;
 }
+
+const roleLabels: Record<string, string> = {
+  carer: 'Carer',
+  family_viewer: 'Family Viewer',
+  family_admin: 'Family Admin',
+  manager: 'Manager',
+  disabled_person: 'Care Recipient',
+};
 
 export const InviteMembersButton = ({ familyId, variant = 'default', className }: InviteMembersButtonProps) => {
   const [showDialog, setShowDialog] = useState(false);
@@ -46,6 +54,13 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
   const [selectedPlaceholder, setSelectedPlaceholder] = useState<string>('');
   const [placeholderInviteCode, setPlaceholderInviteCode] = useState<string>('');
   const [isGeneratingPlaceholder, setIsGeneratingPlaceholder] = useState(false);
+
+  // Email invite state
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [placeholderEmailSent, setPlaceholderEmailSent] = useState<Record<string, boolean>>({});
+  const [isSendingPlaceholderEmail, setIsSendingPlaceholderEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (showDialog && familyId) {
@@ -172,6 +187,98 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const sendInviteEmail = async (code: string, emailAddress: string, role: string) => {
+    if (!emailAddress.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
+
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email: emailAddress,
+          inviterName: profile?.full_name || 'A team member',
+          familyName: family?.name || 'Care Team',
+          inviteCode: code,
+          role: roleLabels[role] || role,
+          expiresIn: '7 days'
+        }
+      });
+
+      if (error) throw error;
+
+      setEmailSent(true);
+      toast({
+        title: "Email Sent!",
+        description: `Invite sent to ${emailAddress}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending invite email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invite email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const sendPlaceholderInviteEmail = async (code: string, placeholder: PlaceholderCarer) => {
+    if (!placeholder.email) {
+      toast({
+        title: "No email",
+        description: "This carer doesn't have an email on file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingPlaceholderEmail(placeholder.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
+
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email: placeholder.email,
+          inviterName: profile?.full_name || 'A team member',
+          familyName: family?.name || 'Care Team',
+          inviteCode: code,
+          role: 'Carer',
+          expiresIn: '7 days'
+        }
+      });
+
+      if (error) throw error;
+
+      setPlaceholderEmailSent(prev => ({ ...prev, [placeholder.id]: true }));
+      toast({
+        title: "Email Sent!",
+        description: `Invite sent to ${placeholder.full_name} (${placeholder.email})`,
+      });
+    } catch (error: any) {
+      console.error('Error sending placeholder invite email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invite email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingPlaceholderEmail(null);
+    }
+  };
+
   const handleAddCarer = async () => {
     if (!fullName.trim()) {
       toast({
@@ -237,6 +344,9 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
     setNotes('');
     setSelectedPlaceholder('');
     setPlaceholderInviteCode('');
+    setRecipientEmail('');
+    setEmailSent(false);
+    setPlaceholderEmailSent({});
   };
 
   return (
@@ -294,6 +404,21 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
                 </Select>
               </div>
 
+              {!generatedCode && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Recipient Email (optional)</Label>
+                  <Input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="email@example.com"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If provided, we'll email the invite directly
+                  </p>
+                </div>
+              )}
+
               {!generatedCode ? (
                 <Button 
                   onClick={generateInviteCode} 
@@ -327,6 +452,63 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
                           </>
                         )}
                       </Button>
+
+                      {/* Email section */}
+                      {recipientEmail && !emailSent ? (
+                        <Button
+                          onClick={() => sendInviteEmail(generatedCode, recipientEmail, selectedRole)}
+                          disabled={isSendingEmail}
+                          className="w-full"
+                        >
+                          {isSendingEmail ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4 mr-2" />
+                              Email to {recipientEmail}
+                            </>
+                          )}
+                        </Button>
+                      ) : emailSent ? (
+                        <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                          <Check className="h-4 w-4" />
+                          Email sent to {recipientEmail}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                              <span className="bg-background px-2 text-muted-foreground">or send via email</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              type="email"
+                              value={recipientEmail}
+                              onChange={(e) => setRecipientEmail(e.target.value)}
+                              placeholder="Enter email..."
+                              className="flex-1"
+                            />
+                            <Button
+                              size="icon"
+                              onClick={() => sendInviteEmail(generatedCode, recipientEmail, selectedRole)}
+                              disabled={isSendingEmail || !recipientEmail.trim()}
+                            >
+                              {isSendingEmail ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -375,32 +557,66 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
                     <Card>
                       <CardContent className="p-4">
                         <div className="text-center space-y-3">
-                          <p className="text-sm text-muted-foreground">
-                            Invite for {placeholderCarers.find(p => p.id === selectedPlaceholder)?.full_name}:
-                          </p>
-                          <div className="text-2xl font-mono font-bold tracking-wider">
-                            {placeholderInviteCode}
-                          </div>
-                          <Button
-                            variant="outline"
-                            onClick={() => copyInviteCode(placeholderInviteCode)}
-                            className="w-full"
-                          >
-                            {copied ? (
+                          {(() => {
+                            const placeholder = placeholderCarers.find(p => p.id === selectedPlaceholder);
+                            return (
                               <>
-                                <Check className="h-4 w-4 mr-2" />
-                                Copied!
+                                <p className="text-sm text-muted-foreground">
+                                  Invite for {placeholder?.full_name}:
+                                </p>
+                                <div className="text-2xl font-mono font-bold tracking-wider">
+                                  {placeholderInviteCode}
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => copyInviteCode(placeholderInviteCode)}
+                                  className="w-full"
+                                >
+                                  {copied ? (
+                                    <>
+                                      <Check className="h-4 w-4 mr-2" />
+                                      Copied!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Copy Code
+                                    </>
+                                  )}
+                                </Button>
+
+                                {/* Email button for placeholder with email */}
+                                {placeholder?.email && !placeholderEmailSent[placeholder.id] ? (
+                                  <Button
+                                    onClick={() => sendPlaceholderInviteEmail(placeholderInviteCode, placeholder)}
+                                    disabled={isSendingPlaceholderEmail === placeholder.id}
+                                    className="w-full"
+                                  >
+                                    {isSendingPlaceholderEmail === placeholder.id ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Sending...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Mail className="h-4 w-4 mr-2" />
+                                        Email to {placeholder.email}
+                                      </>
+                                    )}
+                                  </Button>
+                                ) : placeholder?.email && placeholderEmailSent[placeholder.id] ? (
+                                  <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                                    <Check className="h-4 w-4" />
+                                    Email sent to {placeholder.email}
+                                  </div>
+                                ) : null}
+
+                                <p className="text-xs text-muted-foreground">
+                                  Their shifts will transfer when they sign up
+                                </p>
                               </>
-                            ) : (
-                              <>
-                                <Copy className="h-4 w-4 mr-2" />
-                                Copy Code
-                              </>
-                            )}
-                          </Button>
-                          <p className="text-xs text-muted-foreground">
-                            Their shifts will transfer when they sign up
-                          </p>
+                            );
+                          })()}
                         </div>
                       </CardContent>
                     </Card>

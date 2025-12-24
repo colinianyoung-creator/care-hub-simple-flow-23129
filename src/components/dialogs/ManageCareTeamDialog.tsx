@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar, Send, Loader2, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
@@ -22,6 +23,14 @@ interface ManageCareTeamDialogProps {
 }
 
 type UserRole = 'disabled_person' | 'family_admin' | 'family_viewer' | 'carer' | 'manager';
+
+const roleLabels: Record<string, string> = {
+  carer: 'Carer',
+  family_viewer: 'Family Viewer',
+  family_admin: 'Family Admin',
+  manager: 'Manager',
+  disabled_person: 'Care Recipient',
+};
 
 interface PlaceholderCarer {
   id: string;
@@ -53,9 +62,20 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   } | null>(null);
   const { toast } = useToast();
 
+  // Email functionality state
+  const [inviteRecipientEmail, setInviteRecipientEmail] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [pendingEmailFor, setPendingEmailFor] = useState<string | null>(null);
+  const [placeholderEmailSent, setPlaceholderEmailSent] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     if (isOpen) {
       loadTeamData();
+      // Reset email state when dialog opens
+      setInviteRecipientEmail('');
+      setEmailSent(false);
+      setPlaceholderEmailSent({});
     }
   }, [isOpen, familyId]);
 
@@ -188,6 +208,147 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
       title: "Copied",
       description: "Invite code copied to clipboard",
     });
+  };
+
+  const sendInviteEmail = async (code: string, emailAddress: string, role: string) => {
+    if (!emailAddress.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
+
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email: emailAddress,
+          inviterName: profile?.full_name || 'A team member',
+          familyName: family?.name || 'Care Team',
+          inviteCode: code,
+          role: roleLabels[role] || role,
+          expiresIn: '7 days'
+        }
+      });
+
+      if (error) throw error;
+
+      setEmailSent(true);
+      toast({
+        title: "Email Sent!",
+        description: `Invite sent to ${emailAddress}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending invite email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invite email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const sendPendingInviteEmail = async (inviteId: string, code: string, role: string) => {
+    setPendingEmailFor(inviteId);
+    setIsSendingEmail(true);
+    try {
+      const email = inviteRecipientEmail;
+      if (!email.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter an email address",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
+
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email,
+          inviterName: profile?.full_name || 'A team member',
+          familyName: family?.name || 'Care Team',
+          inviteCode: code,
+          role: roleLabels[role] || role,
+          expiresIn: '7 days'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email Sent!",
+        description: `Invite sent to ${email}`,
+      });
+      setInviteRecipientEmail('');
+    } catch (error: any) {
+      console.error('Error sending invite email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invite email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
+      setPendingEmailFor(null);
+    }
+  };
+
+  const sendPlaceholderInviteEmail = async (code: string, placeholder: PlaceholderCarer) => {
+    if (!placeholder.email) {
+      toast({
+        title: "No email",
+        description: "This carer doesn't have an email on file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPendingEmailFor(placeholder.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
+
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email: placeholder.email,
+          inviterName: profile?.full_name || 'A team member',
+          familyName: family?.name || 'Care Team',
+          inviteCode: code,
+          role: 'Carer',
+          expiresIn: '7 days'
+        }
+      });
+
+      if (error) throw error;
+
+      setPlaceholderEmailSent(prev => ({ ...prev, [placeholder.id]: true }));
+      toast({
+        title: "Email Sent!",
+        description: `Invite sent to ${placeholder.full_name} (${placeholder.email})`,
+      });
+    } catch (error: any) {
+      console.error('Error sending placeholder invite email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invite email",
+        variant: "destructive",
+      });
+    } finally {
+      setPendingEmailFor(null);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -608,6 +769,28 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                               >
                                 <Copy className="h-3 w-3" />
                               </Button>
+                              {placeholder.email && !placeholderEmailSent[placeholder.id] ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => sendPlaceholderInviteEmail(placeholderInviteCodes[placeholder.id], placeholder)}
+                                  disabled={pendingEmailFor === placeholder.id}
+                                >
+                                  {pendingEmailFor === placeholder.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Send className="h-3 w-3 mr-1" />
+                                      Email
+                                    </>
+                                  )}
+                                </Button>
+                              ) : placeholder.email && placeholderEmailSent[placeholder.id] ? (
+                                <span className="text-xs text-green-600 flex items-center gap-1">
+                                  <Check className="h-3 w-3" />
+                                  Sent
+                                </span>
+                              ) : null}
                             </div>
                           )}
                         </div>
@@ -683,12 +866,28 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                       </Select>
                     </div>
 
+                    {!newInviteCode && (
+                      <div className="space-y-2">
+                        <Label htmlFor="recipientEmail">Recipient Email (optional)</Label>
+                        <Input
+                          id="recipientEmail"
+                          type="email"
+                          value={inviteRecipientEmail}
+                          onChange={(e) => setInviteRecipientEmail(e.target.value)}
+                          placeholder="email@example.com"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          If provided, we'll email the invite directly
+                        </p>
+                      </div>
+                    )}
+
                     <Button onClick={generateInvite} className="w-full">
                       Generate Invite Code
                     </Button>
 
                     {newInviteCode && (
-                      <div className="p-3 bg-muted rounded-lg space-y-2">
+                      <div className="p-3 bg-muted rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium">New Invite Code:</div>
@@ -701,6 +900,56 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
+
+                        {/* Email section for new invite */}
+                        {inviteRecipientEmail && !emailSent ? (
+                          <Button
+                            onClick={() => sendInviteEmail(newInviteCode, inviteRecipientEmail, inviteRole)}
+                            disabled={isSendingEmail}
+                            className="w-full"
+                          >
+                            {isSendingEmail ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="h-4 w-4 mr-2" />
+                                Email to {inviteRecipientEmail}
+                              </>
+                            )}
+                          </Button>
+                        ) : emailSent ? (
+                          <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                            <Check className="h-4 w-4" />
+                            Email sent to {inviteRecipientEmail}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                type="email"
+                                value={inviteRecipientEmail}
+                                onChange={(e) => setInviteRecipientEmail(e.target.value)}
+                                placeholder="Enter email to send..."
+                                className="flex-1"
+                              />
+                              <Button
+                                size="icon"
+                                onClick={() => sendInviteEmail(newInviteCode, inviteRecipientEmail, inviteRole)}
+                                disabled={isSendingEmail || !inviteRecipientEmail.trim()}
+                              >
+                                {isSendingEmail ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Send className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
                         {(inviteRole === 'family_admin' || inviteRole === 'disabled_person') && (
                           <p className="text-xs text-muted-foreground">
                             ⚠️ This will add a co-admin to your care space who will share full administrative access with you. Neither admin can remove or demote the other.
@@ -735,6 +984,25 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                              onClick={() => copyToClipboard(invite.code)}
                            >
                              <Copy className="h-4 w-4" />
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => {
+                               setInviteRecipientEmail('');
+                               const email = prompt('Enter email address to send invite:');
+                               if (email) {
+                                 setInviteRecipientEmail(email);
+                                 sendPendingInviteEmail(invite.id, invite.code, invite.role);
+                               }
+                             }}
+                             disabled={pendingEmailFor === invite.id}
+                           >
+                             {pendingEmailFor === invite.id ? (
+                               <Loader2 className="h-4 w-4 animate-spin" />
+                             ) : (
+                               <Mail className="h-4 w-4" />
+                             )}
                            </Button>
                            <Button
                              size="sm"
