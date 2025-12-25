@@ -24,7 +24,7 @@ const roleMessages: Record<string, string> = {
 
 const generateWelcomeHtml = (userName: string, userRole: string, loginUrl: string) => {
   const roleMessage = roleMessages[userRole] || roleMessages.carer;
-  
+
   return `
 <!DOCTYPE html>
 <html>
@@ -92,13 +92,13 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, userName, userRole }: WelcomeEmailRequest = await req.json();
     console.log(`Sending welcome email to ${email} for user ${userName} with role ${userRole}`);
 
-    const appUrl = req.headers.get('origin') || 'https://lovable.dev';
-    const html = generateWelcomeHtml(userName || 'there', userRole || 'carer', appUrl);
+    const appUrl = req.headers.get("origin") || "https://lovable.dev";
+    const html = generateWelcomeHtml(userName || "there", userRole || "carer", appUrl);
 
     const emailResponse = await resend.emails.send({
-      from: "CareHub <onboarding@resend.dev>",
+      from: "CareHub <no-reply@mycarehub.uk>",
       to: [email],
-      subject: `Welcome to CareHub, ${userName || 'there'}! 💙`,
+      subject: `Welcome to CareHub, ${userName || "there"}! 💙`,
       html,
     });
 
