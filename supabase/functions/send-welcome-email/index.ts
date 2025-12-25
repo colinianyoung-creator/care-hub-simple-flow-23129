@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -88,6 +86,18 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Check for API key upfront
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY is not configured");
+    return new Response(
+      JSON.stringify({ success: false, error: "Email service not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  const resend = new Resend(RESEND_API_KEY);
+
   try {
     const { email, userName, userRole }: WelcomeEmailRequest = await req.json();
     console.log(`Sending welcome email to ${email} for user ${userName} with role ${userRole}`);
@@ -101,6 +111,18 @@ const handler = async (req: Request): Promise<Response> => {
       subject: `Welcome to CareHub, ${userName || "there"}! 💙`,
       html,
     });
+
+    // Check if Resend returned an error
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: emailResponse.error.message || "Failed to send email" 
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     console.log("Welcome email sent successfully:", emailResponse);
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
