@@ -18,16 +18,23 @@ interface InviteEmailRequest {
 }
 
 const roleLabels: Record<string, string> = {
-  family_admin: 'Family Admin',
-  disabled_person: 'Care Recipient',
-  carer: 'Carer',
-  family_viewer: 'Family Viewer',
-  manager: 'Manager',
+  family_admin: "Family Admin",
+  disabled_person: "Care Recipient",
+  carer: "Carer",
+  family_viewer: "Family Viewer",
+  manager: "Manager",
 };
 
-const generateInviteHtml = (inviterName: string, familyName: string, inviteCode: string, role: string, signupUrl: string, expiresIn: string) => {
+const generateInviteHtml = (
+  inviterName: string,
+  familyName: string,
+  inviteCode: string,
+  role: string,
+  signupUrl: string,
+  expiresIn: string,
+) => {
   const roleLabel = roleLabels[role] || roleLabels.carer;
-  
+
   return `
 <!DOCTYPE html>
 <html>
@@ -107,21 +114,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, inviterName, familyName, inviteCode, role, expiresIn = '7 days' }: InviteEmailRequest = await req.json();
+    const {
+      email,
+      inviterName,
+      familyName,
+      inviteCode,
+      role,
+      expiresIn = "7 days",
+    }: InviteEmailRequest = await req.json();
     console.log(`Sending invite email to ${email} for family ${familyName} with code ${inviteCode}`);
 
-    const appUrl = req.headers.get('origin') || 'https://lovable.dev';
+    const appUrl = req.headers.get("origin") || "https://lovable.dev";
     const html = generateInviteHtml(
-      inviterName || 'A team member',
-      familyName || 'Care Team',
+      inviterName || "A team member",
+      familyName || "Care Team",
       inviteCode.toUpperCase(),
-      role || 'carer',
+      role || "carer",
       `${appUrl}/auth`,
-      expiresIn
+      expiresIn,
     );
 
     const emailResponse = await resend.emails.send({
-      from: "CareHub <onboarding@resend.dev>",
+      from: "CareHub <no-reply@mycarehub.uk>",
       to: [email],
       subject: `${inviterName} invited you to join ${familyName} on CareHub 💙`,
       html,
