@@ -525,6 +525,31 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
     }
   };
 
+  const trackExport = async (exportFormat: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Determine if this is a placeholder carer
+      const isPlaceholder = selectedCarerId.startsWith('placeholder_');
+      const actualCarerId = isPlaceholder ? null : selectedCarerId;
+      const placeholderCarerId = isPlaceholder ? selectedCarerId.replace('placeholder_', '') : null;
+
+      await supabase.from('timesheet_exports').insert({
+        family_id: familyId,
+        carer_id: actualCarerId,
+        placeholder_carer_id: placeholderCarerId,
+        start_date: format(startDate, 'yyyy-MM-dd'),
+        end_date: format(endDate, 'yyyy-MM-dd'),
+        exported_by: user.id,
+        format: exportFormat
+      });
+    } catch (error) {
+      console.error('Error tracking export:', error);
+      // Don't fail the export if tracking fails
+    }
+  };
+
   const handleExport = async (exportFormat: 'pdf' | 'excel') => {
     if (!timesheetData) {
       toast({
@@ -538,7 +563,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
     try {
       setLoading(true);
 
-      const response = await fetch(`https://nbdaxpgnfysquicnllmm.supabase.co/functions/v1/export-timesheet`, {
+      const response = await fetch(`https://ydfqtfutdziejjqnqudo.supabase.co/functions/v1/export-timesheet`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -586,6 +611,9 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // Track the export in the database
+      await trackExport(exportFormat);
 
       toast({
         title: "Timesheet exported",

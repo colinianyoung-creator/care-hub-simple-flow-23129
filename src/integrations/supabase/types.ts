@@ -1486,6 +1486,71 @@ export type Database = {
           },
         ]
       }
+      timesheet_exports: {
+        Row: {
+          carer_id: string | null
+          end_date: string
+          exported_at: string
+          exported_by: string
+          family_id: string
+          format: string
+          id: string
+          placeholder_carer_id: string | null
+          start_date: string
+        }
+        Insert: {
+          carer_id?: string | null
+          end_date: string
+          exported_at?: string
+          exported_by: string
+          family_id: string
+          format?: string
+          id?: string
+          placeholder_carer_id?: string | null
+          start_date: string
+        }
+        Update: {
+          carer_id?: string | null
+          end_date?: string
+          exported_at?: string
+          exported_by?: string
+          family_id?: string
+          format?: string
+          id?: string
+          placeholder_carer_id?: string | null
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_exports_carer_id_fkey"
+            columns: ["carer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_exports_exported_by_fkey"
+            columns: ["exported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_exports_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_exports_placeholder_carer_id_fkey"
+            columns: ["placeholder_carer_id"]
+            isOneToOne: false
+            referencedRelation: "placeholder_carers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_memberships: {
         Row: {
           created_at: string

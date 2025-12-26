@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
 import { InviteMembersButton } from '@/components/InviteMembersButton';
 import { BulkDeleteShiftsDialog } from './BulkDeleteShiftsDialog';
+import { DeleteCarerDialog } from './DeleteCarerDialog';
 
 interface ManageCareTeamDialogProps {
   isOpen: boolean;
@@ -59,6 +60,12 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
     mode: 'carer' | 'placeholder';
     id: string;
     name: string;
+  } | null>(null);
+  const [deleteCarerTarget, setDeleteCarerTarget] = useState<{
+    type: 'registered' | 'placeholder';
+    id: string;
+    name: string;
+    membershipId?: string;
   } | null>(null);
   const { toast } = useToast();
 
@@ -384,62 +391,23 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
     }
   };
 
-  const removeMember = async (membershipId: string, memberName: string) => {
-    if (!confirm(`Are you sure you want to remove ${memberName} from the care team? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('user_memberships')
-        .delete()
-        .eq('id', membershipId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Member Removed",
-        description: "Team member has been removed",
-      });
-
-      loadTeamData();
-    } catch (error) {
-      console.error('Error removing member:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove member",
-        variant: "destructive",
-      });
-    }
+  const removeMember = async (membershipId: string, userId: string, memberName: string) => {
+    // Open the DeleteCarerDialog instead of direct deletion
+    setDeleteCarerTarget({
+      type: 'registered',
+      id: userId,
+      name: memberName,
+      membershipId
+    });
   };
 
   const removePlaceholderCarer = async (placeholderId: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove ${name}? Any assigned shifts will need to be reassigned.`)) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('placeholder_carers')
-        .delete()
-        .eq('id', placeholderId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Carer Removed",
-        description: `${name} has been removed`,
-      });
-
-      loadTeamData();
-    } catch (error) {
-      console.error('Error removing placeholder carer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove carer",
-        variant: "destructive",
-      });
-    }
+    // Open the DeleteCarerDialog instead of direct deletion
+    setDeleteCarerTarget({
+      type: 'placeholder',
+      id: placeholderId,
+      name
+    });
   };
 
   const handleApproveRoleChange = async (requestId: string, requesterId: string, newRole: UserRole) => {
@@ -620,7 +588,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => removeMember(member.id, member.profiles?.full_name || 'Unnamed User')}
+                              onClick={() => removeMember(member.id, member.user_id, member.profiles?.full_name || 'Unnamed User')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1104,6 +1072,20 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
             loadTeamData();
             onScheduleChange?.();
           }}
+        />
+      )}
+
+      {deleteCarerTarget && (
+        <DeleteCarerDialog
+          isOpen={!!deleteCarerTarget}
+          onClose={() => setDeleteCarerTarget(null)}
+          familyId={familyId}
+          carerType={deleteCarerTarget.type}
+          carerId={deleteCarerTarget.id}
+          carerName={deleteCarerTarget.name}
+          membershipId={deleteCarerTarget.membershipId}
+          onDeleted={loadTeamData}
+          onScheduleChange={onScheduleChange}
         />
       )}
     </>
