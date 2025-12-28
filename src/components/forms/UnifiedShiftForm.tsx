@@ -389,7 +389,34 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           });
         } else {
           // Admin creating/editing a basic or cover shift
-          if (editShiftData?.id && !isEditingLeaveRequest) {
+          
+          // CASE 1: Editing a RECURRING shift (from shift_assignments)
+          if (editShiftData?.shift_assignment_id && !isEditingLeaveRequest) {
+            // Determine carer type (real user or placeholder)
+            const selectedCarer = carers.find(c => c.user_id === formData.carer_id);
+            const isPlaceholder = selectedCarer?.is_placeholder;
+            const actualCarerId = isPlaceholder ? null : (formData.carer_id || null);
+            const placeholderCarerId = isPlaceholder ? selectedCarer.placeholder_id : null;
+
+            const { error } = await supabase
+              .from('shift_assignments')
+              .update({
+                carer_id: actualCarerId,
+                placeholder_carer_id: placeholderCarerId,
+                shift_type: formData.request_type || 'basic',
+                notes: formData.reason || null
+              })
+              .eq('id', editShiftData.shift_assignment_id);
+
+            if (error) throw error;
+
+            toast({
+              title: "Success",
+              description: "Recurring shift updated successfully"
+            });
+          } 
+          // CASE 2: Editing a one-time shift (from time_entries)
+          else if (editShiftData?.id && !editShiftData?.shift_assignment_id && !isEditingLeaveRequest) {
             // Update existing time entry
             const updateData: any = {};
             
