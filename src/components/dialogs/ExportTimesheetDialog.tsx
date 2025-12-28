@@ -401,19 +401,25 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       if (employerError) {
         console.error('Error loading employer signature:', employerError);
       } else if (employerSignature && employerSignature.length > 0) {
-        const { data } = supabase.storage
+        // Use signed URL for private bucket (1 hour expiry)
+        const { data, error } = await supabase.storage
           .from('timesheet-signatures')
-          .getPublicUrl(`${familyId}/employer/${employerSignature[0].name}`);
-        setSignatures(prev => ({ ...prev, employerSignature: data.publicUrl }));
+          .createSignedUrl(`${familyId}/employer/${employerSignature[0].name}`, 3600);
+        if (!error && data?.signedUrl) {
+          setSignatures(prev => ({ ...prev, employerSignature: data.signedUrl }));
+        }
       }
 
       if (employeeError) {
         console.error('Error loading employee signature:', employeeError);
       } else if (employeeSignature && employeeSignature.length > 0) {
-        const { data } = supabase.storage
+        // Use signed URL for private bucket (1 hour expiry)
+        const { data, error } = await supabase.storage
           .from('timesheet-signatures')
-          .getPublicUrl(`${familyId}/employee/${employeeSignature[0].name}`);
-        setSignatures(prev => ({ ...prev, employeeSignature: data.publicUrl }));
+          .createSignedUrl(`${familyId}/employee/${employeeSignature[0].name}`, 3600);
+        if (!error && data?.signedUrl) {
+          setSignatures(prev => ({ ...prev, employeeSignature: data.signedUrl }));
+        }
       }
     } catch (error) {
       console.error('Error loading signatures:', error);
@@ -478,12 +484,17 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         throw uploadError;
       }
 
-      // Get public URL
-      const { data } = supabase.storage
+      // Get signed URL for private bucket (1 hour expiry)
+      const { data, error: signedUrlError } = await supabase.storage
         .from('timesheet-signatures')
-        .getPublicUrl(`${familyId}/${type}/${fileName}`);
+        .createSignedUrl(`${familyId}/${type}/${fileName}`, 3600);
 
-      setSignatures(prev => ({ ...prev, [`${type}Signature`]: data.publicUrl }));
+      if (signedUrlError) {
+        console.error('Error creating signed URL:', signedUrlError);
+        throw signedUrlError;
+      }
+
+      setSignatures(prev => ({ ...prev, [`${type}Signature`]: data.signedUrl }));
       
       toast({
         title: "Signature uploaded",
