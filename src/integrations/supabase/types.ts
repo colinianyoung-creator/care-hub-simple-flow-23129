@@ -67,6 +67,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -217,6 +224,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "care_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "care_notes_care_recipient_id_fkey"
             columns: ["care_recipient_id"]
             isOneToOne: false
@@ -335,6 +349,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "diet_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "diet_entries_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -371,6 +392,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "families_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -421,6 +449,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invite_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invite_codes_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -439,6 +474,13 @@ export type Database = {
             columns: ["used_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_codes_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -495,6 +537,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "key_information_last_updated_by_fkey"
+            columns: ["last_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
       leave_requests: {
@@ -546,6 +595,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leave_requests_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -557,6 +613,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -617,6 +680,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "mar_doses_given_by_fkey"
+            columns: ["given_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "mar_doses_medication_id_fkey"
             columns: ["medication_id"]
             isOneToOne: false
@@ -659,6 +729,13 @@ export type Database = {
             columns: ["changed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mar_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -722,10 +799,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "medication_administrations_carer_id_fkey"
+            columns: ["carer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "medication_administrations_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_administrations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -872,6 +963,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "money_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "money_records_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -929,6 +1027,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "placeholder_carers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "placeholder_carers_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -940,6 +1045,13 @@ export type Database = {
             columns: ["linked_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "placeholder_carers_linked_user_id_fkey"
+            columns: ["linked_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -1103,10 +1215,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "risk_assessments_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "risk_assessments_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -1121,6 +1247,13 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -1181,10 +1314,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "role_change_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "role_change_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_change_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -1241,6 +1388,13 @@ export type Database = {
             columns: ["carer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_assignments_carer_id_fkey"
+            columns: ["carer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -1338,6 +1492,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shift_change_requests_applied_by_fkey"
+            columns: ["applied_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shift_change_requests_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -1359,8 +1520,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shift_change_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shift_change_requests_reverted_by_fkey"
             columns: ["reverted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_reverted_by_fkey"
+            columns: ["reverted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1369,7 +1551,7 @@ export type Database = {
             foreignKeyName: "shift_change_requests_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -1489,10 +1671,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -1576,6 +1772,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "time_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
       timesheet_exports: {
@@ -1621,10 +1824,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "timesheet_exports_carer_id_fkey"
+            columns: ["carer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "timesheet_exports_exported_by_fkey"
             columns: ["exported_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_exports_exported_by_fkey"
+            columns: ["exported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
             referencedColumns: ["id"]
           },
           {
@@ -1683,11 +1900,62 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_secure: {
+        Row: {
+          care_recipient_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          phone: string | null
+          profile_picture_url: string | null
+          two_factor_enabled: boolean | null
+          ui_preference: Database["public"]["Enums"]["app_role"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          care_recipient_name?: string | null
+          contact_email?: never
+          contact_phone?: never
+          created_at?: string | null
+          email?: never
+          full_name?: string | null
+          id?: string | null
+          phone?: never
+          profile_picture_url?: string | null
+          two_factor_enabled?: boolean | null
+          ui_preference?: Database["public"]["Enums"]["app_role"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          care_recipient_name?: string | null
+          contact_email?: never
+          contact_phone?: never
+          created_at?: string | null
+          email?: never
+          full_name?: string | null
+          id?: string | null
+          phone?: never
+          profile_picture_url?: string | null
+          two_factor_enabled?: boolean | null
+          ui_preference?: Database["public"]["Enums"]["app_role"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_change_request: {
@@ -1711,6 +1979,10 @@ export type Database = {
       }
       can_manage_family: {
         Args: { _family_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_contact_details: {
+        Args: { _profile_id: string; _viewer_id: string }
         Returns: boolean
       }
       create_recurring_task_instance: {
