@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
     membershipId?: string;
   } | null>(null);
   const [revokingAllInvites, setRevokingAllInvites] = useState(false);
+  const [showRevokeAllConfirm, setShowRevokeAllConfirm] = useState(false);
   const { toast } = useToast();
 
   // Email functionality state
@@ -394,11 +396,9 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
 
   const revokeAllInvites = async () => {
     if (invites.length === 0) return;
-    
-    const confirmed = window.confirm(`Are you sure you want to revoke all ${invites.length} pending invite(s)? This cannot be undone.`);
-    if (!confirmed) return;
 
     setRevokingAllInvites(true);
+    setShowRevokeAllConfirm(false);
     try {
       const { error } = await supabase
         .from('invite_codes')
@@ -973,7 +973,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={revokeAllInvites}
+                        onClick={() => setShowRevokeAllConfirm(true)}
                         disabled={revokingAllInvites}
                       >
                         {revokingAllInvites ? (
@@ -1140,6 +1140,25 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           onScheduleChange={onScheduleChange}
         />
       )}
+
+      <AlertDialog open={showRevokeAllConfirm} onOpenChange={setShowRevokeAllConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke All Pending Invites?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all {invites.length} pending invite code(s). 
+              Anyone with these codes will no longer be able to join the care team.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={revokeAllInvites} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Revoke All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
