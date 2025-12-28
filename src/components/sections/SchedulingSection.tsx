@@ -800,6 +800,8 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
             end_time,
             shift_type,
             notes,
+            pending_export,
+            original_carer_name,
             profiles!shift_assignments_carer_id_fkey (
               full_name
             ),
@@ -826,12 +828,12 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       // Transform shift_instances to calendar format
       const recurringShifts = (shiftInstancesData || []).map((instance: any) => {
         const assignment = instance.shift_assignments;
-        // Get carer name - prefer real carer, fallback to placeholder
+        // Get carer name - prefer real carer, fallback to placeholder, then original_carer_name for deleted carers
         const carerName = assignment.carer_id 
           ? (assignment.profiles?.full_name || 'Unknown')
           : assignment.placeholder_carer_id
             ? (assignment.placeholder_carers?.full_name || 'Unknown')
-            : 'Unassigned';
+            : assignment.original_carer_name || 'Unassigned';
         
         return {
           id: instance.id,
@@ -848,7 +850,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           status: instance.status,
           notes: assignment.notes,
           shift_type: assignment.shift_type || 'basic',
-          is_recurring: true
+          is_recurring: true,
+          pending_export: assignment.pending_export || false,
+          original_carer_name: assignment.original_carer_name
         };
       });
 

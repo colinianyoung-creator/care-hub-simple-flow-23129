@@ -561,6 +561,87 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
     }
   };
 
+  const cleanupPendingExportShifts = async () => {
+    try {
+      // Determine if this is a placeholder carer
+      const isPlaceholder = selectedCarerId.startsWith('placeholder_');
+      const actualCarerId = isPlaceholder ? null : selectedCarerId;
+      const placeholderCarerId = isPlaceholder ? selectedCarerId.replace('placeholder_', '') : null;
+
+      // Find shift_assignments that are pending_export for this carer
+      let query = supabase
+        .from('shift_assignments')
+        .select('id')
+        .eq('family_id', familyId)
+        .eq('pending_export', true);
+
+      if (actualCarerId) {
+        query = query.eq('carer_id', actualCarerId);
+      } else if (placeholderCarerId) {
+        query = query.eq('placeholder_carer_id', placeholderCarerId);
+      } else {
+        return; // No carer selected
+      }
+
+      const { data: pendingAssignments, error: fetchError } = await query;
+      if (fetchError) {
+        console.error('Error fetching pending assignments:', fetchError);
+        return;
+      }
+
+      if (!pendingAssignments || pendingAssignments.length === 0) {
+        return; // No pending export shifts to clean up
+      }
+
+      const assignmentIds = pendingAssignments.map(a => a.id);
+      const exportEndDateStr = format(endDate, 'yyyy-MM-dd');
+
+      // Delete shift_instances that are within the exported date range
+      const { error: instancesError } = await supabase
+        .from('shift_instances')
+        .delete()
+        .in('shift_assignment_id', assignmentIds)
+        .lte('scheduled_date', exportEndDateStr);
+
+      if (instancesError) {
+        console.error('Error deleting pending shift instances:', instancesError);
+        return;
+      }
+
+      // Check if any assignments now have no remaining shift_instances
+      const { data: remainingInstances, error: countError } = await supabase
+        .from('shift_instances')
+        .select('shift_assignment_id')
+        .in('shift_assignment_id', assignmentIds);
+
+      if (countError) {
+        console.error('Error counting remaining instances:', countError);
+        return;
+      }
+
+      // Find assignment IDs that have no remaining instances
+      const assignmentsWithInstances = new Set(remainingInstances?.map(i => i.shift_assignment_id) || []);
+      const assignmentsToDelete = assignmentIds.filter(id => !assignmentsWithInstances.has(id));
+
+      // Delete assignments that have no remaining instances
+      if (assignmentsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('shift_assignments')
+          .delete()
+          .in('id', assignmentsToDelete);
+
+        if (deleteError) {
+          console.error('Error deleting empty assignments:', deleteError);
+        }
+      }
+
+      console.log(`Cleaned up ${assignmentsToDelete.length} pending export assignments after timesheet export`);
+    } catch (error) {
+      console.error('Error cleaning up pending export shifts:', error);
+      // Don't fail the export if cleanup fails
+    }
+  };
+
   const handleExport = async (exportFormat: 'pdf' | 'excel') => {
     if (!timesheetData) {
       toast({
@@ -625,6 +706,9 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
 
       // Track the export in the database
       await trackExport(exportFormat);
+
+      // Clean up pending_export shifts for this carer after successful export
+      await cleanupPendingExportShifts();
 
       toast({
         title: "Timesheet exported",
