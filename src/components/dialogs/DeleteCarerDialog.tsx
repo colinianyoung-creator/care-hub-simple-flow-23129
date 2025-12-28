@@ -175,40 +175,198 @@ export const DeleteCarerDialog = ({
   };
 
   const handleReassignShifts = async (targetCarerId: string, targetType: 'registered' | 'placeholder') => {
-    const updateData = targetType === 'registered'
-      ? { carer_id: targetCarerId, placeholder_carer_id: null }
-      : { carer_id: null, placeholder_carer_id: targetCarerId };
-
-    let query = supabase
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // First, get all shift assignments for this carer
+    let assignmentQuery = supabase
       .from('shift_assignments')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .select('id, day_of_week')
       .eq('family_id', familyId)
       .eq('active', true);
 
     if (carerType === 'registered') {
-      query = query.eq('carer_id', carerId);
+      assignmentQuery = assignmentQuery.eq('carer_id', carerId);
     } else {
-      query = query.eq('placeholder_carer_id', carerId);
+      assignmentQuery = assignmentQuery.eq('placeholder_carer_id', carerId);
     }
 
-    const { error } = await query;
-    if (error) throw error;
+    const { data: assignments, error: fetchError } = await assignmentQuery;
+    if (fetchError) throw fetchError;
+    
+    if (!assignments || assignments.length === 0) return;
+
+    const assignmentIds = assignments.map(a => a.id);
+
+    // Get shift instances to determine which are past vs future
+    const { data: instances, error: instancesError } = await supabase
+      .from('shift_instances')
+      .select('id, shift_assignment_id, scheduled_date')
+      .in('shift_assignment_id', assignmentIds);
+
+    if (instancesError) throw instancesError;
+
+    // Separate past and future instances
+    const pastInstanceAssignmentIds = new Set<string>();
+    const futureInstanceAssignmentIds = new Set<string>();
+    
+    instances?.forEach(instance => {
+      if (instance.scheduled_date < today) {
+        pastInstanceAssignmentIds.add(instance.shift_assignment_id);
+      } else {
+        futureInstanceAssignmentIds.add(instance.shift_assignment_id);
+      }
+    });
+
+    // Prepare update data for future shifts (full reassignment)
+    const futureUpdateData = targetType === 'registered'
+      ? { carer_id: targetCarerId, placeholder_carer_id: null, original_carer_name: null, pending_export: false }
+      : { carer_id: null, placeholder_carer_id: targetCarerId, original_carer_name: null, pending_export: false };
+
+    // Update FUTURE shift assignments - fully reassign to new carer
+    const futureAssignmentIds = assignmentIds.filter(id => futureInstanceAssignmentIds.has(id) && !pastInstanceAssignmentIds.has(id));
+    
+    if (futureAssignmentIds.length > 0) {
+      const { error: futureError } = await supabase
+        .from('shift_assignments')
+        .update({ ...futureUpdateData, updated_at: new Date().toISOString() })
+        .in('id', futureAssignmentIds);
+
+      if (futureError) throw futureError;
+    }
+
+    // For assignments that have BOTH past and future instances, we need to handle carefully
+    // Keep the assignment but mark it as pending export with original carer name
+    const mixedAssignmentIds = assignmentIds.filter(id => 
+      pastInstanceAssignmentIds.has(id) && futureInstanceAssignmentIds.has(id)
+    );
+
+    // For purely past assignments, mark them as pending export
+    const pastOnlyAssignmentIds = assignmentIds.filter(id => 
+      pastInstanceAssignmentIds.has(id) && !futureInstanceAssignmentIds.has(id)
+    );
+
+    // Mark past-only shifts as pending export and preserve original carer name
+    if (pastOnlyAssignmentIds.length > 0) {
+      const { error: pastError } = await supabase
+        .from('shift_assignments')
+        .update({ 
+          original_carer_name: carerName,
+          pending_export: true,
+          updated_at: new Date().toISOString() 
+        })
+        .in('id', pastOnlyAssignmentIds);
+
+      if (pastError) throw pastError;
+    }
+
+    // For mixed assignments, preserve original name and mark pending, but also reassign future instances
+    if (mixedAssignmentIds.length > 0) {
+      // Update the assignment to mark it pending and preserve original name
+      const { error: mixedError } = await supabase
+        .from('shift_assignments')
+        .update({ 
+          original_carer_name: carerName,
+          pending_export: true,
+          updated_at: new Date().toISOString() 
+        })
+        .in('id', mixedAssignmentIds);
+
+      if (mixedError) throw mixedError;
+
+      // Delete future instances from mixed assignments (they'll be recreated for new carer)
+      const { error: deleteInstancesError } = await supabase
+        .from('shift_instances')
+        .delete()
+        .in('shift_assignment_id', mixedAssignmentIds)
+        .gte('scheduled_date', today);
+
+      if (deleteInstancesError) throw deleteInstancesError;
+    }
   };
 
   const handleDeleteShifts = async () => {
-    let query = supabase
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // First, get all shift assignments for this carer
+    let assignmentQuery = supabase
       .from('shift_assignments')
-      .delete()
+      .select('id')
       .eq('family_id', familyId);
 
     if (carerType === 'registered') {
-      query = query.eq('carer_id', carerId);
+      assignmentQuery = assignmentQuery.eq('carer_id', carerId);
     } else {
-      query = query.eq('placeholder_carer_id', carerId);
+      assignmentQuery = assignmentQuery.eq('placeholder_carer_id', carerId);
     }
 
-    const { error } = await query;
-    if (error) throw error;
+    const { data: assignments, error: fetchError } = await assignmentQuery;
+    if (fetchError) throw fetchError;
+    
+    if (!assignments || assignments.length === 0) return;
+
+    const assignmentIds = assignments.map(a => a.id);
+
+    // Get shift instances to determine which are past vs future
+    const { data: instances, error: instancesError } = await supabase
+      .from('shift_instances')
+      .select('id, shift_assignment_id, scheduled_date')
+      .in('shift_assignment_id', assignmentIds);
+
+    if (instancesError) throw instancesError;
+
+    // Separate assignments based on whether they have past instances
+    const assignmentsWithPastInstances = new Set<string>();
+    const assignmentsWithFutureInstances = new Set<string>();
+    
+    instances?.forEach(instance => {
+      if (instance.scheduled_date < today) {
+        assignmentsWithPastInstances.add(instance.shift_assignment_id);
+      } else {
+        assignmentsWithFutureInstances.add(instance.shift_assignment_id);
+      }
+    });
+
+    // Delete future shift instances only
+    const { error: deleteInstancesError } = await supabase
+      .from('shift_instances')
+      .delete()
+      .in('shift_assignment_id', assignmentIds)
+      .gte('scheduled_date', today);
+
+    if (deleteInstancesError) throw deleteInstancesError;
+
+    // Delete assignments that ONLY have future instances (no past data)
+    const futureOnlyAssignmentIds = assignmentIds.filter(id => 
+      !assignmentsWithPastInstances.has(id)
+    );
+
+    if (futureOnlyAssignmentIds.length > 0) {
+      const { error: deleteAssignmentsError } = await supabase
+        .from('shift_assignments')
+        .delete()
+        .in('id', futureOnlyAssignmentIds);
+
+      if (deleteAssignmentsError) throw deleteAssignmentsError;
+    }
+
+    // Mark assignments with past instances as pending export
+    const pastAssignmentIds = assignmentIds.filter(id => 
+      assignmentsWithPastInstances.has(id)
+    );
+
+    if (pastAssignmentIds.length > 0) {
+      const { error: updateError } = await supabase
+        .from('shift_assignments')
+        .update({ 
+          original_carer_name: carerName,
+          pending_export: true,
+          active: false,
+          updated_at: new Date().toISOString() 
+        })
+        .in('id', pastAssignmentIds);
+
+      if (updateError) throw updateError;
+    }
   };
 
   const handleGenerateInviteForShifts = async () => {

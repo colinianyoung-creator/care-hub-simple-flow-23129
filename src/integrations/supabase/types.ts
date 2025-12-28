@@ -1347,6 +1347,8 @@ export type Database = {
           id: string
           is_recurring: boolean | null
           notes: string | null
+          original_carer_name: string | null
+          pending_export: boolean | null
           placeholder_carer_id: string | null
           shift_type: string | null
           start_time: string
@@ -1362,6 +1364,8 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
+          original_carer_name?: string | null
+          pending_export?: boolean | null
           placeholder_carer_id?: string | null
           shift_type?: string | null
           start_time: string
@@ -1377,6 +1381,8 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
+          original_carer_name?: string | null
+          pending_export?: boolean | null
           placeholder_carer_id?: string | null
           shift_type?: string | null
           start_time?: string
