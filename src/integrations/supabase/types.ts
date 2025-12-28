@@ -1033,6 +1033,98 @@ export type Database = {
           },
         ]
       }
+      risk_assessments: {
+        Row: {
+          activity: string
+          approved_at: string | null
+          approved_by: string | null
+          assessment_content: string
+          created_at: string | null
+          created_by: string
+          family_id: string
+          id: string
+          is_approved: boolean | null
+          last_reviewed_at: string | null
+          location: string
+          main_hazards: string
+          next_review_date: string | null
+          residual_risk_level: string | null
+          reviewed_by: string | null
+          setting: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          activity: string
+          approved_at?: string | null
+          approved_by?: string | null
+          assessment_content: string
+          created_at?: string | null
+          created_by: string
+          family_id: string
+          id?: string
+          is_approved?: boolean | null
+          last_reviewed_at?: string | null
+          location: string
+          main_hazards: string
+          next_review_date?: string | null
+          residual_risk_level?: string | null
+          reviewed_by?: string | null
+          setting: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          activity?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          assessment_content?: string
+          created_at?: string | null
+          created_by?: string
+          family_id?: string
+          id?: string
+          is_approved?: boolean | null
+          last_reviewed_at?: string | null
+          location?: string
+          main_hazards?: string
+          next_review_date?: string | null
+          residual_risk_level?: string | null
+          reviewed_by?: string | null
+          setting?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_change_requests: {
         Row: {
           created_at: string
