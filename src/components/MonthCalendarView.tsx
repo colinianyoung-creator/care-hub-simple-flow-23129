@@ -204,14 +204,16 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
         end_time: instance.end_time,
         carer_id: instance.carer_id,
         placeholder_carer_id: instance.placeholder_carer_id,
-        carer_name: instance.carer_name || newCarers[instance.carer_id] || 'Unknown',
+        carer_name: instance.carer_name || instance.original_carer_name || newCarers[instance.carer_id] || 'Unknown',
         placeholder_carer_name: instance.placeholder_carer_name,
         status: instance.status || 'scheduled',
         notes: null,
         family_id: familyId,
         shift_type: instance.shift_type || 'basic',
         is_leave_request: false,
-        is_recurring: true
+        is_recurring: true,
+        pending_export: instance.pending_export || false,
+        original_carer_name: instance.original_carer_name
       }));
 
       // For carers in single-family mode, filter recurring shifts to only show their own
@@ -493,10 +495,13 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                       <Badge 
                         key={shiftIndex} 
                         variant="secondary" 
-                        className={`text-xs w-full justify-start cursor-pointer hover:opacity-80 min-h-[24px] sm:min-h-[32px] md:min-h-[40px] p-1 sm:p-2 ${
-                          getShiftTypeColor(shift.shift_type, shift.is_leave_request)
-                        }`}
+                        className={cn(
+                          "text-xs w-full justify-start cursor-pointer hover:opacity-80 min-h-[24px] sm:min-h-[32px] md:min-h-[40px] p-1 sm:p-2",
+                          getShiftTypeColor(shift.shift_type, shift.is_leave_request),
+                          shift.pending_export && "opacity-50 grayscale"
+                        )}
                         onClick={() => onShiftClick?.(shift)}
+                        title={shift.pending_export ? `${shift.original_carer_name || shift.carer_name} (pending export)` : undefined}
                       >
                               <div className="flex flex-col w-full gap-0.5 sm:gap-1">
                                 <span className="text-xs font-medium leading-tight hidden sm:block">
@@ -507,6 +512,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
                                 </span>
                                 <span className="text-[10px] font-medium leading-tight hidden sm:block opacity-80">
                                   {getShiftTypeLabel(shift.shift_type || 'basic')}
+                                  {shift.pending_export && ' (export pending)'}
                                 </span>
                                 <span className="text-xs opacity-90 leading-tight truncate">
                                   {getShiftDisplayName(shift)}

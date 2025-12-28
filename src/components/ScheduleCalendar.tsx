@@ -485,12 +485,14 @@ useEffect(() => {
                         className="group relative"
                       >
                               <Badge 
-                                className={`${
+                                className={cn(
                                   isTablet 
                                     ? 'text-xs cursor-pointer p-2 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden min-h-[38px] max-h-[42px] relative z-20'
-                                    : 'text-xs px-1 py-0 w-full cursor-pointer hover:opacity-80 transition-opacity overflow-hidden'
-                                } ${getShiftTypeColor(shift.shift_type, shift.is_leave_request)}`}
-                                title={getDisplayNames(shift)}
+                                    : 'text-xs px-1 py-0 w-full cursor-pointer hover:opacity-80 transition-opacity overflow-hidden',
+                                  getShiftTypeColor(shift.shift_type, shift.is_leave_request),
+                                  shift.pending_export && "opacity-50 grayscale"
+                                )}
+                                title={shift.pending_export ? `${shift.original_carer_name || shift.carer_name} (pending export)` : getDisplayNames(shift)}
                                 onClick={() => handleShiftClick(shift)}
                               >
                                 {isTablet ? (
