@@ -67,6 +67,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
     name: string;
     membershipId?: string;
   } | null>(null);
+  const [revokingAllInvites, setRevokingAllInvites] = useState(false);
   const { toast } = useToast();
 
   // Email functionality state
@@ -388,6 +389,40 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
         description: "Failed to revoke invite",
         variant: "destructive",
       });
+    }
+  };
+
+  const revokeAllInvites = async () => {
+    if (invites.length === 0) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to revoke all ${invites.length} pending invite(s)? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setRevokingAllInvites(true);
+    try {
+      const { error } = await supabase
+        .from('invite_codes')
+        .delete()
+        .eq('family_id', familyId)
+        .is('used_by', null);
+
+      if (error) throw error;
+
+      toast({
+        title: "All Invites Revoked",
+        description: `${invites.length} pending invite(s) have been deleted`,
+      });
+
+      loadTeamData();
+    } catch (error) {
+      console.error('Error revoking all invites:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke invites",
+        variant: "destructive",
+      });
+    } finally {
+      setRevokingAllInvites(false);
     }
   };
 
@@ -929,9 +964,26 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Pending Invites</CardTitle>
-                    <CardDescription>Invite codes that haven't been used yet</CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <div>
+                      <CardTitle>Pending Invites</CardTitle>
+                      <CardDescription>Invite codes that haven't been used yet</CardDescription>
+                    </div>
+                    {invites.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={revokeAllInvites}
+                        disabled={revokingAllInvites}
+                      >
+                        {revokingAllInvites ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 mr-1" />
+                        )}
+                        Revoke All
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
