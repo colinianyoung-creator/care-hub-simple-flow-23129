@@ -82,6 +82,80 @@ export type Database = {
           },
         ]
       }
+      attendance_exceptions: {
+        Row: {
+          actual_time: string | null
+          created_at: string | null
+          difference_minutes: number | null
+          exception_type: string
+          family_id: string
+          id: string
+          notes: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          scheduled_time: string | null
+          shift_instance_id: string | null
+        }
+        Insert: {
+          actual_time?: string | null
+          created_at?: string | null
+          difference_minutes?: number | null
+          exception_type: string
+          family_id: string
+          id?: string
+          notes?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          scheduled_time?: string | null
+          shift_instance_id?: string | null
+        }
+        Update: {
+          actual_time?: string | null
+          created_at?: string | null
+          difference_minutes?: number | null
+          exception_type?: string
+          family_id?: string
+          id?: string
+          notes?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          scheduled_time?: string | null
+          shift_instance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_exceptions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_exceptions_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_exceptions_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_exceptions_shift_instance_id_fkey"
+            columns: ["shift_instance_id"]
+            isOneToOne: false
+            referencedRelation: "shift_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       body_logs: {
         Row: {
           body_location: string
@@ -368,6 +442,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          default_attendance_mode: Database["public"]["Enums"]["attendance_mode"]
           id: string
           name: string
           updated_at: string
@@ -375,6 +450,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          default_attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           id?: string
           name: string
           updated_at?: string
@@ -382,6 +458,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          default_attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           id?: string
           name?: string
           updated_at?: string
@@ -1342,6 +1419,7 @@ export type Database = {
           carer_id: string | null
           created_at: string
           day_of_week: number
+          default_attendance_mode: Database["public"]["Enums"]["attendance_mode"]
           end_time: string
           family_id: string
           id: string
@@ -1359,6 +1437,7 @@ export type Database = {
           carer_id?: string | null
           created_at?: string
           day_of_week: number
+          default_attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           end_time: string
           family_id: string
           id?: string
@@ -1376,6 +1455,7 @@ export type Database = {
           carer_id?: string | null
           created_at?: string
           day_of_week?: number
+          default_attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           end_time?: string
           family_id?: string
           id?: string
@@ -1573,6 +1653,9 @@ export type Database = {
         Row: {
           actual_end_time: string | null
           actual_start_time: string | null
+          attendance_mode: Database["public"]["Enums"]["attendance_mode"]
+          completed_at: string | null
+          completed_by: string | null
           created_at: string
           id: string
           notes: string | null
@@ -1584,6 +1667,9 @@ export type Database = {
         Insert: {
           actual_end_time?: string | null
           actual_start_time?: string | null
+          attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1595,6 +1681,9 @@ export type Database = {
         Update: {
           actual_end_time?: string | null
           actual_start_time?: string | null
+          attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1604,6 +1693,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shift_instances_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_instances_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shift_instances_shift_assignment_id_fkey"
             columns: ["shift_assignment_id"]
@@ -2171,6 +2274,7 @@ export type Database = {
         | "disabled_person"
         | "manager"
         | "agency"
+      attendance_mode: "none" | "confirm_only" | "actuals"
       leave_status: "pending" | "approved" | "denied" | "cancelled"
       shift_status: "scheduled" | "completed" | "cancelled" | "absent"
     }
@@ -2308,6 +2412,7 @@ export const Constants = {
         "manager",
         "agency",
       ],
+      attendance_mode: ["none", "confirm_only", "actuals"],
       leave_status: ["pending", "approved", "denied", "cancelled"],
       shift_status: ["scheduled", "completed", "cancelled", "absent"],
     },
