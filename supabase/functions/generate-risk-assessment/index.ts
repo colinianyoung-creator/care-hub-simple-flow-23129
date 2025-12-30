@@ -219,8 +219,17 @@ serve(async (req) => {
       });
     }
 
+    // Get current date formatted for UK
+    const currentDate = new Date().toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+
     // Build the user prompt
     const userPrompt = `Please generate a comprehensive risk assessment based on the following information:
+
+**Current Date:** ${currentDate}
 
 ## User Input:
 - **Activity:** ${activity}
@@ -232,10 +241,11 @@ serve(async (req) => {
 ${contextData || 'No additional context available.'}
 
 Please create a thorough, person-centred risk assessment following your standard template structure. Make sure to:
-1. Consider the specific context and any relevant medical/care information provided
-2. Tailor control measures to the specific activity and setting
-3. Provide practical, proportionate recommendations
-4. Include the required disclaimer at the end`;
+1. Use the current date provided above for the "Date Created" field
+2. Consider the specific context and any relevant medical/care information provided
+3. Tailor control measures to the specific activity and setting
+4. Provide practical, proportionate recommendations
+5. Include the required disclaimer at the end`;
 
     console.log('Calling AI gateway...');
 
