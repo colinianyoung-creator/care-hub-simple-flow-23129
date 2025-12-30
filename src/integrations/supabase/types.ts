@@ -2173,6 +2173,7 @@ export type Database = {
       get_shift_instances_with_names: {
         Args: { _end_date: string; _family_id: string; _start_date: string }
         Returns: {
+          attendance_mode: Database["public"]["Enums"]["attendance_mode"]
           carer_id: string
           carer_name: string
           end_time: string
