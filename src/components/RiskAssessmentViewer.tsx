@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -70,27 +72,58 @@ export const RiskAssessmentViewer = ({
     }
   };
 
+  const convertMarkdownToHtml = (markdown: string): string => {
+    return markdown
+      // Headers
+      .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 class="main-title">$1</h1>')
+      // Bold and italic
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Unordered lists
+      .replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>')
+      // Ordered lists
+      .replace(/^\s*\d+\.\s+(.+)$/gm, '<li>$1</li>')
+      // Wrap consecutive list items
+      .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+      // Paragraphs (lines that aren't already wrapped)
+      .replace(/^(?!<[hul]|<li)(.+)$/gm, '<p>$1</p>')
+      // Clean up empty paragraphs
+      .replace(/<p>\s*<\/p>/g, '')
+      // Line breaks
+      .replace(/\n\n/g, '\n');
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
+      const htmlContent = convertMarkdownToHtml(content);
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
           <title>${title}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
-            h1 { color: #1f2937; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-            h2, h3 { color: #374151; margin-top: 1.5em; }
-            ul { padding-left: 20px; }
-            li { margin-bottom: 0.5em; }
-            .disclaimer { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; }
-            @media print { body { padding: 0; } }
+            body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+            h1.main-title { color: #1f2937; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; font-size: 1.5rem; }
+            h2 { color: #1f2937; font-size: 1.25rem; margin-top: 1.5em; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5em; }
+            h3 { color: #374151; font-size: 1.1rem; margin-top: 1.25em; }
+            h4 { color: #4b5563; font-size: 1rem; margin-top: 1em; }
+            p { margin: 0.75em 0; color: #374151; }
+            ul { padding-left: 24px; margin: 0.75em 0; }
+            li { margin-bottom: 0.5em; color: #374151; }
+            strong { color: #1f2937; }
+            @media print { 
+              body { padding: 0; } 
+              h2 { page-break-before: auto; }
+            }
           </style>
         </head>
         <body>
-          <h1>${title}</h1>
-          ${content.replace(/\n/g, '<br>').replace(/#{1,6}\s/g, '<h3>').replace(/<h3>(.+?)(<br>|$)/g, '<h3>$1</h3>')}
+          ${htmlContent}
         </body>
         </html>
       `);
@@ -258,9 +291,26 @@ export const RiskAssessmentViewer = ({
         </div>
       ) : (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border">
-            {content}
+          <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-6 rounded-lg border">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ children }) => <h1 className="text-xl font-bold text-foreground border-b border-border pb-2 mb-4">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-lg font-semibold text-foreground mt-6 mb-3">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-base font-semibold text-foreground mt-4 mb-2">{children}</h3>,
+                h4: ({ children }) => <h4 className="text-sm font-semibold text-foreground mt-3 mb-2">{children}</h4>,
+                p: ({ children }) => <p className="text-muted-foreground mb-3 leading-relaxed">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="text-muted-foreground">{children}</li>,
+                strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                table: ({ children }) => <table className="w-full border-collapse border border-border my-4">{children}</table>,
+                th: ({ children }) => <th className="border border-border bg-muted px-3 py-2 text-left font-semibold">{children}</th>,
+                td: ({ children }) => <td className="border border-border px-3 py-2">{children}</td>,
+              }}
+            >
+              {content}
+            </ReactMarkdown>
           </div>
         </div>
       )}
