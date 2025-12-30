@@ -12,6 +12,8 @@ export type ShiftType =
   | 'training' 
   | 'other';
 
+export type AttendanceMode = 'none' | 'confirm_only' | 'actuals';
+
 /**
  * Get Tailwind CSS classes for shift type colors
  * @param shiftType - The type of shift (basic, cover, sickness, etc.)
@@ -69,5 +71,73 @@ export const getShiftTypeLabel = (shiftType: string): string => {
     case 'basic':
     default:
       return 'Basic';
+  }
+};
+
+/**
+ * Get attendance mode label
+ */
+export const getAttendanceModeLabel = (mode: AttendanceMode): string => {
+  switch (mode) {
+    case 'none':
+      return 'No Clock-in';
+    case 'confirm_only':
+      return 'Confirm Attendance';
+    case 'actuals':
+      return 'Actual Hours';
+    default:
+      return 'Unknown';
+  }
+};
+
+/**
+ * Get pay source based on attendance mode
+ */
+export const getPaySource = (mode: AttendanceMode): 'scheduled' | 'actual' => {
+  return mode === 'actuals' ? 'actual' : 'scheduled';
+};
+
+/**
+ * Check if clock-in is required for an attendance mode
+ */
+export const isClockInRequired = (mode: AttendanceMode): boolean => {
+  return mode !== 'none';
+};
+
+/**
+ * Calculate payable hours based on attendance mode
+ * @param mode - The attendance mode
+ * @param scheduledHours - Hours from shift_instance schedule
+ * @param actualHours - Hours from time_entry (if exists)
+ * @param hasTimeEntry - Whether a time_entry exists
+ * @returns Object with payable hours and any exceptions
+ */
+export const calculatePayableHours = (
+  mode: AttendanceMode,
+  scheduledHours: number,
+  actualHours: number | null,
+  hasTimeEntry: boolean
+): { hours: number; exception?: string } => {
+  switch (mode) {
+    case 'none':
+      // Pay from scheduled time, no time_entry needed
+      return { hours: scheduledHours };
+      
+    case 'confirm_only':
+      // Pay from scheduled time, but flag if no time_entry
+      if (!hasTimeEntry) {
+        return { hours: scheduledHours, exception: 'missing_clock_in' };
+      }
+      return { hours: scheduledHours };
+      
+    case 'actuals':
+      // Pay from time_entry only
+      if (!hasTimeEntry || actualHours === null) {
+        return { hours: 0, exception: 'missing_clock_in_blocks_pay' };
+      }
+      return { hours: actualHours };
+      
+    default:
+      return { hours: scheduledHours };
   }
 };

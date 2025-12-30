@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { format as formatDate } from "date-fns";
+import { AttendanceModeSelector, type AttendanceMode } from "@/components/AttendanceModeSelector";
 
 interface UnifiedShiftFormProps {
   familyId: string;
@@ -56,7 +57,8 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
     hours: '8',
     reason: '',
     carer_id: '',
-    shift_category: 'basic'
+    shift_category: 'basic',
+    attendance_mode: 'none' as 'none' | 'confirm_only' | 'actuals'
   });
   
   const isEditingLeaveRequest = editShiftData?.id && ['annual_leave', 'sickness', 'public_holiday'].includes(editShiftData.request_type);
@@ -66,6 +68,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
   const [deleteOption, setDeleteOption] = useState<'single' | 'future' | 'series'>('single');
   const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [familyDefaultMode, setFamilyDefaultMode] = useState<'none' | 'confirm_only' | 'actuals'>('none');
   const { toast } = useToast();
 
   const daysOfWeek = [
@@ -107,10 +110,34 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         hours: calculateHoursFromShift(editShiftData),
         reason: editShiftData?.reason || editShiftData?.notes || '',
         carer_id: editShiftData?.carer_id || '',
-        shift_category: editShiftData?.shift_type || 'basic'
+        shift_category: editShiftData?.shift_type || 'basic',
+        attendance_mode: editShiftData?.attendance_mode || familyDefaultMode || 'none'
       });
     }
-  }, [open, editShiftData, initialDate]);
+  }, [open, editShiftData, initialDate, familyDefaultMode]);
+
+  // Load family default attendance mode
+  useEffect(() => {
+    const loadFamilyDefault = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('families')
+          .select('default_attendance_mode')
+          .eq('id', familyId)
+          .single();
+        
+        if (!error && data?.default_attendance_mode) {
+          setFamilyDefaultMode(data.default_attendance_mode as 'none' | 'confirm_only' | 'actuals');
+        }
+      } catch (error) {
+        console.error('Error loading family default attendance mode:', error);
+      }
+    };
+    
+    if (familyId) {
+      loadFamilyDefault();
+    }
+  }, [familyId]);
 
   // Load carers (registered + placeholder)
   useEffect(() => {
@@ -348,7 +375,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             const actualCarerId = isPlaceholder ? null : formData.carer_id;
             const placeholderCarerId = isPlaceholder ? selectedCarer.placeholder_id : null;
 
-            // Create shift_assignment
+            // Create shift_assignment with default_attendance_mode
             const { data: assignment, error: assignmentError } = await supabase
               .from('shift_assignments')
               .insert({
@@ -361,7 +388,8 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
                 shift_type: formData.request_type,
                 is_recurring: true,
                 active: true,
-                notes: formData.reason || 'Recurring shift'
+                notes: formData.reason || 'Recurring shift',
+                default_attendance_mode: formData.attendance_mode
               })
               .select()
               .single();
@@ -856,6 +884,13 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               </div>
             )}
 
+            {/* Attendance Mode - Only for admins and non-leave shift types */}
+            {isAdmin && !['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type) && (
+              <AttendanceModeSelector
+                value={formData.attendance_mode}
+                onChange={(value) => setFormData(prev => ({ ...prev, attendance_mode: value }))}
+              />
+            )}
             {/* End Date - Only for leave types */}
             {['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type) && (
               <div>
