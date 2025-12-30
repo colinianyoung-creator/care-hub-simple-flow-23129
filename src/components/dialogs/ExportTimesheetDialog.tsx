@@ -13,7 +13,7 @@ import { format, startOfMonth, endOfMonth, addMonths, subMonths, addWeeks, isSam
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
+import { calculatePayableHours, AttendanceMode } from "@/lib/shiftUtils";
 interface ExportTimesheetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -191,7 +191,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       
       const timeQuery = supabase
         .from('time_entries')
-        .select('clock_in, clock_out, user_id, notes, shift_type')
+        .select('clock_in, clock_out, user_id, notes, shift_type, shift_instance_id, total_hours')
         .eq('family_id', familyId)
         .eq('user_id', selectedCarerId)
         .gte('clock_in', startDate.toISOString())
@@ -251,14 +251,41 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         }) || [];
         
         // Helper function to calculate hours by shift type from time entries
-        const calculateHoursByShiftType = (entries: any[], targetType: string) => {
+        // Now considers attendance_mode from associated shift_instance
+        const calculateHoursByShiftType = (entries: any[], targetType: string, shiftInstances: any[]) => {
           return entries
             .filter(entry => entry.shift_type === targetType)
             .reduce((total, entry) => {
               if (entry.clock_in && entry.clock_out) {
-                const start = new Date(entry.clock_in);
-                const end = new Date(entry.clock_out);
-                return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                // Find the associated shift_instance if it exists
+                const shiftInstance = entry.shift_instance_id 
+                  ? shiftInstances.find(si => si.id === entry.shift_instance_id)
+                  : null;
+                
+                const attendanceMode = (shiftInstance?.attendance_mode || 'none') as AttendanceMode;
+                
+                // Calculate scheduled hours from shift_instance if available
+                let scheduledHours = 0;
+                if (shiftInstance?.start_time && shiftInstance?.end_time) {
+                  const start = new Date(`2000-01-01T${shiftInstance.start_time}`);
+                  const end = new Date(`2000-01-01T${shiftInstance.end_time}`);
+                  scheduledHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                }
+                
+                // Calculate actual hours from time_entry
+                const actualStart = new Date(entry.clock_in);
+                const actualEnd = new Date(entry.clock_out);
+                const actualHours = (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60);
+                
+                // Use calculatePayableHours to determine which hours to use
+                const payable = calculatePayableHours(
+                  attendanceMode,
+                  scheduledHours || actualHours, // fallback to actual if no scheduled
+                  actualHours,
+                  true // has time entry
+                );
+                
+                return total + payable.hours;
               }
               return total;
             }, 0);
@@ -266,6 +293,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
         
         // Helper function to calculate hours from shift_instances that DON'T have time_entries
         // This prevents double-counting while capturing scheduled shifts
+        // Now respects attendance_mode - 'actuals' mode shifts without time entries get 0 hours
         const calculateShiftInstanceHours = (instances: any[], targetType: string) => {
           return instances
             .filter(shift => shift.shift_type === targetType)
@@ -282,24 +310,35 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
               if (shift.start_time && shift.end_time) {
                 const start = new Date(`2000-01-01T${shift.start_time}`);
                 const end = new Date(`2000-01-01T${shift.end_time}`);
-                return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                const scheduledHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                
+                // Use attendance mode to determine payable hours
+                const attendanceMode = (shift.attendance_mode || 'none') as AttendanceMode;
+                const payable = calculatePayableHours(
+                  attendanceMode,
+                  scheduledHours,
+                  null, // no actual hours
+                  false // no time entry
+                );
+                
+                return total + payable.hours;
               }
               return total;
             }, 0);
         };
         
         // Calculate hours from time_entries + unmatched shift_instances
-        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic') 
+        const basic = calculateHoursByShiftType(weekTimeEntries, 'basic', weekShiftInstances) 
           + calculateShiftInstanceHours(weekShiftInstances, 'basic');
-        const cover = calculateHoursByShiftType(weekTimeEntries, 'cover')
+        const cover = calculateHoursByShiftType(weekTimeEntries, 'cover', weekShiftInstances)
           + calculateShiftInstanceHours(weekShiftInstances, 'cover');
           
         // Calculate leave hours from time_entries + unmatched shift_instances
-        let annual_leave = calculateHoursByShiftType(weekTimeEntries, 'annual_leave')
+        let annual_leave = calculateHoursByShiftType(weekTimeEntries, 'annual_leave', weekShiftInstances)
           + calculateShiftInstanceHours(weekShiftInstances, 'annual_leave');
-        let public_holiday = calculateHoursByShiftType(weekTimeEntries, 'public_holiday')
+        let public_holiday = calculateHoursByShiftType(weekTimeEntries, 'public_holiday', weekShiftInstances)
           + calculateShiftInstanceHours(weekShiftInstances, 'public_holiday');
-        let sickness = calculateHoursByShiftType(weekTimeEntries, 'sickness')
+        let sickness = calculateHoursByShiftType(weekTimeEntries, 'sickness', weekShiftInstances)
           + calculateShiftInstanceHours(weekShiftInstances, 'sickness');
         
         // Only add leave_requests hours as fallback if NO time_entries or shift_instances exist
