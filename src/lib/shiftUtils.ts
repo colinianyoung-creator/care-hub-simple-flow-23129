@@ -105,6 +105,41 @@ export const isClockInRequired = (mode: AttendanceMode): boolean => {
 };
 
 /**
+ * Round a date to the nearest quarter hour (15 minutes)
+ * @param date - The date to round
+ * @returns A new Date rounded to the nearest quarter hour
+ */
+export const roundToNearestQuarterHour = (date: Date): Date => {
+  const rounded = new Date(date);
+  const minutes = rounded.getMinutes();
+  const seconds = rounded.getSeconds();
+  
+  // Calculate total minutes including seconds
+  const totalMinutes = minutes + (seconds >= 30 ? 1 : 0);
+  
+  // Round to nearest 15 minutes
+  let roundedMinutes: number;
+  if (totalMinutes <= 7) {
+    roundedMinutes = 0;
+  } else if (totalMinutes <= 22) {
+    roundedMinutes = 15;
+  } else if (totalMinutes <= 37) {
+    roundedMinutes = 30;
+  } else if (totalMinutes <= 52) {
+    roundedMinutes = 45;
+  } else {
+    roundedMinutes = 0;
+    rounded.setHours(rounded.getHours() + 1);
+  }
+  
+  rounded.setMinutes(roundedMinutes);
+  rounded.setSeconds(0);
+  rounded.setMilliseconds(0);
+  
+  return rounded;
+};
+
+/**
  * Calculate payable hours based on attendance mode
  * @param mode - The attendance mode
  * @param scheduledHours - Hours from shift_instance schedule
