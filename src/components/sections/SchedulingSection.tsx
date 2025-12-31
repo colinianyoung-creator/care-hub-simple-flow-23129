@@ -24,6 +24,7 @@ import { ShiftViewToggle } from "../ShiftViewToggle";
 import { ChangeRequestCard } from "../ChangeRequestCard";
 import { SnapshotViewerModal } from "../dialogs/SnapshotViewerModal";
 import { ConflictResolutionModal } from "../dialogs/ConflictResolutionModal";
+import { PendingTimeEntries } from "../PendingTimeEntries";
 
 interface SchedulingSectionProps {
   familyId: string | undefined;
@@ -1547,6 +1548,14 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         </TabsContent>
 
         <TabsContent value="requests" className="space-y-4">
+          {/* Pending Time Entries - Admin only */}
+          {isAdmin && (
+            <PendingTimeEntries 
+              familyId={familyId} 
+              onUpdate={loadSchedulingData}
+            />
+          )}
+
           <Card>
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">

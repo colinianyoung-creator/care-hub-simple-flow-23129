@@ -1818,12 +1818,16 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           break_duration: number | null
           clock_in: string
           clock_out: string | null
           created_at: string
           family_id: string
           id: string
+          is_unscheduled: boolean
           notes: string | null
           shift_instance_id: string | null
           shift_type: string | null
@@ -1832,12 +1836,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           break_duration?: number | null
           clock_in: string
           clock_out?: string | null
           created_at?: string
           family_id: string
           id?: string
+          is_unscheduled?: boolean
           notes?: string | null
           shift_instance_id?: string | null
           shift_type?: string | null
@@ -1846,12 +1854,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           break_duration?: number | null
           clock_in?: string
           clock_out?: string | null
           created_at?: string
           family_id?: string
           id?: string
+          is_unscheduled?: boolean
           notes?: string | null
           shift_instance_id?: string | null
           shift_type?: string | null
@@ -1860,6 +1872,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_family_id_fkey"
             columns: ["family_id"]

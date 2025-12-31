@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Play, Square, CheckCircle, Info } from 'lucide-react';
+import { Clock, Play, Square, CheckCircle, Info, AlertTriangle, CalendarClock } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AttendanceModeBadge, type AttendanceMode } from "@/components/AttendanceModeSelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { roundToNearestQuarterHour } from "@/lib/shiftUtils";
+import { format } from 'date-fns';
+
+interface TodayShift {
+  id: string;
+  shift_instance_id: string;
+  attendance_mode: AttendanceMode;
+  scheduled_date: string;
+  start_time: string;
+  end_time: string;
+  carer_name: string;
+  shift_type: string;
+}
 
 interface ClockInOutProps {
   familyId: string;
@@ -25,21 +37,19 @@ interface ClockInOutProps {
 
 export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockInOutProps) => {
   const [activeEntry, setActiveEntry] = useState<any>(null);
-  const [manualEntry, setManualEntry] = useState({
-    start_time: '',
-    end_time: '',
-    notes: ''
-  });
+  const [todayShifts, setTodayShifts] = useState<TodayShift[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [loadingShifts, setLoadingShifts] = useState(true);
   const [markingComplete, setMarkingComplete] = useState(false);
   const { toast } = useToast();
 
-  const attendanceMode = currentShiftInstance?.attendance_mode || 'none';
-  const requiresClockIn = attendanceMode !== 'none';
+  // Get today's shift requiring clock-in (if any)
+  const shiftRequiringClockIn = todayShifts.find(s => s.attendance_mode !== 'none');
+  const hasScheduledShiftToday = todayShifts.length > 0;
 
   useEffect(() => {
     loadActiveEntry();
+    loadTodayShifts();
   }, [familyId]);
 
   const loadActiveEntry = async () => {
@@ -63,27 +73,85 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
     }
   };
 
-  const handleClockIn = async () => {
+  const loadTodayShifts = async () => {
+    try {
+      setLoadingShifts(true);
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const today = format(new Date(), 'yyyy-MM-dd');
+
+      // Get today's shift instances assigned to this carer
+      const { data, error } = await supabase
+        .rpc('get_shift_instances_with_names', {
+          _family_id: familyId,
+          _start_date: today,
+          _end_date: today
+        });
+
+      if (error) throw error;
+
+      // Filter to only this carer's shifts
+      const myShifts = (data || [])
+        .filter((shift: any) => shift.carer_id === user.data.user!.id)
+        .map((shift: any) => ({
+          id: shift.shift_assignment_id,
+          shift_instance_id: shift.id,
+          attendance_mode: shift.attendance_mode as AttendanceMode,
+          scheduled_date: shift.scheduled_date,
+          start_time: shift.start_time,
+          end_time: shift.end_time,
+          carer_name: shift.carer_name,
+          shift_type: shift.shift_type || 'basic'
+        }));
+
+      setTodayShifts(myShifts);
+    } catch (error) {
+      console.error('Error loading today\'s shifts:', error);
+    } finally {
+      setLoadingShifts(false);
+    }
+  };
+
+  const handleClockIn = async (forShift?: TodayShift) => {
     setLoading(true);
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user) throw new Error('Not authenticated');
+
+      // Round clock-in time to nearest quarter hour
+      const roundedTime = roundToNearestQuarterHour(new Date());
+      
+      // Determine if this is a scheduled or unscheduled clock-in
+      const isScheduled = !!forShift;
+      const approvalStatus = isScheduled ? 'auto_approved' : 'pending';
 
       const { error } = await supabase
         .from('time_entries')
         .insert({
           family_id: familyId,
           user_id: user.data.user.id,
-          clock_in: new Date().toISOString(),
-          shift_instance_id: currentShiftInstance?.id || null
+          clock_in: roundedTime.toISOString(),
+          shift_instance_id: forShift?.shift_instance_id || null,
+          shift_type: forShift?.shift_type || 'basic',
+          approval_status: approvalStatus,
+          is_unscheduled: !isScheduled
         });
 
       if (error) throw error;
 
-      toast({
-        title: "Clocked In",
-        description: "Your shift has started",
-      });
+      if (!isScheduled) {
+        toast({
+          title: "Clocked In (Pending Approval)",
+          description: `Your unscheduled clock-in at ${format(roundedTime, 'HH:mm')} will need admin approval`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Clocked In",
+          description: `Your shift started at ${format(roundedTime, 'HH:mm')}`,
+        });
+      }
 
       loadActiveEntry();
       onUpdate();
@@ -104,10 +172,13 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
     
     setLoading(true);
     try {
+      // Round clock-out time to nearest quarter hour
+      const roundedTime = roundToNearestQuarterHour(new Date());
+
       const { error } = await supabase
         .from('time_entries')
         .update({
-          clock_out: new Date().toISOString(),
+          clock_out: roundedTime.toISOString(),
           notes: notes || null
         })
         .eq('id', activeEntry.id);
@@ -116,7 +187,7 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
 
       toast({
         title: "Clocked Out",
-        description: "Your shift has ended",
+        description: `Your shift ended at ${format(roundedTime, 'HH:mm')}`,
       });
 
       setActiveEntry(null);
@@ -170,47 +241,6 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
     }
   };
 
-  const handleManualEntry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('time_entries')
-        .insert({
-          family_id: familyId,
-          user_id: user.data.user.id,
-          clock_in: manualEntry.start_time,
-          clock_out: manualEntry.end_time,
-          notes: manualEntry.notes || null,
-          shift_instance_id: currentShiftInstance?.id || null
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Entry Added",
-        description: "Manual time entry created successfully",
-      });
-
-      setManualEntry({ start_time: '', end_time: '', notes: '' });
-      setShowManualEntry(false);
-      onUpdate();
-    } catch (error) {
-      console.error('Error creating manual entry:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create manual entry",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], { 
       hour: '2-digit', 
@@ -228,8 +258,8 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
     return `${hours}h ${minutes}m`;
   };
 
-  // For 'none' mode, show a simplified "Mark Complete" interface
-  if (attendanceMode === 'none') {
+  // For 'none' mode with currentShiftInstance, show simplified "Mark Complete" interface
+  if (currentShiftInstance && currentShiftInstance.attendance_mode === 'none') {
     return (
       <div className="space-y-4">
         <Card>
@@ -251,18 +281,16 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
               </AlertDescription>
             </Alert>
             
-            {currentShiftInstance && (
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="text-sm space-y-1">
-                  <div><span className="font-medium">Date:</span> {currentShiftInstance.scheduled_date}</div>
-                  <div><span className="font-medium">Time:</span> {currentShiftInstance.start_time} - {currentShiftInstance.end_time}</div>
-                </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="text-sm space-y-1">
+                <div><span className="font-medium">Date:</span> {currentShiftInstance.scheduled_date}</div>
+                <div><span className="font-medium">Time:</span> {currentShiftInstance.start_time} - {currentShiftInstance.end_time}</div>
               </div>
-            )}
+            </div>
 
             <Button 
               onClick={handleMarkComplete}
-              disabled={markingComplete || !currentShiftInstance}
+              disabled={markingComplete}
               className="w-full"
               size="lg"
             >
@@ -275,7 +303,7 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
     );
   }
 
-  // For 'confirm_only' and 'actuals' modes, show clock-in/out interface
+  // Main clock-in/out interface
   return (
     <div className="space-y-4">
       <Card>
@@ -284,16 +312,17 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
             <Clock className="h-5 w-5" />
             Time Tracking
           </CardTitle>
-          <CardDescription className="flex items-center gap-2">
-            <AttendanceModeBadge mode={attendanceMode} />
-            {attendanceMode === 'confirm_only' 
-              ? 'Clock-in confirms attendance (pay from scheduled hours)'
-              : 'Clock-in/out determines your pay'
-            }
+          <CardDescription>
+            Clock in and out to track your work hours
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {activeEntry ? (
+          {loadingShifts ? (
+            <div className="text-center py-4 text-muted-foreground">
+              Loading today's shifts...
+            </div>
+          ) : activeEntry ? (
+            // Currently clocked in
             <div className="text-center space-y-4">
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950 dark:border-green-800">
                 <div className="text-sm text-green-600 dark:text-green-400 mb-2">Currently clocked in</div>
@@ -303,6 +332,12 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
                 <div className="text-sm text-green-600 dark:text-green-400">
                   Elapsed: {getElapsedTime()}
                 </div>
+                {activeEntry.is_unscheduled && (
+                  <Badge variant="outline" className="mt-2 border-amber-500 text-amber-600">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Pending Approval
+                  </Badge>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -328,100 +363,70 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
               </Button>
             </div>
           ) : (
-            <div className="text-center space-y-4">
-              <Button 
-                onClick={handleClockIn}
-                disabled={loading}
-                className="w-full"
-                size="lg"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                {loading ? 'Clocking In...' : 'Clock In'}
-              </Button>
-              
-              <div className="text-sm text-muted-foreground">or</div>
-              
-              <Button 
-                onClick={() => setShowManualEntry(!showManualEntry)}
-                variant="outline"
-                className="w-full"
-              >
-                Add Manual Entry
-              </Button>
+            // Not clocked in - show options
+            <div className="space-y-4">
+              {/* Show scheduled shift if exists and requires clock-in */}
+              {shiftRequiringClockIn && (
+                <div className="p-4 border-2 border-primary rounded-lg bg-primary/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    <span className="font-medium">Today's Shift</span>
+                    <AttendanceModeBadge mode={shiftRequiringClockIn.attendance_mode} />
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-3">
+                    {shiftRequiringClockIn.start_time.slice(0, 5)} - {shiftRequiringClockIn.end_time.slice(0, 5)}
+                  </div>
+                  <Button 
+                    onClick={() => handleClockIn(shiftRequiringClockIn)}
+                    disabled={loading}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    {loading ? 'Clocking In...' : 'Clock In for Shift'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Always show option to clock in (unscheduled if no shift) */}
+              <div className={shiftRequiringClockIn ? 'pt-2 border-t' : ''}>
+                {!shiftRequiringClockIn && hasScheduledShiftToday && (
+                  <Alert className="mb-4">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Your shift today doesn't require clock-in (using scheduled hours for pay).
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Button 
+                  onClick={() => handleClockIn()}
+                  disabled={loading}
+                  variant={shiftRequiringClockIn ? "outline" : "default"}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  {loading ? 'Clocking In...' : (
+                    shiftRequiringClockIn || hasScheduledShiftToday 
+                      ? 'Clock In (Unscheduled)' 
+                      : 'Clock In'
+                  )}
+                </Button>
+                
+                {(!shiftRequiringClockIn && !hasScheduledShiftToday) && (
+                  <Alert className="mt-3" variant="default">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      No shift scheduled today. This clock-in will need admin approval.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {showManualEntry && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Manual Time Entry</CardTitle>
-            <CardDescription>
-              Add a completed shift manually
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleManualEntry} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="start_time">Start Time</Label>
-                  <Input
-                    id="start_time"
-                    type="datetime-local"
-                    value={manualEntry.start_time}
-                    onChange={(e) => setManualEntry(prev => ({ 
-                      ...prev, 
-                      start_time: e.target.value 
-                    }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end_time">End Time</Label>
-                  <Input
-                    id="end_time"
-                    type="datetime-local"
-                    value={manualEntry.end_time}
-                    onChange={(e) => setManualEntry(prev => ({ 
-                      ...prev, 
-                      end_time: e.target.value 
-                    }))}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={manualEntry.notes}
-                  onChange={(e) => setManualEntry(prev => ({ 
-                    ...prev, 
-                    notes: e.target.value 
-                  }))}
-                  placeholder="Describe the work completed..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowManualEntry(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Adding...' : 'Add Entry'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

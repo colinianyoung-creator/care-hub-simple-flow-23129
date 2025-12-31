@@ -15,6 +15,7 @@ import { ProfileDialog } from './dialogs/ProfileDialog';
 import { ManageCareTeamDialog } from './dialogs/ManageCareTeamDialog';
 import { FamilySwitcher } from './FamilySwitcher';
 import { AIReportsSection } from './sections/AIReportsSection';
+import { ShiftReminderBanner } from './ShiftReminderBanner';
 // Mobile tabs and action menu removed - using accordion for all screens
 import { Clock, CheckSquare, FileText, Pill, Calendar, Users, Utensils, Wallet, Info, CalendarClock, UserPlus, FileBarChart } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -48,6 +49,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
   const [userName, setUserName] = useState('');
   const [showJoinButton, setShowJoinButton] = useState(false);
   const [isConnectedToFamily, setIsConnectedToFamily] = useState(false);
+  const [activeScheduleTab, setActiveScheduleTab] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -179,9 +181,22 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
           />
 
+          {/* Shift reminder banner for carers */}
+          {familyId && userRole === 'carer' && (
+            <ShiftReminderBanner 
+              familyId={familyId} 
+              onClockTabClick={() => setActiveScheduleTab('clock')}
+            />
+          )}
+
           <div className="space-y-4">
             <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
-              <SchedulingSection familyId={familyId} userRole={userRole} careRecipientNameHint={careRecipientNameHint} />
+              <SchedulingSection 
+                familyId={familyId} 
+                userRole={userRole} 
+                careRecipientNameHint={careRecipientNameHint}
+                defaultActiveTab={activeScheduleTab}
+              />
             </ExpandableDashboardSection>
 
             <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>

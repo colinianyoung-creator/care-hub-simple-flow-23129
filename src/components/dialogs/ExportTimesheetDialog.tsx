@@ -191,12 +191,13 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       
       const timeQuery = supabase
         .from('time_entries')
-        .select('clock_in, clock_out, user_id, notes, shift_type, shift_instance_id, total_hours')
+        .select('clock_in, clock_out, user_id, notes, shift_type, shift_instance_id, total_hours, approval_status')
         .eq('family_id', familyId)
         .eq('user_id', selectedCarerId)
         .gte('clock_in', startDate.toISOString())
         .lte('clock_in', endDate.toISOString())
-        .not('clock_out', 'is', null);
+        .not('clock_out', 'is', null)
+        .in('approval_status', ['auto_approved', 'approved']); // Only include approved entries
       
       const { data: timeEntries, error: timeError } = await timeQuery;
       if (timeError) throw timeError;
