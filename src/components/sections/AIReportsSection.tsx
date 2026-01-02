@@ -290,12 +290,12 @@ export const AIReportsSection = ({ familyId, userRole, careRecipientName }: AIRe
                         <Button
                           variant="outline"
                           className={cn(
-                            'w-full justify-start text-left font-normal',
+                            'w-full justify-start text-left font-normal truncate',
                             !startDate && 'text-muted-foreground'
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? format(startDate, 'PPP') : 'Pick a date'}
+                          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{startDate ? format(startDate, isMobile ? 'dd/MM/yy' : 'PPP') : 'Pick a date'}</span>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -304,6 +304,7 @@ export const AIReportsSection = ({ familyId, userRole, careRecipientName }: AIRe
                           selected={startDate}
                           onSelect={(date) => date && setStartDate(date)}
                           initialFocus
+                          className="pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -316,12 +317,12 @@ export const AIReportsSection = ({ familyId, userRole, careRecipientName }: AIRe
                         <Button
                           variant="outline"
                           className={cn(
-                            'w-full justify-start text-left font-normal',
+                            'w-full justify-start text-left font-normal truncate',
                             !endDate && 'text-muted-foreground'
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDate ? format(endDate, 'PPP') : 'Pick a date'}
+                          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{endDate ? format(endDate, isMobile ? 'dd/MM/yy' : 'PPP') : 'Pick a date'}</span>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -330,6 +331,7 @@ export const AIReportsSection = ({ familyId, userRole, careRecipientName }: AIRe
                           selected={endDate}
                           onSelect={(date) => date && setEndDate(date)}
                           initialFocus
+                          className="pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
