@@ -48,6 +48,7 @@ export const PendingTimeEntries = ({ familyId, onUpdate }: PendingTimeEntriesPro
         `)
         .eq('family_id', familyId)
         .eq('approval_status', 'pending')
+        .not('clock_out', 'is', null) // Only show completed entries
         .order('clock_in', { ascending: false });
 
       if (error) throw error;
