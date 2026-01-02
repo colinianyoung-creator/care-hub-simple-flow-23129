@@ -18,7 +18,7 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
-        <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <nav className="container mx-auto px-2 sm:px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">CareHub</h1>
           <div className="flex items-center gap-3">
             <Link to="/auth">
@@ -36,7 +36,7 @@ const Landing = () => {
 
       {/* Features Showcase Grid */}
       <section className="py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Everything You Need for Home Care</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -98,7 +98,7 @@ const Landing = () => {
 
       {/* How It Works */}
       <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Get Started in Minutes</h2>
             <p className="text-lg text-muted-foreground">
@@ -146,7 +146,7 @@ const Landing = () => {
 
       {/* Security & Privacy */}
       <section className="py-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex p-4 rounded-2xl bg-primary/10 mb-6">
               <Shield className="h-12 w-12 text-primary" />
@@ -169,7 +169,7 @@ const Landing = () => {
 
       {/* Final CTA */}
       <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto px-2 sm:px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Simplify Your Care Management?
           </h2>
