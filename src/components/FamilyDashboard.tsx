@@ -186,7 +186,7 @@ export const FamilyDashboard = ({
 
           <ExpandableDashboardSection
             id="key-information"
-            title="Key Information"
+            title="Key Information & Risk Assessments"
             icon={<Users className="h-5 w-5" />}
           >
             <KeyInformationSection familyId={familyId} userRole={userRole} />
