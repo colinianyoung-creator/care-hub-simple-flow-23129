@@ -244,11 +244,6 @@ All colors MUST be HSL.
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
   .grid-cols-7 {
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0.25rem;
@@ -313,12 +308,6 @@ All colors MUST be HSL.
     margin-bottom: 12px;
     padding-bottom: 12px;
     border-bottom: 1px solid hsl(var(--border));
-  }
-
-  /* Mobile container adjustments */
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
   }
 
   /* Mobile grid adjustments */
