@@ -7,9 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Shield, ArrowLeft, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  checkClientRateLimit,
+  recordClientAttempt,
+  clearClientAttempts,
+  getRemainingAttempts,
+  getTimeUntilReset,
+  formatTimeRemaining,
+  RATE_LIMITS
+} from "@/lib/rateLimiter";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -25,6 +35,10 @@ const Auth = () => {
   const [showResetForm, setShowResetForm] = useState(false);
   const [awaitingVerification, setAwaitingVerification] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [loginRateLimited, setLoginRateLimited] = useState(false);
+  const [loginAttemptsRemaining, setLoginAttemptsRemaining] = useState<number>(RATE_LIMITS.login.maxAttempts);
+  const [resetRateLimited, setResetRateLimited] = useState(false);
+  const [rateLimitTimeRemaining, setRateLimitTimeRemaining] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -110,8 +124,35 @@ const Auth = () => {
     }
   };
 
+  const updateLoginRateLimitState = (emailToCheck: string) => {
+    const remaining = getRemainingAttempts('login', emailToCheck, RATE_LIMITS.login.maxAttempts, RATE_LIMITS.login.windowMs);
+    setLoginAttemptsRemaining(remaining);
+    
+    const isLimited = !checkClientRateLimit('login', emailToCheck, RATE_LIMITS.login.maxAttempts, RATE_LIMITS.login.windowMs);
+    setLoginRateLimited(isLimited);
+    
+    if (isLimited) {
+      const timeRemaining = getTimeUntilReset('login', emailToCheck, RATE_LIMITS.login.windowMs);
+      setRateLimitTimeRemaining(formatTimeRemaining(timeRemaining));
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check client-side rate limit
+    if (!checkClientRateLimit('login', email, RATE_LIMITS.login.maxAttempts, RATE_LIMITS.login.windowMs)) {
+      const timeRemaining = getTimeUntilReset('login', email, RATE_LIMITS.login.windowMs);
+      setLoginRateLimited(true);
+      setRateLimitTimeRemaining(formatTimeRemaining(timeRemaining));
+      toast({
+        title: "Too many attempts",
+        description: `Please try again in ${formatTimeRemaining(timeRemaining)}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -120,7 +161,15 @@ const Auth = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Record failed attempt
+        recordClientAttempt('login', email);
+        updateLoginRateLimitState(email);
+        throw error;
+      }
+      
+      // Clear attempts on successful login
+      clearClientAttempts('login', email);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -142,8 +191,23 @@ const Auth = () => {
       return;
     }
 
+    // Check client-side rate limit for password reset
+    if (!checkClientRateLimit('passwordReset', email, RATE_LIMITS.passwordReset.maxAttempts, RATE_LIMITS.passwordReset.windowMs)) {
+      const timeRemaining = getTimeUntilReset('passwordReset', email, RATE_LIMITS.passwordReset.windowMs);
+      setResetRateLimited(true);
+      toast({
+        title: "Too many reset attempts",
+        description: `Please try again in ${formatTimeRemaining(timeRemaining)}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setResetLoading(true);
     try {
+      // Record the attempt
+      recordClientAttempt('passwordReset', email);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth`,
       });
@@ -301,6 +365,14 @@ const Auth = () => {
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">
+                {loginRateLimited && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Too many login attempts. Please try again in {rateLimitTimeRemaining}.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
@@ -311,6 +383,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      disabled={loginRateLimited}
                     />
                   </div>
                   <div className="space-y-2">
@@ -322,6 +395,7 @@ const Auth = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={loginRateLimited}
                       />
                       <Button
                         type="button"
@@ -338,16 +412,21 @@ const Auth = () => {
                       </Button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full" disabled={loading || loginRateLimited}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
+                  {loginAttemptsRemaining < RATE_LIMITS.login.maxAttempts && loginAttemptsRemaining > 0 && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      {loginAttemptsRemaining} attempt{loginAttemptsRemaining !== 1 ? 's' : ''} remaining
+                    </p>
+                  )}
                   <div className="text-center">
                     <Button
                       type="button"
                       variant="link"
                       className="text-sm p-0 h-auto"
                       onClick={handleForgotPassword}
-                      disabled={resetLoading}
+                      disabled={resetLoading || resetRateLimited}
                     >
                       {resetLoading ? "Sending..." : "Forgot Password?"}
                     </Button>
