@@ -1178,6 +1178,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_attempts: {
+        Row: {
+          action_type: string
+          attempted_at: string
+          id: string
+          identifier: string
+          metadata: Json | null
+          success: boolean
+        }
+        Insert: {
+          action_type: string
+          attempted_at?: string
+          id?: string
+          identifier: string
+          metadata?: Json | null
+          success?: boolean
+        }
+        Update: {
+          action_type?: string
+          attempted_at?: string
+          id?: string
+          identifier?: string
+          metadata?: Json | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           care_recipient_name: string
@@ -2120,6 +2147,16 @@ export type Database = {
         Args: { _profile_id: string; _viewer_id: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          _action_type: string
+          _identifier: string
+          _max_attempts?: number
+          _window_minutes?: number
+        }
+        Returns: boolean
+      }
+      cleanup_rate_limit_attempts: { Args: never; Returns: number }
       create_recurring_task_instance: {
         Args: {
           _assigned_to: string
@@ -2196,6 +2233,15 @@ export type Database = {
           ui_preference: Database["public"]["Enums"]["app_role"]
         }[]
       }
+      get_remaining_attempts: {
+        Args: {
+          _action_type: string
+          _identifier: string
+          _max_attempts?: number
+          _window_minutes?: number
+        }
+        Returns: number
+      }
       get_shift_instances_with_names: {
         Args: { _end_date: string; _family_id: string; _start_date: string }
         Returns: {
@@ -2269,6 +2315,15 @@ export type Database = {
           _dose_id: string
           _new_status: string
           _note?: string
+        }
+        Returns: undefined
+      }
+      record_rate_limit_attempt: {
+        Args: {
+          _action_type: string
+          _identifier: string
+          _metadata?: Json
+          _success?: boolean
         }
         Returns: undefined
       }
