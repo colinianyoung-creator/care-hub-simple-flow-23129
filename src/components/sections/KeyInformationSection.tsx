@@ -498,11 +498,11 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="key-info" className="flex items-center gap-2">
           <Info className="h-4 w-4" />
-          Key Information
+          <span className="hidden sm:inline">Key Information</span>
         </TabsTrigger>
         <TabsTrigger value="risk-assessments" className="flex items-center gap-2">
           <FileWarning className="h-4 w-4" />
-          Risk Assessments
+          <span className="hidden sm:inline">Risk Assessments</span>
         </TabsTrigger>
       </TabsList>
 
@@ -736,9 +736,9 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
           </Card>
         ) : (
           <>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h3 className="text-lg font-semibold">Risk Assessments</h3>
-              <Button onClick={() => setShowCreateForm(true)}>
+              <Button onClick={() => setShowCreateForm(true)} className="w-full sm:w-auto shrink-0">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Assessment
               </Button>

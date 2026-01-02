@@ -3,14 +3,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Play, Square, CheckCircle, Info, AlertTriangle, CalendarClock } from 'lucide-react';
+import { Clock, Play, Square, CheckCircle, Info, AlertTriangle, CalendarClock, History } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AttendanceModeBadge, type AttendanceMode } from "@/components/AttendanceModeSelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { roundToNearestQuarterHour } from "@/lib/shiftUtils";
 import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface TodayShift {
   id: string;
@@ -124,7 +134,8 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
       
       // Determine if this is a scheduled or unscheduled clock-in
       const isScheduled = !!forShift;
-      const approvalStatus = isScheduled ? 'auto_approved' : 'pending';
+      // Unscheduled entries start as auto_approved but will become pending after clock-out
+      const approvalStatus = isScheduled ? 'auto_approved' : 'auto_approved';
 
       const { error } = await supabase
         .from('time_entries')
@@ -140,18 +151,10 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
 
       if (error) throw error;
 
-      if (!isScheduled) {
-        toast({
-          title: "Clocked In (Pending Approval)",
-          description: `Your unscheduled clock-in at ${format(roundedTime, 'HH:mm')} will need admin approval`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Clocked In",
-          description: `Your shift started at ${format(roundedTime, 'HH:mm')}`,
-        });
-      }
+      toast({
+        title: "Clocked In",
+        description: `Your shift started at ${format(roundedTime, 'HH:mm')}${!isScheduled ? ' (will need approval when completed)' : ''}`,
+      });
 
       loadActiveEntry();
       onUpdate();
@@ -174,21 +177,32 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
     try {
       // Round clock-out time to nearest quarter hour
       const roundedTime = roundToNearestQuarterHour(new Date());
+      
+      // If this is an unscheduled entry, set it to pending now that it's complete
+      const newApprovalStatus = activeEntry.is_unscheduled ? 'pending' : activeEntry.approval_status;
 
       const { error } = await supabase
         .from('time_entries')
         .update({
           clock_out: roundedTime.toISOString(),
-          notes: notes || null
+          notes: notes || null,
+          approval_status: newApprovalStatus
         })
         .eq('id', activeEntry.id);
 
       if (error) throw error;
 
-      toast({
-        title: "Clocked Out",
-        description: `Your shift ended at ${format(roundedTime, 'HH:mm')}`,
-      });
+      if (activeEntry.is_unscheduled) {
+        toast({
+          title: "Clocked Out - Pending Approval",
+          description: `Your unscheduled shift (${format(new Date(activeEntry.clock_in), 'HH:mm')} - ${format(roundedTime, 'HH:mm')}) has been submitted for admin approval`,
+        });
+      } else {
+        toast({
+          title: "Clocked Out",
+          description: `Your shift ended at ${format(roundedTime, 'HH:mm')}`,
+        });
+      }
 
       setActiveEntry(null);
       onUpdate();
@@ -201,6 +215,70 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const [retroDialogOpen, setRetroDialogOpen] = useState(false);
+  const [retroDate, setRetroDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [retroClockIn, setRetroClockIn] = useState('09:00');
+  const [retroClockOut, setRetroClockOut] = useState('17:00');
+  const [retroNotes, setRetroNotes] = useState('');
+  const [savingRetro, setSavingRetro] = useState(false);
+
+  const handleRetroEntry = async () => {
+    setSavingRetro(true);
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Not authenticated');
+
+      const clockInTime = roundToNearestQuarterHour(new Date(`${retroDate}T${retroClockIn}`));
+      const clockOutTime = roundToNearestQuarterHour(new Date(`${retroDate}T${retroClockOut}`));
+
+      if (clockOutTime <= clockInTime) {
+        toast({
+          title: "Invalid Times",
+          description: "Clock out time must be after clock in time",
+          variant: "destructive",
+        });
+        setSavingRetro(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('time_entries')
+        .insert({
+          family_id: familyId,
+          user_id: user.data.user.id,
+          clock_in: clockInTime.toISOString(),
+          clock_out: clockOutTime.toISOString(),
+          notes: retroNotes || null,
+          shift_type: 'basic',
+          approval_status: 'pending',
+          is_unscheduled: true
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Retrospective Entry Submitted",
+        description: "Your time entry has been submitted for admin approval",
+      });
+
+      setRetroDialogOpen(false);
+      setRetroDate(format(new Date(), 'yyyy-MM-dd'));
+      setRetroClockIn('09:00');
+      setRetroClockOut('17:00');
+      setRetroNotes('');
+      onUpdate();
+    } catch (error) {
+      console.error('Error creating retrospective entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create retrospective entry",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingRetro(false);
     }
   };
 
@@ -418,10 +496,86 @@ export const ClockInOut = ({ familyId, onUpdate, currentShiftInstance }: ClockIn
                   <Alert className="mt-3" variant="default">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      No shift scheduled today. This clock-in will need admin approval.
+                      No shift scheduled today. This clock-in will need admin approval after you clock out.
                     </AlertDescription>
                   </Alert>
                 )}
+              </div>
+
+              {/* Retrospective Entry Dialog */}
+              <div className="pt-4 border-t mt-4">
+                <Dialog open={retroDialogOpen} onOpenChange={setRetroDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" className="w-full" size="sm">
+                      <History className="h-4 w-4 mr-2" />
+                      Add Missed Clock-In/Out
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Retrospective Entry</DialogTitle>
+                      <DialogDescription>
+                        Submit a missed clock-in/out for admin approval
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="retro-date">Date</Label>
+                        <Input
+                          id="retro-date"
+                          type="date"
+                          value={retroDate}
+                          onChange={(e) => setRetroDate(e.target.value)}
+                          max={format(new Date(), 'yyyy-MM-dd')}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="retro-clock-in">Clock In</Label>
+                          <Input
+                            id="retro-clock-in"
+                            type="time"
+                            value={retroClockIn}
+                            onChange={(e) => setRetroClockIn(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="retro-clock-out">Clock Out</Label>
+                          <Input
+                            id="retro-clock-out"
+                            type="time"
+                            value={retroClockOut}
+                            onChange={(e) => setRetroClockOut(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="retro-notes">Notes (optional)</Label>
+                        <Textarea
+                          id="retro-notes"
+                          placeholder="Explain why this entry was missed..."
+                          value={retroNotes}
+                          onChange={(e) => setRetroNotes(e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Times will be rounded to the nearest 15 minutes. This entry requires admin approval.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setRetroDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleRetroEntry} disabled={savingRetro}>
+                        {savingRetro ? 'Submitting...' : 'Submit for Approval'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           )}
