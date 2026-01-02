@@ -208,7 +208,7 @@ export const DisabledPersonDashboard = ({
       />
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto px-2 sm:px-4 py-6 space-y-6">
       <HeroBanner 
         title={userFirstName ? `Welcome back, ${userFirstName}` : `Welcome back, there`}
         subtitle={familyId ? "Your care coordination hub" : "Create your family to get started"}
@@ -392,7 +392,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection
             id="key-information"
-            title="Key Information"
+            title="Key Information & Risk Assessments"
             icon={<Users className="h-5 w-5" />}
           >
             <KeyInformationSection familyId={familyId} userRole="disabled_person" />

@@ -13,7 +13,7 @@ interface HeroBannerProps {
 
 export const HeroBanner = ({ title, subtitle, children, careRecipientName, profilePictureUrl, onProfileClick }: HeroBannerProps) => {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-care-primary via-care-primary/90 to-care-accent rounded-2xl p-6 md:p-8 text-white shadow-elevated">
+    <div className="relative overflow-hidden bg-gradient-to-br from-care-primary via-care-primary/90 to-care-accent rounded-2xl p-4 sm:p-6 md:p-8 text-white shadow-elevated">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-4 right-4">

@@ -25,7 +25,7 @@ export const ExpandableDashboardSection = ({
   return (
     <Card>
       <CardHeader 
-        className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors p-4 md:p-6"
+        className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors p-3 sm:p-4 md:p-6"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center justify-between">
@@ -43,7 +43,7 @@ export const ExpandableDashboardSection = ({
         </div>
       </CardHeader>
       {isOpen && (
-        <CardContent className="pt-0 px-4 pb-4 md:px-6 md:pb-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <CardContent className="pt-0 px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6 space-y-4 max-h-[80vh] overflow-y-auto">
           <div className="space-y-4">
             {children}
           </div>

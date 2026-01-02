@@ -215,7 +215,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
               <MoneySection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 
-            <ExpandableDashboardSection id="key-info" title="Key Information" icon={<Info className="h-5 w-5" />}>
+            <ExpandableDashboardSection id="key-info" title="Key Information & Risk Assessments" icon={<Info className="h-5 w-5" />}>
               <KeyInformationSection familyId={familyId} userRole={userRole} />
             </ExpandableDashboardSection>
 

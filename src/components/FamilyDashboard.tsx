@@ -113,7 +113,7 @@ export const FamilyDashboard = ({
         onFamilySelected={onFamilySelected}
       />
 
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-2 sm:px-4 py-8 space-y-8">
         <HeroBanner 
           title={`Welcome back, ${userName?.split(' ')[0] || 'there'}`}
           subtitle={familyId ? "Manage your family's care with ease" : "Create or join a family to access care features"}
