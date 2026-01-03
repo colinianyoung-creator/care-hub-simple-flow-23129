@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, User, Users, ArrowLeftRight } from 'lucide-react';
+import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle } from 'lucide-react';
 import { ProfileDialog } from './dialogs/ProfileDialog';
 import { ManageCareTeamDialog } from './dialogs/ManageCareTeamDialog';
 import { InviteMembersButton } from './InviteMembersButton';
 import { JoinFamilyButton } from './JoinFamilyButton';
 import { CreateFamilyButton } from './CreateFamilyButton';
+import { ChatDialog } from './chat/ChatDialog';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardHeaderProps {
@@ -44,7 +46,9 @@ export const DashboardHeader = ({
 }: DashboardHeaderProps) => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
+  const [showChatDialog, setShowChatDialog] = useState(false);
   const [userName, setUserName] = useState('');
+  const { unreadCount } = useUnreadMessages(familyId);
 
   useEffect(() => {
     const loadUserName = async () => {
@@ -123,9 +127,14 @@ export const DashboardHeader = ({
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="shrink-0">
+            <Button variant="outline" size="sm" className="shrink-0 relative">
               <Menu className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Menu</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -145,6 +154,17 @@ export const DashboardHeader = ({
               <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-create-button]')?.click()}>
                 <Users className="mr-2 h-4 w-4" />
                 Create Family
+              </DropdownMenuItem>
+            )}
+            {familyId && (
+              <DropdownMenuItem onClick={() => setShowChatDialog(true)}>
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Messages
+                {unreadCount > 0 && (
+                  <span className="ml-auto h-5 w-5 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => setShowProfileDialog(true)}>
@@ -177,6 +197,14 @@ export const DashboardHeader = ({
         currentFamilyId={familyId}
         onProfileUpdate={onProfileUpdate}
       />
+      
+      {familyId && (
+        <ChatDialog
+          isOpen={showChatDialog}
+          onClose={() => setShowChatDialog(false)}
+          familyId={familyId}
+        />
+      )}
       
       {familyId && (userRole === 'family_admin' || userRole === 'disabled_person') && (
         <ManageCareTeamDialog 
