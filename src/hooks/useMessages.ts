@@ -12,6 +12,9 @@ export interface Message {
   sender_name: string;
   sender_avatar: string | null;
   is_own: boolean;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
 }
 
 export const useMessages = (conversationId?: string) => {
@@ -39,9 +42,15 @@ export const useMessages = (conversationId?: string) => {
 
       if (error) throw error;
 
-      // Enrich with sender info
+      // Enrich with sender info - cast to include new attachment columns
+      type MessageWithAttachment = typeof messagesData[number] & {
+        attachment_url?: string | null;
+        attachment_type?: string | null;
+        attachment_name?: string | null;
+      };
+
       const enrichedMessages: Message[] = await Promise.all(
-        (messagesData || []).map(async (msg) => {
+        ((messagesData || []) as MessageWithAttachment[]).map(async (msg) => {
           const { data: profile } = await supabase
             .from('profiles')
             .select('full_name, profile_picture_url')
@@ -57,7 +66,10 @@ export const useMessages = (conversationId?: string) => {
             is_deleted: msg.is_deleted,
             sender_name: profile?.full_name || 'Unknown',
             sender_avatar: profile?.profile_picture_url || null,
-            is_own: msg.sender_id === user.user!.id
+            is_own: msg.sender_id === user.user!.id,
+            attachment_url: msg.attachment_url,
+            attachment_type: msg.attachment_type,
+            attachment_name: msg.attachment_name
           };
         })
       );
@@ -104,6 +116,9 @@ export const useMessages = (conversationId?: string) => {
             content: string;
             created_at: string;
             is_deleted: boolean;
+            attachment_url?: string | null;
+            attachment_type?: string | null;
+            attachment_name?: string | null;
           };
 
           const { data: profile } = await supabase
@@ -121,7 +136,10 @@ export const useMessages = (conversationId?: string) => {
             is_deleted: newMsg.is_deleted,
             sender_name: profile?.full_name || 'Unknown',
             sender_avatar: profile?.profile_picture_url || null,
-            is_own: newMsg.sender_id === user.user!.id
+            is_own: newMsg.sender_id === user.user!.id,
+            attachment_url: newMsg.attachment_url,
+            attachment_type: newMsg.attachment_type,
+            attachment_name: newMsg.attachment_name
           };
 
           setMessages(prev => [...prev, enrichedMessage]);
@@ -143,18 +161,36 @@ export const useMessages = (conversationId?: string) => {
     };
   }, [conversationId, fetchMessages]);
 
-  const sendMessage = async (content: string): Promise<boolean> => {
-    if (!conversationId || !content.trim()) return false;
+  const sendMessage = async (
+    content: string, 
+    attachment?: { url: string; type: string; name: string }
+  ): Promise<boolean> => {
+    if (!conversationId || (!content.trim() && !attachment)) return false;
 
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return false;
 
-      const { error } = await supabase.from('messages').insert({
+      const messageData: {
+        conversation_id: string;
+        sender_id: string;
+        content: string;
+        attachment_url?: string;
+        attachment_type?: string;
+        attachment_name?: string;
+      } = {
         conversation_id: conversationId,
         sender_id: user.user.id,
         content: content.trim()
-      });
+      };
+
+      if (attachment) {
+        messageData.attachment_url = attachment.url;
+        messageData.attachment_type = attachment.type;
+        messageData.attachment_name = attachment.name;
+      }
+
+      const { error } = await supabase.from('messages').insert(messageData);
 
       if (error) throw error;
       return true;
