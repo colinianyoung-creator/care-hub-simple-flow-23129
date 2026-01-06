@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,9 +37,9 @@ export const NewConversationDialog = ({
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [groupName, setGroupName] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'group' | 'individual'>('group');
 
   useEffect(() => {
     if (!isOpen || !familyId) return;
@@ -49,7 +49,6 @@ export const NewConversationDialog = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
-        setCurrentUserId(user.user.id);
 
         // Get family members
         const { data: memberships } = await supabase
@@ -90,23 +89,31 @@ export const NewConversationDialog = ({
     fetchMembers();
   }, [isOpen, familyId]);
 
-  const handleToggleMember = (memberId: string) => {
-    setSelectedMembers(prev =>
-      prev.includes(memberId)
-        ? prev.filter(id => id !== memberId)
-        : [...prev, memberId]
-    );
-  };
-
-  const handleCreate = async () => {
-    if (selectedMembers.length === 0) return;
+  const handleCreateGroup = async () => {
+    if (members.length === 0) return;
 
     setCreating(true);
     try {
-      const type = selectedMembers.length === 1 ? 'direct' : 'group';
-      const name = type === 'group' && groupName.trim() ? groupName.trim() : undefined;
+      const allMemberIds = members.map(m => m.id);
+      const name = groupName.trim() || undefined;
       
-      const conversationId = await createConversation(type, selectedMembers, name);
+      const conversationId = await createConversation('group', allMemberIds, name);
+      
+      if (conversationId) {
+        onConversationCreated(conversationId);
+        handleClose();
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCreateDirect = async () => {
+    if (!selectedMember) return;
+
+    setCreating(true);
+    try {
+      const conversationId = await createConversation('direct', [selectedMember]);
       
       if (conversationId) {
         onConversationCreated(conversationId);
@@ -118,50 +125,94 @@ export const NewConversationDialog = ({
   };
 
   const handleClose = () => {
-    setSelectedMembers([]);
+    setSelectedMember(null);
     setGroupName('');
+    setActiveTab('group');
     onClose();
   };
 
-  const isGroup = selectedMembers.length > 1;
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>New Conversation</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex items-center gap-3 p-2">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              ))}
-            </div>
-          ) : members.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No other family members found</p>
-            </div>
-          ) : (
-            <>
+        {loading ? (
+          <div className="space-y-3 py-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center gap-3 p-2">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ))}
+          </div>
+        ) : members.length === 0 ? (
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No other family members found</p>
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'group' | 'individual')} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2 shrink-0">
+              <TabsTrigger value="group" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Group Chat</span>
+                <span className="sm:hidden">Group</span>
+              </TabsTrigger>
+              <TabsTrigger value="individual" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Individual</span>
+                <span className="sm:hidden">1-on-1</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="group" className="flex-1 flex flex-col space-y-4 mt-4 overflow-hidden">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-sm text-muted-foreground">
+                  Create a group chat with all {members.length} family member{members.length !== 1 ? 's' : ''}.
+                </p>
+              </div>
+              
               <div className="space-y-2">
-                <Label>Select members</Label>
-                <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                <Label htmlFor="groupName">Group name (optional)</Label>
+                <Input
+                  id="groupName"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Enter group name..."
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 mt-auto">
+                <Button variant="outline" onClick={handleClose} className="w-full sm:flex-1">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateGroup}
+                  disabled={creating}
+                  className="w-full sm:flex-1"
+                >
+                  {creating ? 'Creating...' : 'Create Group'}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="individual" className="flex-1 flex flex-col space-y-4 mt-4 overflow-hidden">
+              <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+                <Label>Select a member</Label>
+                <div className="border rounded-lg divide-y overflow-y-auto flex-1">
                   {members.map(member => (
-                    <label
+                    <button
                       key={member.id}
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                      onClick={() => setSelectedMember(member.id)}
+                      className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
+                        selectedMember === member.id 
+                          ? 'bg-primary/10 border-primary' 
+                          : 'hover:bg-muted/50'
+                      }`}
                     >
-                      <Checkbox
-                        checked={selectedMembers.includes(member.id)}
-                        onCheckedChange={() => handleToggleMember(member.id)}
-                      />
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10 shrink-0">
                         {member.profile_picture_url && (
                           <AvatarImage src={member.profile_picture_url} alt={member.full_name} />
                         )}
@@ -170,38 +221,29 @@ export const NewConversationDialog = ({
                         </AvatarFallback>
                       </Avatar>
                       <span className="flex-1 truncate">{member.full_name}</span>
-                    </label>
+                      {selectedMember === member.id && (
+                        <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                      )}
+                    </button>
                   ))}
                 </div>
               </div>
 
-              {isGroup && (
-                <div className="space-y-2">
-                  <Label htmlFor="groupName">Group name (optional)</Label>
-                  <Input
-                    id="groupName"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    placeholder="Enter group name..."
-                  />
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={handleClose} className="flex-1">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <Button variant="outline" onClick={handleClose} className="w-full sm:flex-1">
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleCreate}
-                  disabled={selectedMembers.length === 0 || creating}
-                  className="flex-1"
+                  onClick={handleCreateDirect}
+                  disabled={!selectedMember || creating}
+                  className="w-full sm:flex-1"
                 >
-                  {creating ? 'Creating...' : isGroup ? 'Create Group' : 'Start Chat'}
+                  {creating ? 'Creating...' : 'Start Chat'}
                 </Button>
               </div>
-            </>
-          )}
-        </div>
+            </TabsContent>
+          </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );

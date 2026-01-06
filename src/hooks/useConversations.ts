@@ -30,6 +30,78 @@ export const useConversations = (familyId?: string) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const getOrCreateFamilyGroupChat = async (): Promise<string | null> => {
+    if (!familyId) return null;
+    
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return null;
+
+      // Look for existing family group chat
+      const { data: existingConvo } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('family_id', familyId)
+        .eq('type', 'group')
+        .eq('name', 'Family Chat')
+        .maybeSingle();
+
+      if (existingConvo) {
+        // Check if current user is a participant
+        const { data: participation } = await supabase
+          .from('conversation_participants')
+          .select('id')
+          .eq('conversation_id', existingConvo.id)
+          .eq('user_id', userData.user.id)
+          .maybeSingle();
+
+        if (!participation) {
+          // Add current user to the family chat
+          await supabase.from('conversation_participants').insert({
+            conversation_id: existingConvo.id,
+            user_id: userData.user.id
+          });
+        }
+        return existingConvo.id;
+      }
+
+      // Get all family members
+      const { data: familyMembers } = await supabase
+        .from('user_memberships')
+        .select('user_id')
+        .eq('family_id', familyId);
+
+      if (!familyMembers || familyMembers.length === 0) return null;
+
+      // Create family group chat
+      const { data: newConvo, error } = await supabase
+        .from('conversations')
+        .insert({
+          family_id: familyId,
+          type: 'group',
+          name: 'Family Chat',
+          created_by: userData.user.id
+        })
+        .select()
+        .single();
+
+      if (error || !newConvo) return null;
+
+      // Add all family members as participants
+      const participants = familyMembers.map(member => ({
+        conversation_id: newConvo.id,
+        user_id: member.user_id
+      }));
+
+      await supabase.from('conversation_participants').insert(participants);
+
+      return newConvo.id;
+    } catch (error) {
+      console.error('Error getting/creating family group chat:', error);
+      return null;
+    }
+  };
+
   const fetchConversations = async () => {
     if (!familyId) {
       setConversations([]);
@@ -133,8 +205,12 @@ export const useConversations = (familyId?: string) => {
         })
       );
 
-      // Sort by last message time
+      // Sort: Family Chat first, then by last message time
       enrichedConversations.sort((a, b) => {
+        // Family Chat always first
+        if (a.name === 'Family Chat' && a.type === 'group') return -1;
+        if (b.name === 'Family Chat' && b.type === 'group') return 1;
+        
         const aTime = a.last_message?.created_at || a.created_at;
         const bTime = b.last_message?.created_at || b.created_at;
         return new Date(bTime).getTime() - new Date(aTime).getTime();
@@ -239,6 +315,7 @@ export const useConversations = (familyId?: string) => {
     loading,
     createConversation,
     getOrCreateDirectConversation,
+    getOrCreateFamilyGroupChat,
     refetch: fetchConversations
   };
 };

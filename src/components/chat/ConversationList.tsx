@@ -52,7 +52,7 @@ export const ConversationList = ({ conversations, loading, onSelect }: Conversat
   }
 
   return (
-    <div className="overflow-y-auto h-full">
+    <div className="overflow-y-auto h-full divide-y">
       {conversations.map(conversation => {
         const displayName = conversation.type === 'group' 
           ? conversation.name || 'Group Chat'
@@ -68,7 +68,9 @@ export const ConversationList = ({ conversations, loading, onSelect }: Conversat
           <button
             key={conversation.id}
             onClick={() => onSelect(conversation)}
-            className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left border-b"
+            className={`w-full p-3 sm:p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left ${
+              conversation.name === 'Family Chat' && conversation.type === 'group' ? 'bg-primary/5' : ''
+            }`}
           >
             <div className="relative shrink-0">
               {conversation.type === 'group' ? (
