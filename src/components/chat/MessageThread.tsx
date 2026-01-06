@@ -1,9 +1,15 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { useMessages, Message } from '@/hooks/useMessages';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useReadReceipts } from '@/hooks/useReadReceipts';
 import { MessageInput } from './MessageInput';
+import { TypingIndicator } from './TypingIndicator';
+import { ReadReceiptIndicator } from './ReadReceiptIndicator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FileText, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MessageThreadProps {
   conversationId: string;
@@ -32,11 +38,37 @@ const shouldShowDateSeparator = (currentMsg: Message, prevMsg?: Message) => {
 
 export const MessageThread = ({ conversationId, conversationName }: MessageThreadProps) => {
   const { messages, loading, sendMessage } = useMessages(conversationId);
+  const { typingUsers, setTyping } = useTypingIndicator(conversationId);
+  const { getReadersForMessage } = useReadReceipts(conversationId);
+  const [userName, setUserName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        setUserName(profile?.full_name || 'You');
+      }
+    };
+    getUser();
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, typingUsers]);
+
+  const handleTyping = (isTyping: boolean) => {
+    setTyping(isTyping, userName);
+  };
+
+  const handleSend = async (content: string, attachment?: { url: string; type: string; name: string }) => {
+    return sendMessage(content, attachment);
+  };
 
   if (loading) {
     return (
@@ -72,8 +104,11 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
         ) : (
           messages.map((message, index) => {
             const prevMessage = index > 0 ? messages[index - 1] : undefined;
+            const nextMessage = index < messages.length - 1 ? messages[index + 1] : undefined;
             const showDateSeparator = shouldShowDateSeparator(message, prevMessage);
             const showSender = !message.is_own && (!prevMessage || prevMessage.sender_id !== message.sender_id || showDateSeparator);
+            const isLastOwnMessage = message.is_own && (!nextMessage || !nextMessage.is_own);
+            const readers = getReadersForMessage(message.created_at);
 
             return (
               <React.Fragment key={message.id}>
@@ -114,20 +149,56 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
                           : 'bg-muted rounded-bl-md'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                      {/* Attachment display */}
+                      {message.attachment_url && (
+                        <div className="mb-2">
+                          {message.attachment_type === 'image' ? (
+                            <img 
+                              src={message.attachment_url} 
+                              alt={message.attachment_name || 'Image'} 
+                              className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer"
+                              onClick={() => window.open(message.attachment_url, '_blank')}
+                            />
+                          ) : (
+                            <a 
+                              href={message.attachment_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-2 p-2 rounded-lg ${
+                                message.is_own ? 'bg-primary-foreground/10' : 'bg-background'
+                              }`}
+                            >
+                              <FileText className="h-5 w-5" />
+                              <span className="text-xs flex-1 truncate">
+                                {message.attachment_name || 'File'}
+                              </span>
+                              <Download className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {message.content && (
+                        <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                      )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                      {formatMessageTime(message.created_at)}
-                    </span>
+                    <div className="flex items-center gap-1 mt-1 px-1">
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatMessageTime(message.created_at)}
+                      </span>
+                      {isLastOwnMessage && (
+                        <ReadReceiptIndicator readers={readers} isOwn={message.is_own} />
+                      )}
+                    </div>
                   </div>
                 </div>
               </React.Fragment>
             );
           })
         )}
+        <TypingIndicator typingUsers={typingUsers} />
         <div ref={messagesEndRef} />
       </div>
-      <MessageInput onSend={sendMessage} />
+      <MessageInput onSend={handleSend} onTyping={handleTyping} />
     </div>
   );
 };
