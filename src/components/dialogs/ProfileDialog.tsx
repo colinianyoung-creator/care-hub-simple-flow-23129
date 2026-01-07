@@ -157,7 +157,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Get auth session for edge function
+      // Verify we have an active session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No active session');
 
@@ -170,14 +170,14 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         }
       }
 
-      // Call edge function to delete user (requires service role)
-      const { data, error } = await supabase.functions.invoke('delete-user', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
+      // Call edge function to delete user - let client attach auth automatically
+      const { data, error } = await supabase.functions.invoke('delete-user');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        const statusCode = (error as any)?.context?.response?.status;
+        throw new Error(statusCode ? `Delete failed (${statusCode})` : error.message || 'Delete failed');
+      }
       if (data?.error) throw new Error(data.error);
 
       // Sign out (user is already deleted on the backend)
