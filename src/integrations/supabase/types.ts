@@ -19,7 +19,7 @@ export type Database = {
           appointment_date: string
           care_recipient_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string | null
           family_id: string
           id: string
@@ -31,7 +31,7 @@ export type Database = {
           appointment_date: string
           care_recipient_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description?: string | null
           family_id: string
           id?: string
@@ -43,7 +43,7 @@ export type Database = {
           appointment_date?: string
           care_recipient_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string | null
           family_id?: string
           id?: string
@@ -162,7 +162,7 @@ export type Database = {
           body_region_code: string
           care_recipient_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string
           family_id: string
           id: string
@@ -177,7 +177,7 @@ export type Database = {
           body_region_code: string
           care_recipient_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description: string
           family_id: string
           id?: string
@@ -192,7 +192,7 @@ export type Database = {
           body_region_code?: string
           care_recipient_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string
           family_id?: string
           id?: string
@@ -211,6 +211,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "body_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "body_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "body_logs_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
@@ -223,7 +237,7 @@ export type Database = {
         Row: {
           activity_support: string | null
           activity_tags: string[] | null
-          author_id: string
+          author_id: string | null
           bathroom_usage: string | null
           care_recipient_id: string | null
           category: string | null
@@ -246,7 +260,7 @@ export type Database = {
         Insert: {
           activity_support?: string | null
           activity_tags?: string[] | null
-          author_id: string
+          author_id?: string | null
           bathroom_usage?: string | null
           care_recipient_id?: string | null
           category?: string | null
@@ -269,7 +283,7 @@ export type Database = {
         Update: {
           activity_support?: string | null
           activity_tags?: string[] | null
-          author_id?: string
+          author_id?: string | null
           bathroom_usage?: string | null
           care_recipient_id?: string | null
           category?: string | null
@@ -449,7 +463,7 @@ export type Database = {
         Row: {
           care_recipient_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string
           entry_date: string
           family_id: string
@@ -464,7 +478,7 @@ export type Database = {
         Insert: {
           care_recipient_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description: string
           entry_date?: string
           family_id: string
@@ -479,7 +493,7 @@ export type Database = {
         Update: {
           care_recipient_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string
           entry_date?: string
           family_id?: string
@@ -568,7 +582,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
-          created_by: string
+          created_by: string | null
           expires_at: string
           family_id: string
           id: string
@@ -580,7 +594,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
-          created_by: string
+          created_by?: string | null
           expires_at: string
           family_id: string
           id?: string
@@ -592,7 +606,7 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           expires_at?: string
           family_id?: string
           id?: string
@@ -1100,7 +1114,7 @@ export type Database = {
           care_recipient_id: string | null
           category: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string
           family_id: string
           id: string
@@ -1116,7 +1130,7 @@ export type Database = {
           care_recipient_id?: string | null
           category?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description: string
           family_id: string
           id?: string
@@ -1132,7 +1146,7 @@ export type Database = {
           care_recipient_id?: string | null
           category?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string
           family_id?: string
           id?: string
@@ -1177,7 +1191,7 @@ export type Database = {
       placeholder_carers: {
         Row: {
           created_at: string | null
-          created_by: string
+          created_by: string | null
           email: string | null
           family_id: string
           full_name: string
@@ -1190,7 +1204,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          created_by: string
+          created_by?: string | null
           email?: string | null
           family_id: string
           full_name: string
@@ -1203,7 +1217,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          created_by?: string
+          created_by?: string | null
           email?: string | null
           family_id?: string
           full_name?: string
@@ -1375,7 +1389,7 @@ export type Database = {
           approved_by: string | null
           assessment_content: string
           created_at: string | null
-          created_by: string
+          created_by: string | null
           family_id: string
           id: string
           is_approved: boolean | null
@@ -1395,7 +1409,7 @@ export type Database = {
           approved_by?: string | null
           assessment_content: string
           created_at?: string | null
-          created_by: string
+          created_by?: string | null
           family_id: string
           id?: string
           is_approved?: boolean | null
@@ -1415,7 +1429,7 @@ export type Database = {
           approved_by?: string | null
           assessment_content?: string
           created_at?: string | null
-          created_by?: string
+          created_by?: string | null
           family_id?: string
           id?: string
           is_approved?: boolean | null
@@ -1660,7 +1674,7 @@ export type Database = {
           original_shift_snapshot: Json | null
           parent_request_id: string | null
           reason: string | null
-          requested_by: string
+          requested_by: string | null
           reverted_at: string | null
           reverted_by: string | null
           reviewed_at: string | null
@@ -1683,7 +1697,7 @@ export type Database = {
           original_shift_snapshot?: Json | null
           parent_request_id?: string | null
           reason?: string | null
-          requested_by: string
+          requested_by?: string | null
           reverted_at?: string | null
           reverted_by?: string | null
           reviewed_at?: string | null
@@ -1706,7 +1720,7 @@ export type Database = {
           original_shift_snapshot?: Json | null
           parent_request_id?: string | null
           reason?: string | null
-          requested_by?: string
+          requested_by?: string | null
           reverted_at?: string | null
           reverted_by?: string | null
           reviewed_at?: string | null
@@ -1867,7 +1881,7 @@ export type Database = {
           assigned_to: string | null
           completed: boolean | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string | null
           due_date: string | null
           family_id: string
@@ -1885,7 +1899,7 @@ export type Database = {
           assigned_to?: string | null
           completed?: boolean | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           family_id: string
@@ -1903,7 +1917,7 @@ export type Database = {
           assigned_to?: string | null
           completed?: boolean | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           family_id?: string
@@ -2067,7 +2081,7 @@ export type Database = {
           carer_id: string | null
           end_date: string
           exported_at: string
-          exported_by: string
+          exported_by: string | null
           family_id: string
           format: string
           id: string
@@ -2078,7 +2092,7 @@ export type Database = {
           carer_id?: string | null
           end_date: string
           exported_at?: string
-          exported_by: string
+          exported_by?: string | null
           family_id: string
           format?: string
           id?: string
@@ -2089,7 +2103,7 @@ export type Database = {
           carer_id?: string | null
           end_date?: string
           exported_at?: string
-          exported_by?: string
+          exported_by?: string | null
           family_id?: string
           format?: string
           id?: string
