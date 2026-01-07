@@ -1,7 +1,7 @@
 project_id = "ydfqtfutdziejjqnqudo"
 
 [functions.delete-user]
-verify_jwt = true
+verify_jwt = false
 
 [functions.export-mar]
 verify_jwt = true

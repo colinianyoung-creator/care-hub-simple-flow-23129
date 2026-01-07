@@ -170,15 +170,33 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
         }
       }
 
-      // Call edge function to delete user - let client attach auth automatically
-      const { data, error } = await supabase.functions.invoke('delete-user');
+      // Call edge function to delete user with empty body to ensure POST
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: {}
+      });
 
       if (error) {
         console.error('Edge function error:', error);
-        const statusCode = (error as any)?.context?.response?.status;
-        throw new Error(statusCode ? `Delete failed (${statusCode})` : error.message || 'Delete failed');
+        // Try to extract actual error message from response body
+        let errorMessage = 'Delete failed';
+        try {
+          const errorData = await (error as any)?.context?.json?.();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+            if (errorData.details) errorMessage += `: ${errorData.details}`;
+          }
+        } catch {
+          // If we can't parse the body, use what we have
+          const statusCode = (error as any)?.context?.response?.status;
+          errorMessage = statusCode ? `Delete failed (${statusCode})` : (error.message || 'Delete failed');
+        }
+        throw new Error(errorMessage);
       }
-      if (data?.error) throw new Error(data.error);
+      
+      if (data?.error) {
+        const errorMessage = data.details ? `${data.error}: ${data.details}` : data.error;
+        throw new Error(errorMessage);
+      }
 
       // Sign out (user is already deleted on the backend)
       await supabase.auth.signOut();
