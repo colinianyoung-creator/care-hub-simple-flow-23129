@@ -36,7 +36,7 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 <DialogContent className="max-w-2xl h-[90vh] sm:h-[80vh] flex flex-col p-0">
           <DialogHeader className="p-3 sm:p-4 pb-2 border-b shrink-0">
-            <div className="flex items-center gap-2 pr-8">
+            <div className="flex items-center gap-2 pr-10">
               {selectedConversation && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4" />
