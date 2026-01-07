@@ -381,21 +381,21 @@ export type Database = {
           id: string
           joined_at: string
           last_read_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           conversation_id: string
           id?: string
           joined_at?: string
           last_read_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           conversation_id?: string
           id?: string
           joined_at?: string
           last_read_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -733,7 +733,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["leave_status"] | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -746,7 +746,7 @@ export type Database = {
           start_date: string
           status?: Database["public"]["Enums"]["leave_status"] | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -759,7 +759,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["leave_status"] | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1080,7 +1080,7 @@ export type Database = {
           created_at: string
           id: string
           is_deleted: boolean
-          sender_id: string
+          sender_id: string | null
         }
         Insert: {
           content: string
@@ -1088,7 +1088,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_deleted?: boolean
-          sender_id: string
+          sender_id?: string | null
         }
         Update: {
           content?: string
@@ -1096,7 +1096,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_deleted?: boolean
-          sender_id?: string
+          sender_id?: string | null
         }
         Relationships: [
           {
@@ -1507,7 +1507,7 @@ export type Database = {
           reviewed_by: string | null
           status: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1520,7 +1520,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1533,7 +1533,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1993,7 +1993,7 @@ export type Database = {
           shift_type: string | null
           total_hours: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           approval_status?: string
@@ -2011,7 +2011,7 @@ export type Database = {
           shift_type?: string | null
           total_hours?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           approval_status?: string
@@ -2029,7 +2029,7 @@ export type Database = {
           shift_type?: string | null
           total_hours?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2162,7 +2162,7 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2170,7 +2170,7 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2178,7 +2178,7 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
