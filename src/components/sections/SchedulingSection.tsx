@@ -419,6 +419,20 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         return;
       }
       
+      // Calculate hours properly from start/end times
+      let calculatedHours = 8;
+      if (shift.start_time && shift.end_time) {
+        const parseTime = (t: string) => {
+          const parts = t.split(':');
+          return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+        };
+        calculatedHours = (parseTime(shift.end_time) - parseTime(shift.start_time)) / 60;
+      } else if (shift.clock_in && shift.clock_out) {
+        const start = new Date(shift.clock_in);
+        const end = new Date(shift.clock_out);
+        calculatedHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      }
+      
       // Prepare edit data in the expected format
       const editData = {
         ...timeEntry,
@@ -426,7 +440,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         start_date: shift.scheduled_date || shift.date,
         start_time: shift.start_time,
         end_time: shift.end_time,
-        hours: shift.hours || 8,
+        hours: calculatedHours.toFixed(1),
         request_type: shift.shift_type || 'basic',
         reason: shift.notes || ''
       };
