@@ -91,6 +91,16 @@ const generateInviteHtml = (
         <p style="color:#92400e;font-size:14px;margin:0;">⏰ This invitation expires in <strong>${expiresIn}</strong></p>
       </div>
 
+      <!-- Fallback Link -->
+      <div style="background-color:#f8fafc;border-radius:8px;padding:16px;margin-bottom:20px;">
+        <p style="color:#64748b;font-size:13px;margin:0 0 8px;text-align:center;">
+          If the button doesn't work, copy and paste this link:
+        </p>
+        <p style="color:#1e3a5f;font-size:12px;word-break:break-all;margin:0;text-align:center;">
+          ${signupUrl}
+        </p>
+      </div>
+
       <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0;text-align:center;">
         Questions about this invitation? Contact ${inviterName} directly or reply to this email.
       </p>
@@ -135,12 +145,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending invite email to ${email} for family ${familyName} with code ${inviteCode}`);
 
     const appUrl = req.headers.get("origin") || "https://lovable.dev";
+    const signupUrl = `${appUrl}/auth?invite=${encodeURIComponent(inviteCode.toUpperCase())}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role || "carer")}`;
     const html = generateInviteHtml(
       inviterName || "A team member",
       familyName || "Care Team",
       inviteCode.toUpperCase(),
       role || "carer",
-      `${appUrl}/auth`,
+      signupUrl,
       expiresIn,
     );
 

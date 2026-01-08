@@ -42,6 +42,25 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [activeTab, setActiveTab] = useState<string>("signin");
+
+  useEffect(() => {
+    // Check URL params for invite pre-fill
+    const params = new URLSearchParams(window.location.search);
+    const inviteParam = params.get('invite');
+    const emailParam = params.get('email');
+    const roleParam = params.get('role');
+    
+    if (inviteParam) {
+      setInviteCode(inviteParam);
+      setActiveTab("signup");
+    }
+    if (emailParam) setEmail(decodeURIComponent(emailParam));
+    if (roleParam && ['disabled_person', 'family_admin', 'family_viewer', 'carer', 'manager'].includes(roleParam)) {
+      setSelectedRole(roleParam as any);
+    }
+  }, []);
+
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
@@ -309,93 +328,52 @@ const Auth = () => {
           <p className="text-muted-foreground">Welcome to your care coordination hub</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{showResetForm ? "Reset Password" : "Get Started"}</CardTitle>
-            <CardDescription>
-              {showResetForm ? "Enter your new password" : "Sign in to your account or create a new one"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {showResetForm ? (
-              <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="new-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your new password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Updating..." : "Update Password"}
+        {awaitingVerification ? (
+          <Card className="border-primary">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                Check Your Email
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                We sent a verification link to <strong>{verificationEmail}</strong>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Click the link in your email to activate your account. The link expires in 24 hours.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleResendVerification} disabled={resetLoading}>
+                  {resetLoading ? 'Sending...' : 'Resend Email'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowResetForm(false)}
-                >
+                <Button variant="ghost" onClick={() => setAwaitingVerification(false)}>
                   Back to Sign In
                 </Button>
-              </form>
-            ) : (
-            <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="signin" className="space-y-4">
-                {loginRateLimited && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      Too many login attempts. Please try again in {rateLimitTimeRemaining}.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                <form onSubmit={handleSignIn} className="space-y-4">
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>{showResetForm ? "Reset Password" : "Get Started"}</CardTitle>
+              <CardDescription>
+                {showResetForm ? "Enter your new password" : "Sign in to your account or create a new one"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {showResetForm ? (
+                <form onSubmit={handlePasswordUpdate} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={loginRateLimited}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                    <Label htmlFor="new-password">New Password</Label>
                     <div className="relative">
                       <Input
-                        id="signin-password"
+                        id="new-password"
                         type={showPassword ? "text" : "password"}
+                        placeholder="Enter your new password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        disabled={loginRateLimited}
                       />
                       <Button
                         type="button"
@@ -412,163 +390,198 @@ const Auth = () => {
                       </Button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading || loginRateLimited}>
-                    {loading ? "Signing in..." : "Sign In"}
-                  </Button>
-                  {loginAttemptsRemaining < RATE_LIMITS.login.maxAttempts && loginAttemptsRemaining > 0 && (
-                    <p className="text-sm text-muted-foreground text-center">
-                      {loginAttemptsRemaining} attempt{loginAttemptsRemaining !== 1 ? 's' : ''} remaining
-                    </p>
-                  )}
-                  <div className="text-center">
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="text-sm p-0 h-auto"
-                      onClick={handleForgotPassword}
-                      disabled={resetLoading || resetRateLimited}
-                    >
-                      {resetLoading ? "Sending..." : "Forgot Password?"}
-                    </Button>
-                  </div>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Your full name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="signup-password"
-                        type={showSignUpPassword ? "text" : "password"}
-                        placeholder="Choose a strong password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                      >
-                        {showSignUpPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">I am a...</Label>
-                    <Select value={selectedRole} onValueChange={(value: any) => setSelectedRole(value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="disabled_person">Disabled Person (Care Recipient)</SelectItem>
-                        <SelectItem value="family_admin">Family Member (Admin)</SelectItem>
-                        <SelectItem value="family_viewer">Family Member (Viewer)</SelectItem>
-                        <SelectItem value="carer">Carer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {(selectedRole === 'disabled_person' || selectedRole === 'family_admin') && (
-                    <div className="space-y-2">
-                      <Label htmlFor="care-recipient-name">
-                        {selectedRole === 'disabled_person' ? 'Your Name (for care records)' : 'Care Recipient Name'}
-                      </Label>
-                      <Input
-                        id="care-recipient-name"
-                        type="text"
-                        value={careRecipientName}
-                        onChange={(e) => setCareRecipientName(e.target.value)}
-                        placeholder="Name for care documentation"
-                        required
-                      />
-                    </div>
-                  )}
-
-                  {(selectedRole === 'carer' || selectedRole === 'family_viewer') && (
-                    <div className="space-y-2">
-                      <Label htmlFor="invite-code">Invite Code (Optional)</Label>
-                      <Input
-                        id="invite-code"
-                        type="text"
-                        value={inviteCode}
-                        onChange={(e) => setInviteCode(e.target.value)}
-                        placeholder="Have an invite code? Enter it here"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        You can join a family later from your dashboard
-                      </p>
-                    </div>
-                  )}
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? "Updating..." : "Update Password"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowResetForm(false)}
+                  >
+                    Back to Sign In
                   </Button>
                 </form>
-              </TabsContent>
-            </Tabs>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="signin" className="space-y-4">
+                    {loginRateLimited && (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Too many login attempts. Please try again in {rateLimitTimeRemaining}.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    <form onSubmit={handleSignIn} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-email">Email</Label>
+                        <Input
+                          id="signin-email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          disabled={loginRateLimited}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="signin-password"
+                            type={showPassword ? "text" : "password"}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            disabled={loginRateLimited}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={loading || loginRateLimited}>
+                        {loading ? "Signing in..." : "Sign In"}
+                      </Button>
+                      {loginAttemptsRemaining < RATE_LIMITS.login.maxAttempts && loginAttemptsRemaining > 0 && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          {loginAttemptsRemaining} attempt{loginAttemptsRemaining !== 1 ? 's' : ''} remaining
+                        </p>
+                      )}
+                      <div className="text-center">
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-sm p-0 h-auto"
+                          onClick={handleForgotPassword}
+                          disabled={resetLoading || resetRateLimited}
+                        >
+                          {resetLoading ? "Sending..." : "Forgot Password?"}
+                        </Button>
+                      </div>
+                    </form>
+                  </TabsContent>
+                  
+                  <TabsContent value="signup" className="space-y-4">
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-name">Full Name</Label>
+                        <Input
+                          id="signup-name"
+                          type="text"
+                          placeholder="Your full name"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="signup-password"
+                            type={showSignUpPassword ? "text" : "password"}
+                            placeholder="Choose a strong password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                          >
+                            {showSignUpPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">I am a...</Label>
+                        <Select value={selectedRole} onValueChange={(value: any) => setSelectedRole(value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="disabled_person">Disabled Person (Care Recipient)</SelectItem>
+                            <SelectItem value="family_admin">Family Member (Admin)</SelectItem>
+                            <SelectItem value="family_viewer">Family Member (Viewer)</SelectItem>
+                            <SelectItem value="carer">Carer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {(selectedRole === 'disabled_person' || selectedRole === 'family_admin') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="care-recipient-name">
+                            {selectedRole === 'disabled_person' ? 'Your Name (for care records)' : 'Care Recipient Name'}
+                          </Label>
+                          <Input
+                            id="care-recipient-name"
+                            type="text"
+                            value={careRecipientName}
+                            onChange={(e) => setCareRecipientName(e.target.value)}
+                            placeholder="Name for care documentation"
+                            required
+                          />
+                        </div>
+                      )}
 
-        {/* Email Verification Pending */}
-        {awaitingVerification && (
-          <Card className="mt-4 border-primary">
-            <CardHeader>
-              <CardTitle className="text-lg">Verify Your Email</CardTitle>
-              <CardDescription>
-                We sent a verification link to <strong>{verificationEmail}</strong>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Click the link in your email to activate your account. 
-                The link expires in 24 hours.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleResendVerification}
-                  disabled={resetLoading}
-                >
-                  {resetLoading ? 'Sending...' : 'Resend Email'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setAwaitingVerification(false)}
-                >
-                  Back to Sign In
-                </Button>
-              </div>
+                      {(selectedRole === 'carer' || selectedRole === 'family_viewer') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="invite-code">Invite Code (Optional)</Label>
+                          <Input
+                            id="invite-code"
+                            type="text"
+                            value={inviteCode}
+                            onChange={(e) => setInviteCode(e.target.value)}
+                            placeholder="Have an invite code? Enter it here"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            You can join a family later from your dashboard
+                          </p>
+                        </div>
+                      )}
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Creating account..." : "Create Account"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              )}
             </CardContent>
           </Card>
         )}
