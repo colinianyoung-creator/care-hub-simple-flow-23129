@@ -31,21 +31,39 @@ interface UnifiedShiftFormProps {
   initialDate?: string;
 }
 
+// Helper: Parse time string (HH:mm or HH:mm:ss) to minutes since midnight
+const parseTimeToMinutes = (time: string): number => {
+  const parts = time.split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+};
+
 // Helper: Calculate hours from shift data
 const calculateHoursFromShift = (shift: any): string => {
   if (!shift) return '8';
-  if (shift.hours) return shift.hours.toString();
+  
+  // If hours is explicitly set and valid, use it
+  if (shift.hours && !isNaN(parseFloat(shift.hours))) {
+    return parseFloat(shift.hours).toFixed(1);
+  }
+  
+  // Calculate from clock_in/clock_out (timestamps)
   if (shift.clock_in && shift.clock_out) {
     const start = new Date(shift.clock_in);
     const end = new Date(shift.clock_out);
-    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    return Math.round(hours).toString();
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      return hours.toFixed(1);
+    }
   }
+  
+  // Calculate from start_time/end_time (time strings like "09:00:00" or "09:00")
   if (shift.start_time && shift.end_time) {
-    const start = parseInt(shift.start_time.split(':')[0]);
-    const end = parseInt(shift.end_time.split(':')[0]);
-    return (end - start).toString();
+    const startMinutes = parseTimeToMinutes(shift.start_time);
+    const endMinutes = parseTimeToMinutes(shift.end_time);
+    const hours = (endMinutes - startMinutes) / 60;
+    return hours.toFixed(1);
   }
+  
   return '8';
 };
 
@@ -242,22 +260,95 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
       }
 
       if (isCarer) {
-        // Carers submit change requests instead of direct updates
+        const isLeaveType = ['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type);
+        
+        // NEW: Handle creating a leave request without an existing shift
+        if (!editShiftData?.id && isLeaveType) {
+          const { error } = await supabase
+            .from('leave_requests')
+            .insert({
+              family_id: familyId,
+              user_id: user.data.user.id,
+              start_date: formData.start_date,
+              end_date: formData.end_date || formData.start_date,
+              reason: formData.reason || null,
+              status: 'pending'
+            });
+
+          if (error) throw error;
+
+          toast({
+            title: "Leave Request Submitted",
+            description: "Your leave request has been submitted for admin approval",
+          });
+          
+          onSuccess();
+          onOpenChange(false);
+          setLoading(false);
+          return;
+        }
+        
+        // Carers submit change requests for existing shifts
         if (editShiftData?.id) {
           // If end_date is set, create bulk change requests for all shifts in range
-          if (formData.end_date && ['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type)) {
-            // Query all shifts in date range for this carer
-            const { data: shiftsInRange, error: queryError } = await supabase
+          if (formData.end_date && isLeaveType) {
+            // Query shifts from BOTH time_entries AND shift_instances
+            const startDate = formData.start_date;
+            const endDate = formData.end_date;
+            
+            // Query 1: time_entries (one-time shifts)
+            const { data: timeEntriesInRange, error: teError } = await supabase
               .from('time_entries')
               .select('id, clock_in, clock_out')
               .eq('family_id', familyId)
               .eq('user_id', user.data.user.id)
-              .gte('clock_in', `${formData.start_date}T00:00:00`)
-              .lte('clock_in', `${formData.end_date}T23:59:59`);
+              .gte('clock_in', `${startDate}T00:00:00`)
+              .lte('clock_in', `${endDate}T23:59:59`);
 
-            if (queryError) throw queryError;
+            if (teError) throw teError;
 
-            if (!shiftsInRange || shiftsInRange.length === 0) {
+            // Query 2: shift_instances (recurring shifts)
+            const { data: instancesInRange, error: instError } = await supabase
+              .from('shift_instances')
+              .select(`
+                id,
+                scheduled_date,
+                shift_assignments!inner (
+                  id, carer_id, start_time, end_time, family_id
+                )
+              `)
+              .gte('scheduled_date', startDate)
+              .lte('scheduled_date', endDate);
+
+            if (instError) throw instError;
+
+            // Filter instances to only those assigned to the current user
+            const myInstances = (instancesInRange || []).filter(inst => {
+              const assignment = inst.shift_assignments as any;
+              return assignment?.carer_id === user.data.user.id && 
+                     assignment?.family_id === familyId;
+            });
+
+            // Combine results
+            const allShifts = [
+              ...(timeEntriesInRange || []).map(te => ({
+                id: te.id,
+                clock_in: te.clock_in,
+                clock_out: te.clock_out,
+                source: 'time_entry' as const
+              })),
+              ...myInstances.map(inst => {
+                const assignment = inst.shift_assignments as any;
+                return {
+                  id: inst.id,
+                  clock_in: `${inst.scheduled_date}T${assignment.start_time}`,
+                  clock_out: `${inst.scheduled_date}T${assignment.end_time}`,
+                  source: 'shift_instance' as const
+                };
+              })
+            ];
+
+            if (allShifts.length === 0) {
               toast({
                 title: "No Shifts Found",
                 description: "No shifts found in the selected date range",
@@ -267,32 +358,53 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               return;
             }
 
-            // Create change request for each shift
-            const startHour = 9;
-            const hours = parseInt(formData.hours) || 8;
-            const endHour = startHour + hours;
+            // For shift_instances, we need to create a time_entry first or use a different approach
+            // For now, filter to only time_entries (direct approach)
+            const timeEntryShifts = allShifts.filter(s => s.source === 'time_entry');
+            
+            if (timeEntryShifts.length === 0) {
+              // If only recurring shifts, create a leave request instead
+              const { error } = await supabase
+                .from('leave_requests')
+                .insert({
+                  family_id: familyId,
+                  user_id: user.data.user.id,
+                  start_date: startDate,
+                  end_date: endDate,
+                  reason: formData.reason || null,
+                  status: 'pending'
+                });
 
-            const changeRequests = shiftsInRange.map(shift => ({
-              family_id: familyId,
-              time_entry_id: shift.id,
-              requested_by: user.data.user.id,
-              new_start_time: shift.clock_in,
-              new_end_time: shift.clock_out,
-              new_shift_type: formData.request_type,
-              reason: formData.reason || null,
-              status: 'pending'
-            }));
+              if (error) throw error;
 
-            const { error: bulkError } = await supabase
-              .from('shift_change_requests')
-              .insert(changeRequests);
+              toast({
+                title: "Leave Request Submitted",
+                description: `Leave request submitted for ${startDate} to ${endDate}`,
+              });
+            } else {
+              // Create change requests for time_entries
+              const changeRequests = timeEntryShifts.map(shift => ({
+                family_id: familyId,
+                time_entry_id: shift.id,
+                requested_by: user.data.user.id,
+                new_start_time: shift.clock_in,
+                new_end_time: shift.clock_out,
+                new_shift_type: formData.request_type,
+                reason: formData.reason || null,
+                status: 'pending'
+              }));
 
-            if (bulkError) throw bulkError;
+              const { error: bulkError } = await supabase
+                .from('shift_change_requests')
+                .insert(changeRequests);
 
-            toast({
-              title: "Bulk Change Requests Submitted",
-              description: `${shiftsInRange.length} shift change requests submitted for ${formData.start_date} to ${formData.end_date}`,
-            });
+              if (bulkError) throw bulkError;
+
+              toast({
+                title: "Bulk Change Requests Submitted",
+                description: `${timeEntryShifts.length} shift change requests submitted for ${startDate} to ${endDate}`,
+              });
+            }
           } else {
             // Single shift change request
             const timeEntry = {
@@ -302,9 +414,9 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               family_id: familyId
             };
 
-            const startHour = 9;
-            const hours = parseInt(formData.hours) || 8;
-            const endHour = startHour + hours;
+            // Use proper times from edit data
+            const startTime = editShiftData.start_time || '09:00:00';
+            const endTime = editShiftData.end_time || '17:00:00';
 
             const { error } = await supabase
               .from('shift_change_requests')
@@ -312,8 +424,8 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
                 family_id: familyId,
                 time_entry_id: timeEntry.id,
                 requested_by: user.data.user.id,
-                new_start_time: `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`,
-                new_end_time: `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`,
+                new_start_time: `${formData.start_date}T${startTime}`,
+                new_end_time: `${formData.start_date}T${endTime}`,
                 new_shift_type: formData.request_type || 'basic',
                 reason: formData.reason || null,
                 status: 'pending'
