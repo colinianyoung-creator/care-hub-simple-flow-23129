@@ -434,6 +434,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       }
       
       // Prepare edit data in the expected format
+      // Determine source type: shift_instance if it has shift_assignment_id or scheduled_date
+      const isShiftInstance = !!(shift.shift_assignment_id || (shift.scheduled_date && !shift.clock_in));
+      
       const editData = {
         ...timeEntry,
         carer_id: shift.carer_id || shift.user_id,
@@ -442,7 +445,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         end_time: shift.end_time,
         hours: calculatedHours.toFixed(1),
         request_type: shift.shift_type || 'basic',
-        reason: shift.notes || ''
+        reason: shift.notes || '',
+        source: isShiftInstance ? 'shift_instance' : 'time_entry',
+        shift_instance_id: shift.id,
+        time_entry_id: shift.time_entry_id || null
       };
       
       console.log('✅ Opening UnifiedShiftForm (carer) with:', editData);

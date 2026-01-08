@@ -358,71 +358,111 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               return;
             }
 
-            // For shift_instances, we need to create a time_entry first or use a different approach
-            // For now, filter to only time_entries (direct approach)
-            const timeEntryShifts = allShifts.filter(s => s.source === 'time_entry');
+            // Collect all shifts that have time_entries
+            const timeEntryShifts: { id: string; clock_in: string; clock_out: string }[] = 
+              allShifts.filter(s => s.source === 'time_entry').map(s => ({
+                id: s.id,
+                clock_in: s.clock_in,
+                clock_out: s.clock_out
+              }));
             
-            if (timeEntryShifts.length === 0) {
-              // If only recurring shifts, create a leave request instead
-              const { error } = await supabase
-                .from('leave_requests')
+            // For shift_instances, create time_entries first to materialize them
+            const instanceShifts = allShifts.filter(s => s.source === 'shift_instance');
+            
+            for (const inst of instanceShifts) {
+              // Create a time_entry from the shift_instance
+              const { data: newTimeEntry, error: teCreateError } = await supabase
+                .from('time_entries')
                 .insert({
                   family_id: familyId,
                   user_id: user.data.user.id,
-                  start_date: startDate,
-                  end_date: endDate,
-                  reason: formData.reason || null,
-                  status: 'pending'
-                });
-
-              if (error) throw error;
-
-              toast({
-                title: "Leave Request Submitted",
-                description: `Leave request submitted for ${startDate} to ${endDate}`,
-              });
-            } else {
-              // Create change requests for time_entries
-              const changeRequests = timeEntryShifts.map(shift => ({
-                family_id: familyId,
-                time_entry_id: shift.id,
-                requested_by: user.data.user.id,
-                new_start_time: shift.clock_in,
-                new_end_time: shift.clock_out,
-                new_shift_type: formData.request_type,
-                reason: formData.reason || null,
-                status: 'pending'
-              }));
-
-              const { error: bulkError } = await supabase
-                .from('shift_change_requests')
-                .insert(changeRequests);
-
-              if (bulkError) throw bulkError;
-
-              toast({
-                title: "Bulk Change Requests Submitted",
-                description: `${timeEntryShifts.length} shift change requests submitted for ${startDate} to ${endDate}`,
+                  shift_instance_id: inst.id,
+                  clock_in: inst.clock_in,
+                  clock_out: inst.clock_out,
+                  shift_type: 'basic',
+                  is_unscheduled: false,
+                  approval_status: 'approved'
+                })
+                .select('id')
+                .single();
+              
+              if (teCreateError) throw teCreateError;
+              
+              // Add to our list for creating change requests
+              timeEntryShifts.push({
+                id: newTimeEntry.id,
+                clock_in: inst.clock_in,
+                clock_out: inst.clock_out
               });
             }
+
+            if (timeEntryShifts.length === 0) {
+              toast({
+                title: "No Shifts Found",
+                description: "No shifts found to update in the selected date range",
+                variant: "destructive",
+              });
+              setLoading(false);
+              return;
+            }
+
+            // Create change requests for ALL shifts (including converted instances)
+            const changeRequests = timeEntryShifts.map(shift => ({
+              family_id: familyId,
+              time_entry_id: shift.id,
+              requested_by: user.data.user.id,
+              new_start_time: shift.clock_in,
+              new_end_time: shift.clock_out,
+              new_shift_type: formData.request_type,
+              reason: formData.reason || null,
+              status: 'pending'
+            }));
+
+            const { error: bulkError } = await supabase
+              .from('shift_change_requests')
+              .insert(changeRequests);
+
+            if (bulkError) throw bulkError;
+
+            toast({
+              title: "Change Requests Submitted",
+              description: `${timeEntryShifts.length} shift change request(s) submitted for approval`,
+            });
           } else {
             // Single shift change request
-            const timeEntry = {
-              id: editShiftData.id,
-              clock_in: editShiftData.clock_in || `${editShiftData.start_date}T${editShiftData.start_time || '09:00:00'}`,
-              clock_out: editShiftData.clock_out || `${editShiftData.start_date}T${editShiftData.end_time || '17:00:00'}`,
-              family_id: familyId
-            };
-
-            // Use proper times from edit data
             const startTime = editShiftData.start_time || '09:00:00';
             const endTime = editShiftData.end_time || '17:00:00';
+            const clockIn = editShiftData.clock_in || `${formData.start_date}T${startTime}`;
+            const clockOut = editShiftData.clock_out || `${formData.start_date}T${endTime}`;
+            
+            let timeEntryId = editShiftData.id;
+            
+            // If this is a shift_instance without a time_entry, create one first
+            if (editShiftData.source === 'shift_instance') {
+              const { data: newTimeEntry, error: teError } = await supabase
+                .from('time_entries')
+                .insert({
+                  family_id: familyId,
+                  user_id: user.data.user.id,
+                  shift_instance_id: editShiftData.shift_instance_id || editShiftData.id,
+                  clock_in: clockIn,
+                  clock_out: clockOut,
+                  shift_type: editShiftData.shift_type || 'basic',
+                  is_unscheduled: false,
+                  approval_status: 'approved'
+                })
+                .select('id')
+                .single();
+              
+              if (teError) throw teError;
+              timeEntryId = newTimeEntry.id;
+            }
 
             const { error } = await supabase
               .from('shift_change_requests')
               .insert({
                 family_id: familyId,
-                time_entry_id: timeEntry.id,
+                time_entry_id: timeEntryId,
                 requested_by: user.data.user.id,
                 new_start_time: `${formData.start_date}T${startTime}`,
                 new_end_time: `${formData.start_date}T${endTime}`,
