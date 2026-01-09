@@ -721,6 +721,66 @@ export type Database = {
           },
         ]
       }
+      leave_cancellation_requests: {
+        Row: {
+          conflict_details: Json | null
+          conflict_shift_ids: string[] | null
+          created_at: string
+          family_id: string
+          id: string
+          reason: string | null
+          requested_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          time_entry_id: string
+          updated_at: string
+        }
+        Insert: {
+          conflict_details?: Json | null
+          conflict_shift_ids?: string[] | null
+          created_at?: string
+          family_id: string
+          id?: string
+          reason?: string | null
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_entry_id: string
+          updated_at?: string
+        }
+        Update: {
+          conflict_details?: Json | null
+          conflict_shift_ids?: string[] | null
+          created_at?: string
+          family_id?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_entry_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_cancellation_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_cancellation_requests_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null

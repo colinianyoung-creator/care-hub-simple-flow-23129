@@ -22,6 +22,7 @@ import { LeaveSection } from "./LeaveSection";
 import { InviteMembersButton } from "../InviteMembersButton";
 import { ShiftViewToggle } from "../ShiftViewToggle";
 import { ChangeRequestCard } from "../ChangeRequestCard";
+import { CancellationRequestCard } from "../CancellationRequestCard";
 import { SnapshotViewerModal } from "../dialogs/SnapshotViewerModal";
 import { ConflictResolutionModal } from "../dialogs/ConflictResolutionModal";
 import { PendingTimeEntries } from "../PendingTimeEntries";
@@ -51,6 +52,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
 
   const [assignments, setAssignments] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  const [cancellationRequests, setCancellationRequests] = useState<any[]>([]);
   const [instances, setInstances] = useState<any[]>([]);
   const [carers, setCarers] = useState<Record<string, string>>({});
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
@@ -798,8 +800,25 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       
       const { data: leaveRequestsData, error: leaveRequestsError } = await leaveRequestsQuery;
 
+      // Load leave cancellation requests - admins see all, carers see their own
+      let cancellationRequestsQuery = supabase
+        .from('leave_cancellation_requests')
+        .select('*')
+        .eq('family_id', familyId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      
+      if (isCarerRole) {
+        cancellationRequestsQuery = cancellationRequestsQuery.eq('requested_by', userId);
+      }
+      
+      const { data: cancellationRequestsData, error: cancellationError } = await cancellationRequestsQuery;
+
       if (shiftChangeError) throw shiftChangeError;
       if (leaveRequestsError) throw leaveRequestsError;
+      if (cancellationError) {
+        console.error('Error loading cancellation requests:', cancellationError);
+      }
 
       // Load shift_instances (recurring shifts) with assignment details
       const today = new Date();
@@ -977,6 +996,40 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       }
       
       setRequests(allRequests);
+      
+      // Transform cancellation requests - fetch related time_entries and profiles
+      if (cancellationRequestsData && cancellationRequestsData.length > 0) {
+        const timeEntryIds = cancellationRequestsData.map(cr => cr.time_entry_id).filter(Boolean);
+        const requesterIds = cancellationRequestsData.map(cr => cr.requested_by).filter(Boolean);
+        
+        // Fetch time entries
+        const { data: timeEntries } = await supabase
+          .from('time_entries')
+          .select('id, clock_in, shift_type')
+          .in('id', timeEntryIds);
+        
+        // Fetch requester profiles
+        const { data: requesterProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', requesterIds);
+        
+        const transformedCancellations = cancellationRequestsData.map(cr => {
+          const timeEntry = timeEntries?.find(te => te.id === cr.time_entry_id);
+          const requester = requesterProfiles?.find(p => p.id === cr.requested_by);
+          return {
+            ...cr,
+            requester_name: requester?.full_name || 'Unknown',
+            leave_date: timeEntry?.clock_in ? format(new Date(timeEntry.clock_in), 'yyyy-MM-dd') : 'Unknown',
+            leave_type: timeEntry?.shift_type || 'leave',
+            original_carer_name: requester?.full_name || 'Unknown'
+          };
+        });
+        setCancellationRequests(transformedCancellations);
+      } else {
+        setCancellationRequests([]);
+      }
+      
       setInstances(allShifts);
       
       console.log('📊 Loaded scheduling data:', {
@@ -1184,6 +1237,89 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         title: "Error",
         description: "Failed to update leave request",
         variant: "destructive",
+      });
+    }
+  };
+
+  const handleApproveCancellation = async (requestId: string, timeEntryId: string, conflictShiftIds: string[]) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Not authenticated');
+
+      // 1. Revert the leave shift back to basic
+      const { error: updateError } = await supabase
+        .from('time_entries')
+        .update({ shift_type: 'basic' })
+        .eq('id', timeEntryId);
+
+      if (updateError) throw updateError;
+
+      // 2. Delete all conflicting cover shifts
+      if (conflictShiftIds && conflictShiftIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('time_entries')
+          .delete()
+          .in('id', conflictShiftIds);
+
+        if (deleteError) throw deleteError;
+      }
+
+      // 3. Update the cancellation request status
+      const { error: statusError } = await supabase
+        .from('leave_cancellation_requests')
+        .update({ 
+          status: 'approved', 
+          reviewed_by: user.data.user.id, 
+          reviewed_at: new Date().toISOString() 
+        })
+        .eq('id', requestId);
+
+      if (statusError) throw statusError;
+
+      toast({
+        title: "Cancellation Approved",
+        description: `Leave reverted to basic shift${conflictShiftIds?.length ? ` and ${conflictShiftIds.length} cover shift(s) removed` : ''}`
+      });
+
+      await loadSchedulingData();
+    } catch (error) {
+      console.error('Error approving cancellation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve cancellation request",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDenyCancellation = async (requestId: string) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('leave_cancellation_requests')
+        .update({ 
+          status: 'denied', 
+          reviewed_by: user.data.user.id, 
+          reviewed_at: new Date().toISOString() 
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Cancellation Denied",
+        description: "The leave will remain as scheduled"
+      });
+
+      await loadSchedulingData();
+    } catch (error) {
+      console.error('Error denying cancellation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deny cancellation request",
+        variant: "destructive"
       });
     }
   };
@@ -1615,12 +1751,28 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                   return false;
                 });
                 
-                return visibleRequests.length === 0 ? (
+                const hasPendingCancellations = cancellationRequests.length > 0;
+                const hasAnyRequests = visibleRequests.length > 0 || hasPendingCancellations;
+                
+                return !hasAnyRequests ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No pending requests
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Cancellation Requests */}
+                    {cancellationRequests.map((request) => (
+                      <CancellationRequestCard
+                        key={`cancel-${request.id}`}
+                        request={request}
+                        isAdmin={isAdmin}
+                        onApprove={handleApproveCancellation}
+                        onDeny={handleDenyCancellation}
+                        timeEntryId={request.time_entry_id}
+                      />
+                    ))}
+                    
+                    {/* Shift Change and Leave Requests */}
                     {visibleRequests.map((request) => (
                       <ChangeRequestCard
                         key={request.id}
