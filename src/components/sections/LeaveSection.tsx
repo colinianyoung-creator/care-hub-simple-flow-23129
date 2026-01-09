@@ -282,32 +282,85 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
     }
   };
 
-  const handleDeleteLeave = async (entryId: string, sourceType: 'leave_request' | 'time_entry') => {
+  const handleDeleteLeave = async (entryId: string, sourceType: 'leave_request' | 'time_entry', entry: LeaveEntry) => {
     try {
       const realId = entryId.replace(/^(leave-|time-)/, '');
 
       if (sourceType === 'time_entry') {
-        // Revert to basic shift
-        const { error } = await supabase
+        // Step 1: Check for cover shifts on the same date(s)
+        const { data: coverShifts, error: coverError } = await supabase
           .from('time_entries')
-          .update({ shift_type: 'basic' })
-          .eq('id', realId);
+          .select('id, user_id, clock_in, clock_out')
+          .eq('family_id', familyId)
+          .eq('shift_type', 'cover')
+          .gte('clock_in', `${entry.start_date}T00:00:00`)
+          .lte('clock_in', `${entry.end_date}T23:59:59`)
+          .neq('user_id', entry.carer_id);
 
-        if (error) throw error;
+        if (coverError) throw coverError;
+
+        // Step 2: If no conflicts, revert immediately
+        if (!coverShifts || coverShifts.length === 0) {
+          const { error } = await supabase
+            .from('time_entries')
+            .update({ shift_type: 'basic' })
+            .eq('id', realId);
+
+          if (error) throw error;
+
+          toast({
+            title: "Success",
+            description: "Leave reverted to basic shift"
+          });
+        } else {
+          // Step 3: Conflicts found - create cancellation request
+          // Get cover carer names for display
+          const coverCarerIds = [...new Set(coverShifts.map(s => s.user_id).filter(Boolean))];
+          const { data: coverProfiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', coverCarerIds);
+
+          const conflictDetails = coverShifts.map(cs => ({
+            shift_id: cs.id,
+            carer_id: cs.user_id,
+            carer_name: coverProfiles?.find(p => p.id === cs.user_id)?.full_name || 'Unknown',
+            date: format(new Date(cs.clock_in), 'MMM d, yyyy'),
+            time: `${format(new Date(cs.clock_in), 'HH:mm')} - ${cs.clock_out ? format(new Date(cs.clock_out), 'HH:mm') : 'ongoing'}`
+          }));
+
+          const { error: insertError } = await supabase
+            .from('leave_cancellation_requests')
+            .insert({
+              family_id: familyId,
+              time_entry_id: realId,
+              requested_by: currentUserId,
+              conflict_shift_ids: coverShifts.map(s => s.id),
+              conflict_details: conflictDetails,
+              status: 'pending'
+            });
+
+          if (insertError) throw insertError;
+
+          toast({
+            title: "Cancellation Request Submitted",
+            description: `Cover shift conflict detected. Admin approval required to cancel leave and remove ${coverShifts.length} cover shift(s).`,
+          });
+        }
       } else if (sourceType === 'leave_request') {
-        // Cancel the leave request
+        // For leave_requests (pending), just cancel directly
         const { error } = await supabase
           .from('leave_requests')
           .update({ status: 'cancelled' })
           .eq('id', realId);
 
         if (error) throw error;
-      }
 
-      toast({
-        title: "Success",
-        description: "Leave reverted to basic shift"
-      });
+        toast({
+          title: "Success",
+          description: "Leave request cancelled"
+        });
+      }
 
       await loadLeaveData();
       onScheduleRefresh?.();
@@ -315,7 +368,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
       console.error('Error deleting leave:', error);
       toast({
         title: "Error",
-        description: "Failed to delete leave",
+        description: "Failed to process leave cancellation",
         variant: "destructive"
       });
     }
@@ -493,7 +546,7 @@ interface LeaveListProps {
   entries: LeaveEntry[];
   showCarer?: boolean;
   onEdit: (entryId: string, sourceType: 'leave_request' | 'time_entry', newShiftType: string) => void;
-  onDelete: (entryId: string, sourceType: 'leave_request' | 'time_entry') => void;
+  onDelete: (entryId: string, sourceType: 'leave_request' | 'time_entry', entry: LeaveEntry) => void;
   canEditEntry: (entry: LeaveEntry) => boolean;
 }
 
@@ -583,7 +636,7 @@ const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: L
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(entry.id, entry.type)}>
+                        <AlertDialogAction onClick={() => onDelete(entry.id, entry.type, entry)}>
                           Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -678,7 +731,7 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(entry.id, entry.type)}>
+                            <AlertDialogAction onClick={() => onDelete(entry.id, entry.type, entry)}>
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
