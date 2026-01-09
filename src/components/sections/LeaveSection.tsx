@@ -301,12 +301,19 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
 
         // Step 2: If no conflicts, revert immediately
         if (!coverShifts || coverShifts.length === 0) {
-          const { error } = await supabase
+          const { data: updatedEntry, error } = await supabase
             .from('time_entries')
             .update({ shift_type: 'basic' })
-            .eq('id', realId);
+            .eq('id', realId)
+            .select('id')
+            .maybeSingle();
 
           if (error) throw error;
+          
+          // Check if the update actually happened (RLS may have blocked it)
+          if (!updatedEntry) {
+            throw new Error('Failed to update the shift. The entry may not be linked to your account.');
+          }
 
           toast({
             title: "Success",

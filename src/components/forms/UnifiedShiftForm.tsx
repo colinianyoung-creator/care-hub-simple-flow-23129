@@ -631,6 +631,17 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
           } else if (!isEditingLeaveRequest) {
             // Admin creating new shift(s)
             
+            // Validate carer is selected for leave entries
+            if (['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type) && !formData.carer_id) {
+              toast({
+                title: "Carer Required",
+                description: "Please select a carer for this leave entry",
+                variant: "destructive",
+              });
+              setLoading(false);
+              return;
+            }
+            
             // Check if selected carer is a placeholder - can't assign to one-time shifts
             const selectedCarer = carers.find(c => c.user_id === formData.carer_id);
             if (selectedCarer?.is_placeholder) {
