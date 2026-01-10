@@ -108,9 +108,23 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Check if email confirmation is required
-        if (data.user.identities && data.user.identities.length === 0) {
-          // Email confirmation required
+        // If no session returned, email confirmation is required
+        if (!data.session) {
+          // Send custom branded verification email
+          try {
+            const verificationUrl = `${window.location.origin}/auth`;
+            await supabase.functions.invoke('send-verification-email', {
+              body: {
+                email: email,
+                userName: fullName,
+                verificationUrl: verificationUrl
+              }
+            });
+          } catch (emailError) {
+            console.error('Failed to send custom verification email:', emailError);
+            // Supabase default email will still be sent as fallback
+          }
+          
           setAwaitingVerification(true);
           setVerificationEmail(email);
           toast({
@@ -118,7 +132,7 @@ const Auth = () => {
             description: 'Please check your inbox for a verification link.',
           });
         } else {
-          // Email confirmation disabled or already verified
+          // Email confirmation disabled or already verified (auto-confirm enabled)
           const roleMessages = {
             family_admin: 'Welcome to CareHub! Your Family Admin account has been created.',
             disabled_person: 'Welcome to CareHub! Your personal care space has been created.',
