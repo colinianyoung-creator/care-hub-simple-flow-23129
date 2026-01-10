@@ -124,90 +124,108 @@ export const useConversations = (familyId?: string) => {
         .eq('conversation_participants.user_id', user.user.id);
 
       if (error) throw error;
+      if (!convos || convos.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
 
-      // Enrich with participant info and last message
-      const enrichedConversations: Conversation[] = await Promise.all(
-        (convos || []).map(async (convo) => {
-          // Get all participants with their profiles
-          const { data: participants } = await supabase
-            .from('conversation_participants')
-            .select('user_id')
-            .eq('conversation_id', convo.id);
+      // Get all conversation IDs
+      const convoIds = convos.map(c => c.id);
 
-          const participantProfiles: Participant[] = [];
-          for (const p of participants || []) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name, profile_picture_url')
-              .eq('id', p.user_id)
-              .single();
-            
-            participantProfiles.push({
+      // Batch fetch all participants for all conversations
+      const { data: allParticipants } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id, user_id')
+        .in('conversation_id', convoIds);
+
+      // Get unique user IDs
+      const userIds = [...new Set((allParticipants || []).map(p => p.user_id))];
+
+      // Batch fetch all profiles at once
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, profile_picture_url')
+        .in('id', userIds);
+
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      // Batch fetch last messages for all conversations
+      const { data: lastMessages } = await supabase
+        .from('messages')
+        .select('conversation_id, content, created_at, sender_id')
+        .in('conversation_id', convoIds)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
+
+      // Get only the most recent message per conversation
+      const lastMessageMap = new Map<string, { content: string; created_at: string; sender_id: string }>();
+      for (const msg of lastMessages || []) {
+        if (!lastMessageMap.has(msg.conversation_id)) {
+          lastMessageMap.set(msg.conversation_id, msg);
+        }
+      }
+
+      // Build enriched conversations
+      const enrichedConversations: Conversation[] = convos.map((convo) => {
+        // Get participants for this conversation
+        const convoParticipants = (allParticipants || [])
+          .filter(p => p.conversation_id === convo.id)
+          .map(p => {
+            const profile = profileMap.get(p.user_id);
+            return {
               user_id: p.user_id,
               full_name: profile?.full_name || 'Unknown',
               profile_picture_url: profile?.profile_picture_url || null
-            });
-          }
-
-          // Get last message
-          const { data: lastMessageData } = await supabase
-            .from('messages')
-            .select('content, created_at, sender_id')
-            .eq('conversation_id', convo.id)
-            .eq('is_deleted', false)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          let lastMessage;
-          if (lastMessageData) {
-            const sender = participantProfiles.find(p => p.user_id === lastMessageData.sender_id);
-            lastMessage = {
-              content: lastMessageData.content,
-              created_at: lastMessageData.created_at,
-              sender_name: sender?.full_name || 'Unknown'
             };
-          }
+          });
 
-          // Get unread count
-          const userParticipant = convo.conversation_participants.find(
-            (p: { user_id: string }) => p.user_id === user.user!.id
-          );
-          const lastReadAt = userParticipant?.last_read_at;
-          
-          let unreadCount = 0;
-          const unreadQuery = supabase
-            .from('messages')
-            .select('id', { count: 'exact', head: true })
-            .eq('conversation_id', convo.id)
-            .eq('is_deleted', false)
-            .neq('sender_id', user.user!.id);
-          
-          if (lastReadAt) {
-            unreadQuery.gt('created_at', lastReadAt);
-          }
-          
-          const { count } = await unreadQuery;
-          unreadCount = count || 0;
-
-          return {
-            id: convo.id,
-            family_id: convo.family_id,
-            type: convo.type as 'group' | 'direct',
-            name: convo.name,
-            created_by: convo.created_by,
-            created_at: convo.created_at,
-            updated_at: convo.updated_at,
-            participants: participantProfiles,
-            last_message: lastMessage,
-            unread_count: unreadCount
+        // Get last message
+        const lastMsg = lastMessageMap.get(convo.id);
+        let lastMessage;
+        if (lastMsg) {
+          const sender = convoParticipants.find(p => p.user_id === lastMsg.sender_id);
+          lastMessage = {
+            content: lastMsg.content,
+            created_at: lastMsg.created_at,
+            sender_name: sender?.full_name || 'Unknown'
           };
-        })
-      );
+        }
+
+        // Get unread count from the participant data we already have
+        const userParticipant = convo.conversation_participants.find(
+          (p: { user_id: string }) => p.user_id === user.user!.id
+        );
+        const lastReadAt = userParticipant?.last_read_at;
+        
+        // Count unread from last messages (simplified - count messages after last read)
+        let unreadCount = 0;
+        if (lastMessages) {
+          for (const msg of lastMessages) {
+            if (msg.conversation_id === convo.id && msg.sender_id !== user.user!.id) {
+              if (!lastReadAt || new Date(msg.created_at) > new Date(lastReadAt)) {
+                unreadCount++;
+              }
+            }
+          }
+        }
+
+        return {
+          id: convo.id,
+          family_id: convo.family_id,
+          type: convo.type as 'group' | 'direct',
+          name: convo.name,
+          created_by: convo.created_by,
+          created_at: convo.created_at,
+          updated_at: convo.updated_at,
+          participants: convoParticipants,
+          last_message: lastMessage,
+          unread_count: unreadCount
+        };
+      });
 
       // Sort: Family Chat first, then by last message time
       enrichedConversations.sort((a, b) => {
-        // Family Chat always first
         if (a.name === 'Family Chat' && a.type === 'group') return -1;
         if (b.name === 'Family Chat' && b.type === 'group') return 1;
         
@@ -310,12 +328,55 @@ export const useConversations = (familyId?: string) => {
     }
   };
 
+  const deleteConversation = async (conversationId: string): Promise<boolean> => {
+    try {
+      // Delete messages first
+      await supabase
+        .from('messages')
+        .delete()
+        .eq('conversation_id', conversationId);
+
+      // Delete participants
+      await supabase
+        .from('conversation_participants')
+        .delete()
+        .eq('conversation_id', conversationId);
+
+      // Delete the conversation
+      const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+      
+      toast({
+        title: 'Conversation deleted',
+        description: 'The conversation has been removed'
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete conversation',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
   return {
     conversations,
     loading,
     createConversation,
     getOrCreateDirectConversation,
     getOrCreateFamilyGroupChat,
+    deleteConversation,
     refetch: fetchConversations
   };
 };

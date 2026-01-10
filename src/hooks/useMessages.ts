@@ -41,38 +41,45 @@ export const useMessages = (conversationId?: string) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      if (!messagesData || messagesData.length === 0) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
 
-      // Enrich with sender info - cast to include new attachment columns
+      // Get unique sender IDs and batch fetch profiles
+      const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, profile_picture_url')
+        .in('id', senderIds);
+
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      // Build enriched messages
       type MessageWithAttachment = typeof messagesData[number] & {
         attachment_url?: string | null;
         attachment_type?: string | null;
         attachment_name?: string | null;
       };
 
-      const enrichedMessages: Message[] = await Promise.all(
-        ((messagesData || []) as MessageWithAttachment[]).map(async (msg) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, profile_picture_url')
-            .eq('id', msg.sender_id)
-            .single();
-
-          return {
-            id: msg.id,
-            conversation_id: msg.conversation_id,
-            sender_id: msg.sender_id,
-            content: msg.content,
-            created_at: msg.created_at,
-            is_deleted: msg.is_deleted,
-            sender_name: profile?.full_name || 'Unknown',
-            sender_avatar: profile?.profile_picture_url || null,
-            is_own: msg.sender_id === user.user!.id,
-            attachment_url: msg.attachment_url,
-            attachment_type: msg.attachment_type,
-            attachment_name: msg.attachment_name
-          };
-        })
-      );
+      const enrichedMessages: Message[] = (messagesData as MessageWithAttachment[]).map((msg) => {
+        const profile = profileMap.get(msg.sender_id);
+        return {
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          created_at: msg.created_at,
+          is_deleted: msg.is_deleted,
+          sender_name: profile?.full_name || 'Unknown',
+          sender_avatar: profile?.profile_picture_url || null,
+          is_own: msg.sender_id === user.user!.id,
+          attachment_url: msg.attachment_url,
+          attachment_type: msg.attachment_type,
+          attachment_name: msg.attachment_name
+        };
+      });
 
       setMessages(enrichedMessages);
 
