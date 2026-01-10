@@ -8,8 +8,25 @@ import { TypingIndicator } from './TypingIndicator';
 import { ReadReceiptIndicator } from './ReadReceiptIndicator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface MessageThreadProps {
   conversationId: string;
@@ -37,10 +54,11 @@ const shouldShowDateSeparator = (currentMsg: Message, prevMsg?: Message) => {
 };
 
 export const MessageThread = ({ conversationId, conversationName }: MessageThreadProps) => {
-  const { messages, loading, sendMessage } = useMessages(conversationId);
+  const { messages, loading, sendMessage, deleteMessage } = useMessages(conversationId);
   const { typingUsers, setTyping } = useTypingIndicator(conversationId);
   const { getReadersForMessage } = useReadReceipts(conversationId);
   const [userName, setUserName] = useState('');
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,6 +86,13 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
 
   const handleSend = async (content: string, attachment?: { url: string; type: string; name: string }) => {
     return sendMessage(content, attachment);
+  };
+
+  const handleDeleteMessage = async () => {
+    if (messageToDelete) {
+      await deleteMessage(messageToDelete);
+      setMessageToDelete(null);
+    }
   };
 
   if (loading) {
@@ -121,7 +146,7 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
                     <div className="flex-1 h-px bg-border" />
                   </div>
                 )}
-                <div className={`flex gap-2 ${message.is_own ? 'justify-end' : ''}`}>
+                <div className={`flex gap-2 group ${message.is_own ? 'justify-end' : ''}`}>
                   {!message.is_own && (
                     <div className="w-8 shrink-0">
                       {showSender && (
@@ -142,43 +167,89 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
                         {message.sender_name}
                       </span>
                     )}
-                    <div
-                      className={`rounded-2xl px-4 py-2 ${
-                        message.is_own
-                          ? 'bg-primary text-primary-foreground rounded-br-md'
-                          : 'bg-muted rounded-bl-md'
-                      }`}
-                    >
-                      {/* Attachment display */}
-                      {message.attachment_url && (
-                        <div className="mb-2">
-                          {message.attachment_type === 'image' ? (
-                            <img 
-                              src={message.attachment_url} 
-                              alt={message.attachment_name || 'Image'} 
-                              className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer"
-                              onClick={() => window.open(message.attachment_url, '_blank')}
-                            />
-                          ) : (
-                            <a 
-                              href={message.attachment_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className={`flex items-center gap-2 p-2 rounded-lg ${
-                                message.is_own ? 'bg-primary-foreground/10' : 'bg-background'
-                              }`}
+                    <div className="flex items-center gap-1">
+                      {message.is_own && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                              <FileText className="h-5 w-5" />
-                              <span className="text-xs flex-1 truncate">
-                                {message.attachment_name || 'File'}
-                              </span>
-                              <Download className="h-4 w-4" />
-                            </a>
-                          )}
-                        </div>
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setMessageToDelete(message.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete message
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
-                      {message.content && (
-                        <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                      <div
+                        className={`rounded-2xl px-4 py-2 ${
+                          message.is_own
+                            ? 'bg-primary text-primary-foreground rounded-br-md'
+                            : 'bg-muted rounded-bl-md'
+                        }`}
+                      >
+                        {/* Attachment display */}
+                        {message.attachment_url && (
+                          <div className="mb-2">
+                            {message.attachment_type === 'image' ? (
+                              <img 
+                                src={message.attachment_url} 
+                                alt={message.attachment_name || 'Image'} 
+                                className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer"
+                                onClick={() => window.open(message.attachment_url, '_blank')}
+                              />
+                            ) : (
+                              <a 
+                                href={message.attachment_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className={`flex items-center gap-2 p-2 rounded-lg ${
+                                  message.is_own ? 'bg-primary-foreground/10' : 'bg-background'
+                                }`}
+                              >
+                                <FileText className="h-5 w-5" />
+                                <span className="text-xs flex-1 truncate">
+                                  {message.attachment_name || 'File'}
+                                </span>
+                                <Download className="h-4 w-4" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        {message.content && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                        )}
+                      </div>
+                      {!message.is_own && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setMessageToDelete(message.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete for me
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                     <div className="flex items-center gap-1 mt-1 px-1">
@@ -199,6 +270,26 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
         <div ref={messagesEndRef} />
       </div>
       <MessageInput onSend={handleSend} onTyping={handleTyping} />
+
+      <AlertDialog open={!!messageToDelete} onOpenChange={() => setMessageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the message from this conversation. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteMessage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

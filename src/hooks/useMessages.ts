@@ -154,6 +154,21 @@ export const useMessages = (conversationId?: string) => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        async (payload) => {
+          const updatedMsg = payload.new as { id: string; is_deleted: boolean };
+          if (updatedMsg.is_deleted) {
+            setMessages(prev => prev.filter(m => m.id !== updatedMsg.id));
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -205,10 +220,40 @@ export const useMessages = (conversationId?: string) => {
     }
   };
 
+  const deleteMessage = async (messageId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_deleted: true })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Remove from local state immediately
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      
+      toast({
+        title: 'Message deleted',
+        description: 'The message has been removed'
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete message',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
   return {
     messages,
     loading,
     sendMessage,
+    deleteMessage,
     refetch: fetchMessages
   };
 };
