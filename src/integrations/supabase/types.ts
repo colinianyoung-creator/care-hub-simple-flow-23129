@@ -1375,10 +1375,14 @@ export type Database = {
           created_at: string
           date_format: string | null
           email: string | null
+          font_size: string | null
           full_name: string | null
+          high_contrast: boolean | null
           id: string
+          language: string | null
           phone: string | null
           profile_picture_url: string | null
+          reduced_motion: boolean | null
           theme: string | null
           time_format: string | null
           two_factor_enabled: boolean | null
@@ -1392,10 +1396,14 @@ export type Database = {
           created_at?: string
           date_format?: string | null
           email?: string | null
+          font_size?: string | null
           full_name?: string | null
+          high_contrast?: boolean | null
           id: string
+          language?: string | null
           phone?: string | null
           profile_picture_url?: string | null
+          reduced_motion?: boolean | null
           theme?: string | null
           time_format?: string | null
           two_factor_enabled?: boolean | null
@@ -1409,10 +1417,14 @@ export type Database = {
           created_at?: string
           date_format?: string | null
           email?: string | null
+          font_size?: string | null
           full_name?: string | null
+          high_contrast?: boolean | null
           id?: string
+          language?: string | null
           phone?: string | null
           profile_picture_url?: string | null
+          reduced_motion?: boolean | null
           theme?: string | null
           time_format?: string | null
           two_factor_enabled?: boolean | null
