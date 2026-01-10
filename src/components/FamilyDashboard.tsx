@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { logUserContext } from '@/lib/logContext';
+import { useFamilySettings } from '@/hooks/useFamilySettings';
 
 interface FamilyDashboardProps {
   onBack?: () => void;
@@ -52,6 +53,7 @@ export const FamilyDashboard = ({
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
+  const { isSectionEnabled } = useFamilySettings(familyId);
 
   useEffect(() => {
     const loadData = async () => {
@@ -143,78 +145,96 @@ export const FamilyDashboard = ({
 
         {familyId && (
           <div className="space-y-4">
-          <ExpandableDashboardSection
-            id="scheduling"
-            title="Scheduling & Time Management"
-            defaultOpen={true}
-            icon={<Clock className="h-5 w-5" />}
-          >
-            <SchedulingSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('scheduling') && (
+            <ExpandableDashboardSection
+              id="scheduling"
+              title="Scheduling & Time Management"
+              defaultOpen={true}
+              icon={<Clock className="h-5 w-5" />}
+            >
+              <SchedulingSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection
-            id="tasks"
-            title="Tasks"
-            icon={<CheckSquare className="h-5 w-5" />}
-          >
-            <TasksSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('tasks') && (
+            <ExpandableDashboardSection
+              id="tasks"
+              title="Tasks"
+              icon={<CheckSquare className="h-5 w-5" />}
+            >
+              <TasksSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection 
-            id="notes"
-            title="Care Notes" 
-            icon={<FileText className="h-5 w-5" />}
-          >
-            <NotesSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('notes') && (
+            <ExpandableDashboardSection 
+              id="notes"
+              title="Care Notes" 
+              icon={<FileText className="h-5 w-5" />}
+            >
+              <NotesSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection 
-            id="diet"
-            title="Diet Tracking" 
-            icon={<Utensils className="h-5 w-5" />}
-          >
-            <DietSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('diet') && (
+            <ExpandableDashboardSection 
+              id="diet"
+              title="Diet Tracking" 
+              icon={<Utensils className="h-5 w-5" />}
+            >
+              <DietSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection 
-            id="money"
-            title="Money Tracking" 
-            icon={<Wallet className="h-5 w-5" />}
-          >
-            <MoneySection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('money') && (
+            <ExpandableDashboardSection 
+              id="money"
+              title="Money Tracking" 
+              icon={<Wallet className="h-5 w-5" />}
+            >
+              <MoneySection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection
-            id="key-information"
-            title="Key Information & Risk Assessments"
-            icon={<Users className="h-5 w-5" />}
-          >
-            <KeyInformationSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('key-information') && (
+            <ExpandableDashboardSection
+              id="key-information"
+              title="Key Information & Risk Assessments"
+              icon={<Users className="h-5 w-5" />}
+            >
+              <KeyInformationSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection
-            id="medications"
-            title="Medication Administration Record (MAR)"
-            icon={<Pill className="h-5 w-5" />}
-          >
-            <MedicationsSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('medications') && (
+            <ExpandableDashboardSection
+              id="medications"
+              title="Medication Administration Record (MAR)"
+              icon={<Pill className="h-5 w-5" />}
+            >
+              <MedicationsSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection
-            id="appointments"
-            title="Appointments"
-            icon={<Calendar className="h-5 w-5" />}
-          >
-            <AppointmentsSection familyId={familyId} userRole={userRole} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('appointments') && (
+            <ExpandableDashboardSection
+              id="appointments"
+              title="Appointments"
+              icon={<Calendar className="h-5 w-5" />}
+            >
+              <AppointmentsSection familyId={familyId} userRole={userRole} />
+            </ExpandableDashboardSection>
+          )}
 
-          <ExpandableDashboardSection
-            id="ai-reports"
-            title="AI Reports"
-            icon={<FileBarChart className="h-5 w-5" />}
-          >
-            <AIReportsSection familyId={familyId} userRole={userRole} careRecipientName={careRecipientName} />
-          </ExpandableDashboardSection>
+          {isSectionEnabled('ai-reports') && (
+            <ExpandableDashboardSection
+              id="ai-reports"
+              title="AI Reports"
+              icon={<FileBarChart className="h-5 w-5" />}
+            >
+              <AIReportsSection familyId={familyId} userRole={userRole} careRecipientName={careRecipientName} />
+            </ExpandableDashboardSection>
+          )}
           </div>
         )}
       </div>
