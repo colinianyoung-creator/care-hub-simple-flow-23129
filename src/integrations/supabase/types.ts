@@ -578,6 +578,38 @@ export type Database = {
           },
         ]
       }
+      family_settings: {
+        Row: {
+          created_at: string | null
+          enabled_sections: Json | null
+          family_id: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled_sections?: Json | null
+          family_id: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled_sections?: Json | null
+          family_id?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_settings_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: true
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_codes: {
         Row: {
           code: string
@@ -1341,11 +1373,14 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          date_format: string | null
           email: string | null
           full_name: string | null
           id: string
           phone: string | null
           profile_picture_url: string | null
+          theme: string | null
+          time_format: string | null
           two_factor_enabled: boolean | null
           ui_preference: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
@@ -1355,11 +1390,14 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          date_format?: string | null
           email?: string | null
           full_name?: string | null
           id: string
           phone?: string | null
           profile_picture_url?: string | null
+          theme?: string | null
+          time_format?: string | null
           two_factor_enabled?: boolean | null
           ui_preference?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
@@ -1369,11 +1407,14 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          date_format?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
           profile_picture_url?: string | null
+          theme?: string | null
+          time_format?: string | null
           two_factor_enabled?: boolean | null
           ui_preference?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string

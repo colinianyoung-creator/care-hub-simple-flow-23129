@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings } from 'lucide-react';
 import { ProfileDialog } from './dialogs/ProfileDialog';
 import { ManageCareTeamDialog } from './dialogs/ManageCareTeamDialog';
+import { SettingsDialog } from './dialogs/SettingsDialog';
 import { InviteMembersButton } from './InviteMembersButton';
 import { JoinFamilyButton } from './JoinFamilyButton';
 import { CreateFamilyButton } from './CreateFamilyButton';
@@ -47,6 +48,7 @@ export const DashboardHeader = ({
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [userName, setUserName] = useState('');
   const { unreadCount } = useUnreadMessages(familyId);
 
@@ -171,6 +173,10 @@ export const DashboardHeader = ({
               <User className="mr-2 h-4 w-4" />
               Profile
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
             {familyId && (userRole === 'family_admin' || userRole === 'disabled_person') && (
               <DropdownMenuItem onClick={() => setShowCareTeamDialog(true)}>
                 <Users className="mr-2 h-4 w-4" />
@@ -183,6 +189,7 @@ export const DashboardHeader = ({
                 Switch Family
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
@@ -213,6 +220,13 @@ export const DashboardHeader = ({
           familyId={familyId}
         />
       )}
+      
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+        familyId={familyId}
+        userRole={userRole}
+      />
     </header>
   );
 };
