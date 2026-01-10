@@ -19,7 +19,7 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [pendingConversationId, setPendingConversationId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const { conversations, loading, createConversation, refetch } = useConversations(familyId);
+  const { conversations, loading, createConversation, deleteConversation, refetch } = useConversations(familyId);
 
   // Get current user ID
   useEffect(() => {
@@ -112,6 +112,7 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
                 conversations={conversations}
                 loading={loading}
                 onSelect={setSelectedConversation}
+                onDelete={deleteConversation}
                 currentUserId={currentUserId}
               />
             )}

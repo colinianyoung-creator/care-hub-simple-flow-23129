@@ -55,12 +55,15 @@ export const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      // Use signed URL for secure access
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('chat-attachments')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days expiry
+
+      if (signedUrlError) throw signedUrlError;
 
       return {
-        url: publicUrl,
+        url: signedUrlData.signedUrl,
         type: file.type.startsWith('image/') ? 'image' : 'file',
         name: file.name
       };
