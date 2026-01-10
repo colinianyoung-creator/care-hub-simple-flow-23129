@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft, X } from 'lucide-react';
@@ -6,6 +6,7 @@ import { ConversationList } from './ConversationList';
 import { MessageThread } from './MessageThread';
 import { NewConversationDialog } from './NewConversationDialog';
 import { useConversations, Conversation } from '@/hooks/useConversations';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatDialogProps {
   isOpen: boolean;
@@ -16,19 +17,55 @@ interface ChatDialogProps {
 export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showNewConversation, setShowNewConversation] = useState(false);
+  const [pendingConversationId, setPendingConversationId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { conversations, loading, createConversation, refetch } = useConversations(familyId);
+
+  // Get current user ID
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+    getUser();
+  }, []);
+
+  // Auto-select conversation when it appears in the list
+  useEffect(() => {
+    if (pendingConversationId && conversations.length > 0) {
+      const newConvo = conversations.find(c => c.id === pendingConversationId);
+      if (newConvo) {
+        setSelectedConversation(newConvo);
+        setPendingConversationId(null);
+      }
+    }
+  }, [conversations, pendingConversationId]);
 
   const handleConversationCreated = async (conversationId: string) => {
     setShowNewConversation(false);
+    setPendingConversationId(conversationId);
     await refetch();
-    const newConvo = conversations.find(c => c.id === conversationId);
-    if (newConvo) {
-      setSelectedConversation(newConvo);
-    }
   };
 
   const handleBack = () => {
     setSelectedConversation(null);
+  };
+
+  // Get display name for the selected conversation (excluding current user)
+  const getDisplayName = () => {
+    if (!selectedConversation) return 'Messages';
+    if (selectedConversation.name) return selectedConversation.name;
+    
+    const otherParticipants = selectedConversation.participants
+      .filter(p => p.user_id !== currentUserId);
+    
+    if (otherParticipants.length > 0) {
+      return otherParticipants.map(p => p.full_name).join(', ');
+    }
+    
+    return 'Chat';
   };
 
   return (
@@ -45,15 +82,7 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
                 )}
               </div>
               <DialogTitle className="text-sm sm:text-base truncate min-w-0">
-                {selectedConversation 
-                  ? selectedConversation.name || 
-                    selectedConversation.participants
-                      .filter(p => !selectedConversation.participants.some(op => op.user_id === p.user_id && selectedConversation.type === 'direct'))
-                      .map(p => p.full_name)
-                      .join(', ') ||
-                    'Chat'
-                  : 'Messages'
-                }
+                {selectedConversation ? getDisplayName() : 'Messages'}
               </DialogTitle>
               <div className="flex items-center gap-1">
                 {!selectedConversation && (
@@ -76,13 +105,14 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
             {selectedConversation ? (
               <MessageThread 
                 conversationId={selectedConversation.id}
-                conversationName={selectedConversation.name || 'Chat'}
+                conversationName={getDisplayName()}
               />
             ) : (
               <ConversationList
                 conversations={conversations}
                 loading={loading}
                 onSelect={setSelectedConversation}
+                currentUserId={currentUserId}
               />
             )}
           </div>
