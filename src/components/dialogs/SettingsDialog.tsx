@@ -12,7 +12,7 @@ import { useFamilySettings, SectionId } from '@/hooks/useFamilySettings';
 import { useUserPreferences, ThemeOption, TimeFormat, DateFormat } from '@/hooks/useUserPreferences';
 import { useTheme } from 'next-themes';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import i18n from '@/lib/i18n';
 
 interface SettingsDialogProps {
@@ -100,13 +100,13 @@ export const SettingsDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[550px] max-h-[85vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t('settings.title')}</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue={isAdmin && familyId ? "dashboard" : "appearance"} className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${tabCount === 5 ? 'grid-cols-5' : 'grid-cols-4'} h-auto`}>
+        <Tabs defaultValue={isAdmin && familyId ? "dashboard" : "appearance"} className="w-full flex-1 flex flex-col min-h-0">
+          <TabsList className={`grid w-full ${tabCount === 5 ? 'grid-cols-5' : 'grid-cols-4'} h-auto flex-shrink-0`}>
             {isAdmin && familyId && (
               <TabsTrigger value="dashboard" className="flex items-center gap-1 px-1.5 sm:px-2 py-2 text-xs sm:text-sm">
                 <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
@@ -131,7 +131,7 @@ export const SettingsDialog = ({
             </TabsTrigger>
           </TabsList>
           
-          <ScrollArea className="flex-1 mt-4 max-h-[calc(70vh-120px)]">
+          <div className="flex-1 mt-4 overflow-y-auto min-h-0">
             <div className="pr-2 sm:pr-4 pb-4">
               {isAdmin && familyId && (
                 <TabsContent value="dashboard" className="mt-0">
@@ -214,7 +214,7 @@ export const SettingsDialog = ({
                 )}
               </TabsContent>
             </div>
-          </ScrollArea>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
