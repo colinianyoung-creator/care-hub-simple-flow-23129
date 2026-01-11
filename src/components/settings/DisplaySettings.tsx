@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,17 +13,6 @@ interface DisplaySettingsProps {
   disabled?: boolean;
 }
 
-const TIME_FORMAT_OPTIONS: { value: TimeFormat; label: string; example: string }[] = [
-  { value: '24h', label: '24-hour', example: '14:30' },
-  { value: '12h', label: '12-hour', example: '2:30 PM' }
-];
-
-const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string; example: string }[] = [
-  { value: 'DD/MM/YYYY', label: 'Day/Month/Year', example: '31/12/2024' },
-  { value: 'MM/DD/YYYY', label: 'Month/Day/Year', example: '12/31/2024' },
-  { value: 'YYYY-MM-DD', label: 'Year-Month-Day', example: '2024-12-31' }
-];
-
 export const DisplaySettings = ({
   timeFormat,
   dateFormat,
@@ -30,15 +20,28 @@ export const DisplaySettings = ({
   onDateFormatChange,
   disabled = false
 }: DisplaySettingsProps) => {
+  const { t } = useTranslation();
+
+  const TIME_FORMAT_OPTIONS: { value: TimeFormat; labelKey: string; exampleKey: string }[] = [
+    { value: '24h', labelKey: 'display.format24h', exampleKey: 'display.example24h' },
+    { value: '12h', labelKey: 'display.format12h', exampleKey: 'display.example12h' }
+  ];
+
+  const DATE_FORMAT_OPTIONS: { value: DateFormat; labelKey: string; exampleKey: string }[] = [
+    { value: 'DD/MM/YYYY', labelKey: 'display.formatDMY', exampleKey: 'display.exampleDMY' },
+    { value: 'MM/DD/YYYY', labelKey: 'display.formatMDY', exampleKey: 'display.exampleMDY' },
+    { value: 'YYYY-MM-DD', labelKey: 'display.formatYMD', exampleKey: 'display.exampleYMD' }
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="text-sm text-muted-foreground mb-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
         Customize how dates and times are displayed throughout the app.
       </div>
       
       {/* Time Format */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium">Time Format</Label>
+      <div className="space-y-2 sm:space-y-3">
+        <Label className="text-sm sm:text-base font-medium">{t('display.timeFormat')}</Label>
         <RadioGroup
           value={timeFormat}
           onValueChange={(value) => onTimeFormatChange(value as TimeFormat)}
@@ -49,25 +52,29 @@ export const DisplaySettings = ({
             <label
               key={option.value}
               htmlFor={`time-${option.value}`}
-              className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div>
-                  <div className="font-medium">{option.label}</div>
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="min-w-0">
+                  <div className="font-medium text-sm sm:text-base">{t(option.labelKey)}</div>
                   <p className="text-xs text-muted-foreground">
-                    Example: {option.example}
+                    {t(option.exampleKey)}
                   </p>
                 </div>
               </div>
-              <RadioGroupItem value={option.value} id={`time-${option.value}`} />
+              <RadioGroupItem 
+                value={option.value} 
+                id={`time-${option.value}`} 
+                className="shrink-0 scale-90 sm:scale-100"
+              />
             </label>
           ))}
         </RadioGroup>
       </div>
 
       {/* Date Format */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium">Date Format</Label>
+      <div className="space-y-2 sm:space-y-3">
+        <Label className="text-sm sm:text-base font-medium">{t('display.dateFormat')}</Label>
         <Select
           value={dateFormat}
           onValueChange={(value) => onDateFormatChange(value as DateFormat)}
@@ -80,8 +87,8 @@ export const DisplaySettings = ({
             {DATE_FORMAT_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 <div className="flex flex-col">
-                  <span>{option.label}</span>
-                  <span className="text-xs text-muted-foreground">{option.example}</span>
+                  <span>{t(option.labelKey)}</span>
+                  <span className="text-xs text-muted-foreground">{t(option.exampleKey)}</span>
                 </div>
               </SelectItem>
             ))}
