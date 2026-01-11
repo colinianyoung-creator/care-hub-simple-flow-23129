@@ -1,5 +1,5 @@
 import React from 'react';
-import { Label } from '@/components/ui/label';
+import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Globe, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,29 +12,31 @@ interface LanguageSettingsProps {
   disabled?: boolean;
 }
 
-const LANGUAGE_OPTIONS: { value: Language; label: string; nativeLabel: string }[] = [
-  { value: 'en-GB', label: 'English (UK)', nativeLabel: 'English (UK)' },
-  { value: 'en-US', label: 'English (US)', nativeLabel: 'English (US)' },
-  { value: 'es', label: 'Spanish', nativeLabel: 'Español' },
-  { value: 'fr', label: 'French', nativeLabel: 'Français' },
-  { value: 'de', label: 'German', nativeLabel: 'Deutsch' },
-  { value: 'cy', label: 'Welsh', nativeLabel: 'Cymraeg' },
-];
-
 export const LanguageSettings = ({
   language,
   onLanguageChange,
   disabled = false,
 }: LanguageSettingsProps) => {
+  const { t } = useTranslation();
+
+  const LANGUAGE_OPTIONS: { value: Language; labelKey: string; nativeLabelKey?: string }[] = [
+    { value: 'en-GB', labelKey: 'language.enGB' },
+    { value: 'en-US', labelKey: 'language.enUS' },
+    { value: 'es', labelKey: 'language.es', nativeLabelKey: 'language.nativeES' },
+    { value: 'fr', labelKey: 'language.fr', nativeLabelKey: 'language.nativeFR' },
+    { value: 'de', labelKey: 'language.de', nativeLabelKey: 'language.nativeDE' },
+    { value: 'cy', labelKey: 'language.cy', nativeLabelKey: 'language.nativeCY' },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="space-y-3 sm:space-y-4">
         <h4 className="text-sm font-medium flex items-center gap-2">
           <Globe className="h-4 w-4" />
-          App Language
+          {t('language.title')}
         </h4>
-        <p className="text-sm text-muted-foreground">
-          Select your preferred language for the app interface
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          {t('language.subtitle')}
         </p>
 
         <Select
@@ -43,15 +45,15 @@ export const LanguageSettings = ({
           disabled={disabled}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a language" />
+            <SelectValue placeholder={t('language.selectLanguage')} />
           </SelectTrigger>
           <SelectContent>
             {LANGUAGE_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 <span className="flex items-center gap-2">
-                  <span>{option.label}</span>
-                  {option.label !== option.nativeLabel && (
-                    <span className="text-muted-foreground">({option.nativeLabel})</span>
+                  <span>{t(option.labelKey)}</span>
+                  {option.nativeLabelKey && (
+                    <span className="text-muted-foreground">({t(option.nativeLabelKey)})</span>
                   )}
                 </span>
               </SelectItem>
@@ -60,11 +62,10 @@ export const LanguageSettings = ({
         </Select>
       </div>
 
-      <Alert>
+      <Alert className="py-2.5 sm:py-3">
         <Info className="h-4 w-4" />
-        <AlertDescription>
-          Some content may still appear in English until fully translated. Your language preference
-          will be saved and applied when translations become available.
+        <AlertDescription className="text-xs sm:text-sm">
+          {t('language.translationNotice')}
         </AlertDescription>
       </Alert>
     </div>

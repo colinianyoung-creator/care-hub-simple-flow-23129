@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutDashboard, Palette, Monitor, Accessibility, Globe } from 'lucide-react';
@@ -12,6 +13,7 @@ import { useUserPreferences, ThemeOption, TimeFormat, DateFormat } from '@/hooks
 import { useTheme } from 'next-themes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import i18n from '@/lib/i18n';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export const SettingsDialog = ({
   familyId,
   userRole
 }: SettingsDialogProps) => {
+  const { t } = useTranslation();
   const { 
     enabledSections, 
     loading: settingsLoading, 
@@ -77,6 +80,8 @@ export const SettingsDialog = ({
 
   const handleLanguageChange = (language: Language) => {
     updatePreference('language', language);
+    // Update i18n language immediately for real-time effect
+    i18n.changeLanguage(language);
   };
 
   // Sync theme on preferences load
@@ -86,41 +91,48 @@ export const SettingsDialog = ({
     }
   }, [preferences.theme, setTheme]);
 
+  // Sync language on preferences load
+  useEffect(() => {
+    if (preferences.language && i18n.language !== preferences.language) {
+      i18n.changeLanguage(preferences.language);
+    }
+  }, [preferences.language]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t('settings.title')}</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue={isAdmin && familyId ? "dashboard" : "appearance"} className="w-full flex-1 flex flex-col overflow-hidden">
-          <TabsList className={`grid w-full ${tabCount === 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
+          <TabsList className={`grid w-full ${tabCount === 5 ? 'grid-cols-5' : 'grid-cols-4'} h-auto`}>
             {isAdmin && familyId && (
-              <TabsTrigger value="dashboard" className="flex items-center gap-1 px-2">
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden lg:inline text-xs">Dashboard</span>
+              <TabsTrigger value="dashboard" className="flex items-center gap-1 px-1.5 sm:px-2 py-2 text-xs sm:text-sm">
+                <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="hidden md:inline truncate">{t('settings.dashboard')}</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="appearance" className="flex items-center gap-1 px-2">
-              <Palette className="h-4 w-4" />
-              <span className="hidden lg:inline text-xs">Appearance</span>
+            <TabsTrigger value="appearance" className="flex items-center gap-1 px-1.5 sm:px-2 py-2 text-xs sm:text-sm">
+              <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden md:inline truncate">{t('settings.appearance')}</span>
             </TabsTrigger>
-            <TabsTrigger value="display" className="flex items-center gap-1 px-2">
-              <Monitor className="h-4 w-4" />
-              <span className="hidden lg:inline text-xs">Display</span>
+            <TabsTrigger value="display" className="flex items-center gap-1 px-1.5 sm:px-2 py-2 text-xs sm:text-sm">
+              <Monitor className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden md:inline truncate">{t('settings.display')}</span>
             </TabsTrigger>
-            <TabsTrigger value="accessibility" className="flex items-center gap-1 px-2">
-              <Accessibility className="h-4 w-4" />
-              <span className="hidden lg:inline text-xs">Access</span>
+            <TabsTrigger value="accessibility" className="flex items-center gap-1 px-1.5 sm:px-2 py-2 text-xs sm:text-sm">
+              <Accessibility className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden md:inline truncate">{t('settings.accessibility')}</span>
             </TabsTrigger>
-            <TabsTrigger value="language" className="flex items-center gap-1 px-2">
-              <Globe className="h-4 w-4" />
-              <span className="hidden lg:inline text-xs">Language</span>
+            <TabsTrigger value="language" className="flex items-center gap-1 px-1.5 sm:px-2 py-2 text-xs sm:text-sm">
+              <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden md:inline truncate">{t('settings.language')}</span>
             </TabsTrigger>
           </TabsList>
           
-          <ScrollArea className="flex-1 mt-4">
-            <div className="pr-4">
+          <ScrollArea className="flex-1 mt-4 max-h-[calc(70vh-120px)]">
+            <div className="pr-2 sm:pr-4 pb-4">
               {isAdmin && familyId && (
                 <TabsContent value="dashboard" className="mt-0">
                   {settingsLoading ? (
