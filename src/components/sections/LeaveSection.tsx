@@ -73,7 +73,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
       let carerProfiles: any[] = [];
       if (allCarerIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_secure')
           .select('id, full_name')
           .in('id', allCarerIds);
         carerProfiles = profiles || [];
@@ -324,7 +324,7 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
           // Get cover carer names for display
           const coverCarerIds = [...new Set(coverShifts.map(s => s.user_id).filter(Boolean))];
           const { data: coverProfiles } = await supabase
-            .from('profiles')
+            .from('profiles_secure')
             .select('id, full_name')
             .in('id', coverCarerIds);
 

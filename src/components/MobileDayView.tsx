@@ -214,7 +214,7 @@ export const MobileDayView = ({
       let carerProfiles: any[] = [];
       if (carerIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_secure')
           .select('id, full_name')
           .in('id', carerIds);
         carerProfiles = profiles || [];
@@ -306,7 +306,7 @@ export const MobileDayView = ({
       let carerProfiles: any[] = [];
       if (carerIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_secure')
           .select('id, full_name')
           .in('id', carerIds);
         carerProfiles = profiles || [];

@@ -70,7 +70,7 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           
           if (carerIds.length > 0) {
             const { data: profiles, error: profileError } = await supabase
-              .from('profiles')
+              .from('profiles_secure')
               .select('id, full_name')
               .in('id', carerIds);
 
