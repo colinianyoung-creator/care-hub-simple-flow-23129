@@ -200,7 +200,7 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
     setIsSendingEmail(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: profile } = await supabase.from('profiles_secure').select('full_name').eq('id', user?.id).single();
       const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
 
       const { error } = await supabase.functions.invoke('send-invite-email', {
@@ -246,7 +246,7 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
     setIsSendingPlaceholderEmail(placeholder.id);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+      const { data: profile } = await supabase.from('profiles_secure').select('full_name').eq('id', user?.id).single();
       const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
 
       const { error } = await supabase.functions.invoke('send-invite-email', {

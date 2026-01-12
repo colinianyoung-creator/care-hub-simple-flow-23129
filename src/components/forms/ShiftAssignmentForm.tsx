@@ -116,7 +116,7 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
         // Get profile names for all carers in one query
         const carerUserIds = carerMemberships.map(m => m.user_id);
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_secure')
           .select('id, full_name')
           .in('id', carerUserIds);
         

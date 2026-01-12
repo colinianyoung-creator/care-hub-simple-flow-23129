@@ -66,7 +66,7 @@ export const MessageThread = ({ conversationId, conversationName }: MessageThrea
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('profiles_secure')
           .select('full_name')
           .eq('id', user.id)
           .single();

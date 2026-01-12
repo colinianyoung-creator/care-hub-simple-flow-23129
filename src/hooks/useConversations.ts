@@ -144,7 +144,7 @@ export const useConversations = (familyId?: string) => {
 
       // Batch fetch all profiles at once
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profiles_secure')
         .select('id, full_name, profile_picture_url')
         .in('id', userIds);
 

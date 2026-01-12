@@ -37,7 +37,7 @@ export const useReadReceipts = (conversationId?: string) => {
           .filter(p => p.last_read_at)
           .map(async (p) => {
             const { data: profile } = await supabase
-              .from('profiles')
+              .from('profiles_secure')
               .select('full_name, profile_picture_url')
               .eq('id', p.user_id)
               .single();

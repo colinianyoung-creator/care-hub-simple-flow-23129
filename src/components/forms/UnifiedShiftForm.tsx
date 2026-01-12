@@ -175,7 +175,7 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         let registeredCarers: any[] = [];
         if (carerIds.length > 0) {
           const { data: profiles, error: profileError } = await supabase
-            .from('profiles')
+            .from('profiles_secure')
             .select('id, full_name')
             .in('id', carerIds);
 
