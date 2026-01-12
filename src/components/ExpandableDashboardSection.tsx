@@ -1,13 +1,12 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { useTranslation } from 'react-i18next';
 
 interface ExpandableDashboardSectionProps {
   id: string;
-  title: string;
+  titleKey?: string;
+  title?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
   icon?: React.ReactNode;
@@ -15,12 +14,17 @@ interface ExpandableDashboardSectionProps {
 
 export const ExpandableDashboardSection = ({ 
   id, 
+  titleKey,
   title, 
   children, 
   defaultOpen = false,
   icon 
 }: ExpandableDashboardSectionProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const { t } = useTranslation();
+
+  // Use titleKey for translation, fallback to title prop
+  const displayTitle = titleKey ? t(titleKey) : title;
 
   return (
     <Card>
@@ -31,7 +35,7 @@ export const ExpandableDashboardSection = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base md:text-lg font-semibold">
             {icon}
-            {title}
+            {displayTitle}
           </CardTitle>
           <div className="flex items-center justify-center h-10 w-10 md:h-8 md:w-8 min-h-[44px] min-w-[44px] md:min-h-[32px] md:min-w-[32px]">
             {isOpen ? (

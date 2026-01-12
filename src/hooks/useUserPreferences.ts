@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/lib/i18n';
 
 export type ThemeOption = 'light' | 'dark' | 'system';
 export type TimeFormat = '12h' | '24h';
@@ -28,83 +31,82 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   language: 'en-GB'
 };
 
+const applyAccessibilityClasses = (prefs: UserPreferences) => {
+  const html = document.documentElement;
+  
+  // Font size classes
+  html.classList.remove('font-small', 'font-medium', 'font-large', 'font-extra-large');
+  html.classList.add(`font-${prefs.font_size}`);
+  
+  // Reduced motion
+  if (prefs.reduced_motion) {
+    html.classList.add('reduce-motion');
+  } else {
+    html.classList.remove('reduce-motion');
+  }
+  
+  // High contrast
+  if (prefs.high_contrast) {
+    html.classList.add('high-contrast');
+  } else {
+    html.classList.remove('high-contrast');
+  }
+  
+  // Language attribute
+  html.setAttribute('lang', prefs.language);
+};
+
+const fetchUserPreferences = async (): Promise<UserPreferences> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return DEFAULT_PREFERENCES;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('theme, time_format, date_format, reduced_motion, high_contrast, font_size, language')
+    .eq('id', user.id)
+    .single();
+
+  if (error) throw error;
+
+  if (profile) {
+    return {
+      theme: (profile.theme as ThemeOption) || 'light',
+      time_format: (profile.time_format as TimeFormat) || '24h',
+      date_format: (profile.date_format as DateFormat) || 'DD/MM/YYYY',
+      reduced_motion: profile.reduced_motion ?? false,
+      high_contrast: profile.high_contrast ?? false,
+      font_size: (profile.font_size as FontSize) || 'medium',
+      language: (profile.language as Language) || 'en-GB'
+    };
+  }
+
+  return DEFAULT_PREFERENCES;
+};
+
 export const useUserPreferences = () => {
-  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const applyAccessibilityClasses = useCallback((prefs: UserPreferences) => {
-    const html = document.documentElement;
-    
-    // Font size classes
-    html.classList.remove('font-small', 'font-medium', 'font-large', 'font-extra-large');
-    html.classList.add(`font-${prefs.font_size}`);
-    
-    // Reduced motion
-    if (prefs.reduced_motion) {
-      html.classList.add('reduce-motion');
-    } else {
-      html.classList.remove('reduce-motion');
-    }
-    
-    // High contrast
-    if (prefs.high_contrast) {
-      html.classList.add('high-contrast');
-    } else {
-      html.classList.remove('high-contrast');
-    }
-    
-    // Language attribute
-    html.setAttribute('lang', prefs.language);
-  }, []);
+  const queryKey = ['user_preferences'];
 
-  const fetchPreferences = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const { data: preferences = DEFAULT_PREFERENCES, isLoading: loading } = useQuery({
+    queryKey,
+    queryFn: fetchUserPreferences,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('theme, time_format, date_format, reduced_motion, high_contrast, font_size, language')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (profile) {
-        const newPreferences: UserPreferences = {
-          theme: (profile.theme as ThemeOption) || 'light',
-          time_format: (profile.time_format as TimeFormat) || '24h',
-          date_format: (profile.date_format as DateFormat) || 'DD/MM/YYYY',
-          reduced_motion: profile.reduced_motion ?? false,
-          high_contrast: profile.high_contrast ?? false,
-          font_size: (profile.font_size as FontSize) || 'medium',
-          language: (profile.language as Language) || 'en-GB'
-        };
-        setPreferences(newPreferences);
-        applyAccessibilityClasses(newPreferences);
-      }
-    } catch (error) {
-      console.error('Error fetching user preferences:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [applyAccessibilityClasses]);
-
+  // Apply accessibility classes when preferences change
   useEffect(() => {
-    fetchPreferences();
-  }, [fetchPreferences]);
+    if (preferences) {
+      applyAccessibilityClasses(preferences);
+    }
+  }, [preferences]);
 
-  const updatePreference = async <K extends keyof UserPreferences>(
-    key: K,
-    value: UserPreferences[K]
-  ) => {
-    try {
+  const updateMutation = useMutation({
+    mutationFn: async ({ key, value }: { key: keyof UserPreferences; value: UserPreferences[keyof UserPreferences] }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) throw new Error('No user');
 
       const { error } = await supabase
         .from('profiles')
@@ -112,29 +114,67 @@ export const useUserPreferences = () => {
         .eq('id', user.id);
 
       if (error) throw error;
+      return { key, value };
+    },
+    onMutate: async ({ key, value }) => {
+      await queryClient.cancelQueries({ queryKey });
 
-      const newPreferences = { ...preferences, [key]: value };
-      setPreferences(newPreferences);
-      applyAccessibilityClasses(newPreferences);
+      const previousPreferences = queryClient.getQueryData<UserPreferences>(queryKey);
+
+      // Optimistically update
+      queryClient.setQueryData<UserPreferences>(queryKey, (old) => ({
+        ...old!,
+        [key]: value
+      }));
+
+      // Apply changes immediately
+      const newPrefs = { ...previousPreferences!, [key]: value };
+      applyAccessibilityClasses(newPrefs);
       
+      // Handle language change immediately
+      if (key === 'language') {
+        i18n.changeLanguage(value as string);
+      }
+
+      return { previousPreferences };
+    },
+    onSuccess: () => {
       toast({
-        title: "Preference saved",
-        description: "Your preference has been updated.",
+        title: t('notifications.preferenceSaved'),
+        description: t('notifications.preferenceUpdated'),
       });
-    } catch (error) {
+    },
+    onError: (error, _, context) => {
+      if (context?.previousPreferences) {
+        queryClient.setQueryData(queryKey, context.previousPreferences);
+        applyAccessibilityClasses(context.previousPreferences);
+        
+        // Revert language if it was the one that failed
+        i18n.changeLanguage(context.previousPreferences.language);
+      }
       console.error('Error updating preference:', error);
       toast({
-        title: "Error",
-        description: "Failed to save preference. Please try again.",
+        title: t('common.error'),
+        description: t('notifications.errorSaving'),
         variant: "destructive",
       });
-    }
-  };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const updatePreference = useCallback(<K extends keyof UserPreferences>(
+    key: K,
+    value: UserPreferences[K]
+  ) => {
+    updateMutation.mutate({ key, value });
+  }, [updateMutation]);
 
   return {
     preferences,
     loading,
     updatePreference,
-    refetch: fetchPreferences
+    refetch: () => queryClient.invalidateQueries({ queryKey })
   };
 };

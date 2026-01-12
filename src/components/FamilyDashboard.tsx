@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from './DashboardHeader';
 import { HeroBanner } from './HeroBanner';
 import { ExpandableDashboardSection } from './ExpandableDashboardSection';
@@ -47,6 +48,7 @@ export const FamilyDashboard = ({
   onProfileUpdate,
   onFamilySelected
 }: FamilyDashboardProps) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [careRecipientName, setCareRecipientName] = useState('');
   const [userName, setUserName] = useState('');
@@ -117,8 +119,8 @@ export const FamilyDashboard = ({
 
       <div className="container mx-auto px-2 sm:px-4 py-8 space-y-8">
         <HeroBanner 
-          title={`Welcome back, ${userName?.split(' ')[0] || 'there'}`}
-          subtitle={familyId ? "Manage your family's care with ease" : "Create or join a family to access care features"}
+          title={t('hero.welcomeBack', { name: userName?.split(' ')[0] || t('hero.defaultName') })}
+          subtitle={familyId ? t('hero.manageFamilyCare') : t('hero.createOrJoin')}
           careRecipientName={familyId && userRole !== 'disabled_person' ? careRecipientName : undefined}
           profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
         />
@@ -127,8 +129,8 @@ export const FamilyDashboard = ({
           <Alert>
             <UserPlus className="h-5 w-5" />
             <AlertDescription>
-              <p className="font-medium">Join a family to access care coordination features</p>
-              <p className="text-sm mt-1">Click "Join Family" above or ask a family admin to invite you.</p>
+              <p className="font-medium">{t('alerts.joinFamily.title')}</p>
+              <p className="text-sm mt-1">{t('alerts.joinFamily.description')}</p>
             </AlertDescription>
           </Alert>
         )}
@@ -137,8 +139,8 @@ export const FamilyDashboard = ({
           <Alert>
             <UserPlus className="h-5 w-5" />
             <AlertDescription>
-              <p className="font-medium">Create or join a family to get started</p>
-              <p className="text-sm mt-1">Use the buttons above to create or join a family.</p>
+              <p className="font-medium">{t('alerts.createOrJoin.title')}</p>
+              <p className="text-sm mt-1">{t('alerts.createOrJoin.description')}</p>
             </AlertDescription>
           </Alert>
         )}
@@ -148,7 +150,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('scheduling') && (
             <ExpandableDashboardSection
               id="scheduling"
-              title="Scheduling & Time Management"
+              titleKey="sectionTitles.schedulingTime"
               defaultOpen={true}
               icon={<Clock className="h-5 w-5" />}
             >
@@ -159,7 +161,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('tasks') && (
             <ExpandableDashboardSection
               id="tasks"
-              title="Tasks"
+              titleKey="sectionTitles.tasks"
               icon={<CheckSquare className="h-5 w-5" />}
             >
               <TasksSection familyId={familyId} userRole={userRole} />
@@ -169,7 +171,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('notes') && (
             <ExpandableDashboardSection 
               id="notes"
-              title="Care Notes" 
+              titleKey="sectionTitles.careNotes"
               icon={<FileText className="h-5 w-5" />}
             >
               <NotesSection familyId={familyId} userRole={userRole} />
@@ -179,7 +181,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('diet') && (
             <ExpandableDashboardSection 
               id="diet"
-              title="Diet Tracking" 
+              titleKey="sectionTitles.dietTracking"
               icon={<Utensils className="h-5 w-5" />}
             >
               <DietSection familyId={familyId} userRole={userRole} />
@@ -189,7 +191,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('money') && (
             <ExpandableDashboardSection 
               id="money"
-              title="Money Tracking" 
+              titleKey="sectionTitles.moneyTracking"
               icon={<Wallet className="h-5 w-5" />}
             >
               <MoneySection familyId={familyId} userRole={userRole} />
@@ -199,7 +201,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('key-information') && (
             <ExpandableDashboardSection
               id="key-information"
-              title="Key Information & Risk Assessments"
+              titleKey="sectionTitles.keyInformation"
               icon={<Users className="h-5 w-5" />}
             >
               <KeyInformationSection familyId={familyId} userRole={userRole} />
@@ -209,7 +211,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('medications') && (
             <ExpandableDashboardSection
               id="medications"
-              title="Medication Administration Record (MAR)"
+              titleKey="sectionTitles.medications"
               icon={<Pill className="h-5 w-5" />}
             >
               <MedicationsSection familyId={familyId} userRole={userRole} />
@@ -219,7 +221,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('appointments') && (
             <ExpandableDashboardSection
               id="appointments"
-              title="Appointments"
+              titleKey="sectionTitles.appointments"
               icon={<Calendar className="h-5 w-5" />}
             >
               <AppointmentsSection familyId={familyId} userRole={userRole} />
@@ -229,7 +231,7 @@ export const FamilyDashboard = ({
           {isSectionEnabled('ai-reports') && (
             <ExpandableDashboardSection
               id="ai-reports"
-              title="AI Reports"
+              titleKey="sectionTitles.aiReports"
               icon={<FileBarChart className="h-5 w-5" />}
             >
               <AIReportsSection familyId={familyId} userRole={userRole} careRecipientName={careRecipientName} />

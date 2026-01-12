@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from './DashboardHeader';
 import { HeroBanner } from './HeroBanner';
 import { ExpandableDashboardSection } from './ExpandableDashboardSection';
@@ -39,6 +40,7 @@ interface CarerDashboardProps {
 }
 
 export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, careRecipientNameHint, profilePictureUrl = '', careRecipientPictureUrl, currentFamilyId, onProfileUpdate, onFamilySelected }: CarerDashboardProps) => {
+  const { t } = useTranslation();
   const [weeklyHours, setWeeklyHours] = useState(0);
   const [loading, setLoading] = useState(false);
   const [memberships, setMemberships] = useState<any[]>([]);
@@ -147,8 +149,8 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
     } catch (error) {
       console.error('Error loading weekly hours:', error);
       toast({
-        title: "Error",
-        description: "Failed to load weekly hours",
+        title: t('common.error'),
+        description: t('errors.loadWeeklyHours'),
         variant: "destructive",
       });
     } finally {
@@ -160,7 +162,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
     <div className="space-y-6">
       {loading ? (
         <div className="flex items-center justify-center h-32">
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="text-muted-foreground">{t('common.loading')}</div>
         </div>
       ) : (
         <>
@@ -176,8 +178,8 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
           />
           
           <HeroBanner 
-            title={`Welcome back, ${userName}!`}
-            subtitle={familyId ? `Managing care for ${familyName}` : "Join a family to start coordinating care"}
+            title={t('hero.welcomeBack', { name: userName })}
+            subtitle={familyId ? t('hero.managingCareFor', { name: familyName }) : t('hero.joinToStart')}
             profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
           />
 
@@ -191,7 +193,7 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
 
           <div className="space-y-4">
             {isSectionEnabled('scheduling') && (
-              <ExpandableDashboardSection id="scheduling" title="Scheduling & Time Tracking" icon={<Calendar className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="scheduling" titleKey="sectionTitles.schedulingTimeTracking" icon={<Calendar className="h-5 w-5" />}>
                 <SchedulingSection 
                   familyId={familyId} 
                   userRole={userRole} 
@@ -202,49 +204,49 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
             )}
 
             {isSectionEnabled('tasks') && (
-              <ExpandableDashboardSection id="tasks" title="Tasks" icon={<CheckSquare className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="tasks" titleKey="sectionTitles.tasks" icon={<CheckSquare className="h-5 w-5" />}>
                 <TasksSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('notes') && (
-              <ExpandableDashboardSection id="notes" title="Care Notes" icon={<FileText className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="notes" titleKey="sectionTitles.careNotes" icon={<FileText className="h-5 w-5" />}>
                 <NotesSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('diet') && (
-              <ExpandableDashboardSection id="diet" title="Diet & Nutrition" icon={<Utensils className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="diet" titleKey="sectionTitles.dietNutrition" icon={<Utensils className="h-5 w-5" />}>
                 <DietSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('money') && (
-              <ExpandableDashboardSection id="money" title="Money & Expenses" icon={<Wallet className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="money" titleKey="sectionTitles.moneyExpenses" icon={<Wallet className="h-5 w-5" />}>
                 <MoneySection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('key-information') && (
-              <ExpandableDashboardSection id="key-info" title="Key Information & Risk Assessments" icon={<Info className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="key-info" titleKey="sectionTitles.keyInformation" icon={<Info className="h-5 w-5" />}>
                 <KeyInformationSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('medications') && (
-              <ExpandableDashboardSection id="medications" title="Medication Administration Record (MAR)" icon={<Pill className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="medications" titleKey="sectionTitles.medications" icon={<Pill className="h-5 w-5" />}>
                 <MedicationsSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('appointments') && (
-              <ExpandableDashboardSection id="appointments" title="Appointments" icon={<CalendarClock className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="appointments" titleKey="sectionTitles.appointments" icon={<CalendarClock className="h-5 w-5" />}>
                 <AppointmentsSection familyId={familyId} userRole={userRole} />
               </ExpandableDashboardSection>
             )}
 
             {isSectionEnabled('ai-reports') && (
-              <ExpandableDashboardSection id="ai-reports" title="AI Reports" icon={<FileBarChart className="h-5 w-5" />}>
+              <ExpandableDashboardSection id="ai-reports" titleKey="sectionTitles.aiReports" icon={<FileBarChart className="h-5 w-5" />}>
                 <AIReportsSection familyId={familyId} userRole={userRole} careRecipientName={careRecipientNameHint} />
               </ExpandableDashboardSection>
             )}

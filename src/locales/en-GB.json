@@ -53,6 +53,106 @@
     "joinFamily": "Join Family",
     "createFamily": "Create Family"
   },
+  "hero": {
+    "welcomeBack": "Welcome back, {{name}}!",
+    "defaultName": "there",
+    "caringFor": "Caring for {{name}}",
+    "manageFamilyCare": "Manage your family's care with ease",
+    "createOrJoin": "Create or join a family to access care features",
+    "managingCareFor": "Managing care for {{name}}",
+    "joinToStart": "Join a family to start coordinating care",
+    "yourCareHub": "Your care coordination hub",
+    "createToStart": "Create your family to get started"
+  },
+  "alerts": {
+    "joinFamily": {
+      "title": "Join a family to access care coordination features",
+      "description": "Click \"Join Family\" above or ask a family admin to invite you."
+    },
+    "createOrJoin": {
+      "title": "Create or join a family to get started",
+      "description": "Use the buttons above to create or join a family."
+    },
+    "createFamily": {
+      "title": "Create your family to start coordinating care",
+      "description": "Click \"Create Family\" above to set up your care network."
+    }
+  },
+  "sectionTitles": {
+    "schedulingTime": "Scheduling & Time Management",
+    "schedulingTimeTracking": "Scheduling & Time Tracking",
+    "tasks": "Tasks",
+    "careNotes": "Care Notes",
+    "dietTracking": "Diet Tracking",
+    "dietNutrition": "Diet & Nutrition",
+    "moneyTracking": "Money Tracking",
+    "moneyExpenses": "Money & Expenses",
+    "keyInformation": "Key Information & Risk Assessments",
+    "medications": "Medication Administration Record (MAR)",
+    "appointments": "Appointments",
+    "aiReports": "AI Reports"
+  },
+  "dashboardSections": {
+    "subtitle": "Choose which sections appear on your family's dashboard. All family members will see the same sections.",
+    "scheduling": {
+      "label": "Scheduling & Time",
+      "description": "Manage shifts and time tracking"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "description": "Track to-do items and assignments"
+    },
+    "notes": {
+      "label": "Care Notes",
+      "description": "Document daily care activities"
+    },
+    "diet": {
+      "label": "Diet Tracking",
+      "description": "Log meals and nutrition"
+    },
+    "money": {
+      "label": "Money Tracking",
+      "description": "Track expenses and income"
+    },
+    "keyInformation": {
+      "label": "Key Information",
+      "description": "Important details and contacts"
+    },
+    "medications": {
+      "label": "Medications (MAR)",
+      "description": "Medication administration records"
+    },
+    "appointments": {
+      "label": "Appointments",
+      "description": "Manage upcoming appointments"
+    },
+    "aiReports": {
+      "label": "AI Reports",
+      "description": "Generate care summaries"
+    }
+  },
+  "cards": {
+    "weeklyHours": {
+      "title": "This Week's Care Hours",
+      "subtitle": "Approved care time"
+    },
+    "pendingTasks": {
+      "title": "Pending Tasks",
+      "subtitle": "Tasks to complete"
+    },
+    "recentNotes": {
+      "title": "Recent Notes",
+      "subtitle": "This week"
+    },
+    "pendingRequests": {
+      "title": "Pending Requests",
+      "subtitle": "View and manage care team requests"
+    }
+  },
+  "errors": {
+    "loadWeeklyHours": "Failed to load weekly hours",
+    "loadDashboard": "Failed to load dashboard data"
+  },
   "settings": {
     "title": "Settings",
     "dashboard": "Dashboard",

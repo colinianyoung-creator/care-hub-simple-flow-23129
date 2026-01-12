@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export const ALL_SECTIONS = [
   'scheduling',
@@ -24,56 +25,50 @@ export interface FamilySettings {
   updated_at: string;
 }
 
+const fetchFamilySettings = async (familyId: string): Promise<FamilySettings> => {
+  const { data, error } = await supabase
+    .from('family_settings')
+    .select('*')
+    .eq('family_id', familyId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (data) {
+    return {
+      ...data,
+      enabled_sections: (data.enabled_sections as SectionId[]) || [...ALL_SECTIONS]
+    };
+  }
+  
+  // No settings exist yet, return defaults
+  return {
+    id: '',
+    family_id: familyId,
+    enabled_sections: [...ALL_SECTIONS],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
+
 export const useFamilySettings = (familyId?: string) => {
-  const [settings, setSettings] = useState<FamilySettings | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const fetchSettings = useCallback(async () => {
-    if (!familyId) {
-      setLoading(false);
-      return;
-    }
+  const queryKey = ['family_settings', familyId];
 
-    try {
-      const { data, error } = await supabase
-        .from('family_settings')
-        .select('*')
-        .eq('family_id', familyId)
-        .maybeSingle();
+  const { data: settings, isLoading: loading } = useQuery({
+    queryKey,
+    queryFn: () => fetchFamilySettings(familyId!),
+    enabled: !!familyId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-      if (error) throw error;
+  const updateMutation = useMutation({
+    mutationFn: async (sections: SectionId[]) => {
+      if (!familyId) throw new Error('No family ID');
 
-      if (data) {
-        setSettings({
-          ...data,
-          enabled_sections: (data.enabled_sections as SectionId[]) || [...ALL_SECTIONS]
-        });
-      } else {
-        // No settings exist yet, use defaults
-        setSettings({
-          id: '',
-          family_id: familyId,
-          enabled_sections: [...ALL_SECTIONS],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching family settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [familyId]);
-
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  const updateEnabledSections = async (sections: SectionId[]) => {
-    if (!familyId) return;
-
-    try {
       // Check if settings exist
       const { data: existing } = await supabase
         .from('family_settings')
@@ -82,49 +77,72 @@ export const useFamilySettings = (familyId?: string) => {
         .maybeSingle();
 
       if (existing) {
-        // Update existing
         const { error } = await supabase
           .from('family_settings')
           .update({ enabled_sections: sections })
           .eq('family_id', familyId);
-
         if (error) throw error;
       } else {
-        // Insert new
         const { error } = await supabase
           .from('family_settings')
           .insert({ family_id: familyId, enabled_sections: sections });
-
         if (error) throw error;
       }
 
-      setSettings(prev => prev ? { ...prev, enabled_sections: sections } : null);
-      
+      return sections;
+    },
+    onMutate: async (newSections) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey });
+
+      // Snapshot the previous value
+      const previousSettings = queryClient.getQueryData<FamilySettings>(queryKey);
+
+      // Optimistically update
+      if (previousSettings) {
+        queryClient.setQueryData<FamilySettings>(queryKey, {
+          ...previousSettings,
+          enabled_sections: newSections
+        });
+      }
+
+      return { previousSettings };
+    },
+    onSuccess: () => {
       toast({
-        title: "Settings saved",
-        description: "Dashboard sections have been updated.",
+        title: t('notifications.preferenceSaved'),
+        description: t('notifications.preferenceUpdated'),
       });
-    } catch (error) {
+    },
+    onError: (error, _, context) => {
+      // Rollback on error
+      if (context?.previousSettings) {
+        queryClient.setQueryData(queryKey, context.previousSettings);
+      }
       console.error('Error updating family settings:', error);
       toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
+        title: t('common.error'),
+        description: t('notifications.errorSaving'),
         variant: "destructive",
       });
-    }
-  };
+    },
+    onSettled: () => {
+      // Refetch to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
 
   const isSectionEnabled = (sectionId: SectionId): boolean => {
-    if (!settings) return true; // Default to all enabled
+    if (!settings) return true;
     return settings.enabled_sections.includes(sectionId);
   };
 
   return {
-    settings,
+    settings: settings || null,
     loading,
     enabledSections: settings?.enabled_sections || [...ALL_SECTIONS],
-    updateEnabledSections,
+    updateEnabledSections: updateMutation.mutate,
     isSectionEnabled,
-    refetch: fetchSettings
+    refetch: () => queryClient.invalidateQueries({ queryKey })
   };
 };
