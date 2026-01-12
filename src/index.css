@@ -308,8 +308,10 @@ html.font-extra-large {
     font-size: 1.75rem;
   }
   
-  /* Touch target minimum size */
-  button, .button, [role="button"] {
+  /* Touch target minimum size - exclude switch and radio controls */
+  button:not([role="switch"]):not([role="radio"]):not([role="checkbox"]),
+  .button,
+  [role="button"]:not([role="switch"]):not([role="radio"]):not([role="checkbox"]) {
     min-height: var(--touch-target-min) !important;
     min-width: var(--touch-target-min) !important;
   }

@@ -1,6 +1,7 @@
 import { Heart, Shield, Users, User } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { useTranslation } from 'react-i18next';
 
 interface HeroBannerProps {
   title: string;
@@ -12,6 +13,8 @@ interface HeroBannerProps {
 }
 
 export const HeroBanner = ({ title, subtitle, children, careRecipientName, profilePictureUrl, onProfileClick }: HeroBannerProps) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-care-primary via-care-primary/90 to-care-accent rounded-2xl p-4 sm:p-6 md:p-8 text-white shadow-elevated">
       {/* Background pattern */}
@@ -56,7 +59,9 @@ export const HeroBanner = ({ title, subtitle, children, careRecipientName, profi
         <div>
           <h1 className="text-2xl md:text-4xl font-bold leading-tight break-words">{title}</h1>
           {careRecipientName && (
-            <p className="text-base md:text-xl text-white/90 mt-2 font-medium">Caring for {careRecipientName}</p>
+            <p className="text-base md:text-xl text-white/90 mt-2 font-medium">
+              {t('hero.caringFor', { name: careRecipientName })}
+            </p>
           )}
           {subtitle && !careRecipientName && (
             <p className="text-base md:text-xl text-white/90 mt-2 font-medium">{subtitle}</p>
