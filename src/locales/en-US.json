@@ -125,6 +125,18 @@
     "member": "Member",
     "disabledPerson": "Disabled Person"
   },
+  "menu": {
+    "menu": "Menu",
+    "inviteMembers": "Invite Members",
+    "joinFamily": "Join a Family",
+    "createFamily": "Create Family",
+    "messages": "Messages",
+    "profile": "Profile",
+    "settings": "Settings",
+    "manageCareTeam": "Manage Care Team",
+    "switchFamily": "Switch Family",
+    "signOut": "Sign Out"
+  },
   "notifications": {
     "preferenceSaved": "Preference saved",
     "preferenceUpdated": "Your preference has been updated.",
