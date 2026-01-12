@@ -125,6 +125,18 @@
     "member": "Membre",
     "disabledPerson": "Personne Handicapée"
   },
+  "menu": {
+    "menu": "Menu",
+    "inviteMembers": "Inviter des Membres",
+    "joinFamily": "Rejoindre une Famille",
+    "createFamily": "Créer une Famille",
+    "messages": "Messages",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "manageCareTeam": "Gérer l'Équipe de Soins",
+    "switchFamily": "Changer de Famille",
+    "signOut": "Se Déconnecter"
+  },
   "notifications": {
     "preferenceSaved": "Préférence enregistrée",
     "preferenceUpdated": "Votre préférence a été mise à jour.",

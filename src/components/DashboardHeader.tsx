@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings } from 'lucide-react';
@@ -45,6 +46,7 @@ export const DashboardHeader = ({
   isLoading = false,
   onFamilySelected
 }: DashboardHeaderProps) => {
+  const { t } = useTranslation();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
@@ -71,17 +73,17 @@ export const DashboardHeader = ({
   const getRoleDisplay = (role: string) => {
     switch (role) {
       case 'disabled_person':
-        return 'Care Recipient';
+        return t('roles.careRecipient');
       case 'family_admin':
-        return 'Family Admin';
+        return t('roles.familyAdmin');
       case 'family_viewer':
-        return 'Family Viewer';
+        return t('roles.familyViewer');
       case 'carer':
-        return 'Carer';
+        return t('roles.carer');
       case 'manager':
-        return 'Manager';
+        return t('roles.manager');
       default:
-        return 'Member';
+        return t('roles.member');
     }
   };
 
@@ -90,14 +92,14 @@ export const DashboardHeader = ({
       <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
         {canGoBack && onBack && (
           <Button variant="outline" onClick={onBack} size="sm" className="shrink-0">
-            ← Back
+            ← {t('common.back')}
           </Button>
         )}
         <div className="min-w-0 flex-1">
           {userRole === 'carer' ? (
             <>
               <h1 className="text-lg md:text-2xl font-bold truncate">{userName}</h1>
-              <p className="text-xs md:text-sm text-muted-foreground truncate">Carer</p>
+              <p className="text-xs md:text-sm text-muted-foreground truncate">{t('roles.carer')}</p>
             </>
           ) : (
             <>
@@ -131,7 +133,7 @@ export const DashboardHeader = ({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="shrink-0 relative">
               <Menu className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Menu</span>
+              <span className="hidden md:inline">{t('menu.menu')}</span>
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -143,25 +145,25 @@ export const DashboardHeader = ({
             {showInviteButton && familyId && (
               <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click()}>
                 <Users className="mr-2 h-4 w-4" />
-                Invite Members
+                {t('menu.inviteMembers')}
               </DropdownMenuItem>
             )}
             {showJoinButton && (
               <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-join-button]')?.click()}>
                 <Users className="mr-2 h-4 w-4" />
-                Join a Family
+                {t('menu.joinFamily')}
               </DropdownMenuItem>
             )}
             {showCreateButton && (
               <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-create-button]')?.click()}>
                 <Users className="mr-2 h-4 w-4" />
-                Create Family
+                {t('menu.createFamily')}
               </DropdownMenuItem>
             )}
             {familyId && (
               <DropdownMenuItem onClick={() => setShowChatDialog(true)}>
                 <MessageCircle className="mr-2 h-4 w-4" />
-                Messages
+                {t('menu.messages')}
                 {unreadCount > 0 && (
                   <span className="ml-auto h-5 w-5 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -171,28 +173,28 @@ export const DashboardHeader = ({
             )}
             <DropdownMenuItem onClick={() => setShowProfileDialog(true)}>
               <User className="mr-2 h-4 w-4" />
-              Profile
+              {t('menu.profile')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              {t('menu.settings')}
             </DropdownMenuItem>
             {familyId && (userRole === 'family_admin' || userRole === 'disabled_person') && (
               <DropdownMenuItem onClick={() => setShowCareTeamDialog(true)}>
                 <Users className="mr-2 h-4 w-4" />
-                Manage Care Team
+                {t('menu.manageCareTeam')}
               </DropdownMenuItem>
             )}
             {userRole === 'carer' && onSwitchFamily && (
               <DropdownMenuItem onClick={onSwitchFamily}>
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
-                Switch Family
+                {t('menu.switchFamily')}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+              {t('menu.signOut')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

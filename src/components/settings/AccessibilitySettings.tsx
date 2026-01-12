@@ -43,21 +43,30 @@ export const AccessibilitySettings = ({
           <Zap className="h-4 w-4" />
           {t('accessibility.motionAnimation')}
         </h4>
-        <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4">
-          <div className="space-y-0.5 flex-1 min-w-0 pr-3">
-            <Label htmlFor="reduced-motion" className="text-sm sm:text-base">
+        <div className="flex items-center justify-between rounded-lg border p-2.5 sm:p-4">
+          <div className="space-y-0.5 flex-1 min-w-0 pr-2 sm:pr-3">
+            <Label htmlFor="reduced-motion" className="text-xs sm:text-base">
               {t('accessibility.reducedMotion')}
             </Label>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-[10px] sm:text-sm text-muted-foreground">
               {t('accessibility.reducedMotionDescription')}
             </p>
           </div>
-          <div className="flex-shrink-0 scale-90 sm:scale-100">
+          <div className="flex-shrink-0">
             <Switch
               id="reduced-motion"
               checked={reducedMotion}
               onCheckedChange={onReducedMotionChange}
               disabled={disabled}
+              size="sm"
+              className="sm:hidden"
+            />
+            <Switch
+              id="reduced-motion-desktop"
+              checked={reducedMotion}
+              onCheckedChange={onReducedMotionChange}
+              disabled={disabled}
+              className="hidden sm:inline-flex"
             />
           </div>
         </div>
@@ -69,21 +78,30 @@ export const AccessibilitySettings = ({
           <Eye className="h-4 w-4" />
           {t('accessibility.visual')}
         </h4>
-        <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4">
-          <div className="space-y-0.5 flex-1 min-w-0 pr-3">
-            <Label htmlFor="high-contrast" className="text-sm sm:text-base">
+        <div className="flex items-center justify-between rounded-lg border p-2.5 sm:p-4">
+          <div className="space-y-0.5 flex-1 min-w-0 pr-2 sm:pr-3">
+            <Label htmlFor="high-contrast" className="text-xs sm:text-base">
               {t('accessibility.highContrast')}
             </Label>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-[10px] sm:text-sm text-muted-foreground">
               {t('accessibility.highContrastDescription')}
             </p>
           </div>
-          <div className="flex-shrink-0 scale-90 sm:scale-100">
+          <div className="flex-shrink-0">
             <Switch
               id="high-contrast"
               checked={highContrast}
               onCheckedChange={onHighContrastChange}
               disabled={disabled}
+              size="sm"
+              className="sm:hidden"
+            />
+            <Switch
+              id="high-contrast-desktop"
+              checked={highContrast}
+              onCheckedChange={onHighContrastChange}
+              disabled={disabled}
+              className="hidden sm:inline-flex"
             />
           </div>
         </div>
@@ -107,16 +125,16 @@ export const AccessibilitySettings = ({
           {fontSizeOptions.map((option) => (
             <div
               key={option.value}
-              className="flex items-center space-x-2 sm:space-x-3 rounded-lg border p-3 sm:p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+              className="flex items-center space-x-2 sm:space-x-3 rounded-lg border p-2.5 sm:p-4 cursor-pointer hover:bg-muted/50 transition-colors"
             >
-              <div className="flex-shrink-0 scale-90 sm:scale-100">
+              <div className="flex-shrink-0 scale-75 sm:scale-100">
                 <RadioGroupItem value={option.value} id={`font-${option.value}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <Label htmlFor={`font-${option.value}`} className="text-sm sm:text-base cursor-pointer">
+                <Label htmlFor={`font-${option.value}`} className="text-xs sm:text-base cursor-pointer">
                   {option.label}
                 </Label>
-                <p className="text-xs sm:text-sm text-muted-foreground">{option.description}</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{option.description}</p>
               </div>
             </div>
           ))}

@@ -125,6 +125,18 @@
     "member": "Aelod",
     "disabledPerson": "Person Anabl"
   },
+  "menu": {
+    "menu": "Dewislen",
+    "inviteMembers": "Gwahodd Aelodau",
+    "joinFamily": "Ymuno â Theulu",
+    "createFamily": "Creu Teulu",
+    "messages": "Negeseuon",
+    "profile": "Proffil",
+    "settings": "Gosodiadau",
+    "manageCareTeam": "Rheoli Tîm Gofal",
+    "switchFamily": "Newid Teulu",
+    "signOut": "Allgofnodi"
+  },
   "notifications": {
     "preferenceSaved": "Dewis wedi'i gadw",
     "preferenceUpdated": "Mae eich dewis wedi'i ddiweddaru.",
