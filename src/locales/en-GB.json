@@ -149,6 +149,20 @@
       "subtitle": "View and manage care team requests"
     }
   },
+  "buttons": {
+    "inviteCareTeam": "Invite Care Team",
+    "viewCarePlan": "View Care Plan",
+    "viewRequestsChanges": "View Requests/Changes"
+  },
+  "inviteDialog": {
+    "title": "Invite Care Team Member",
+    "role": "Role",
+    "familyMemberAdmin": "Family Member (Admin)",
+    "familyMemberViewer": "Family Member (Viewer)",
+    "generateCode": "Generate Invite Code",
+    "shareCode": "Share this code:",
+    "sendCodeMessage": "Send this code to your {{role}} so they can join your care team."
+  },
   "errors": {
     "loadWeeklyHours": "Failed to load weekly hours",
     "loadDashboard": "Failed to load dashboard data"

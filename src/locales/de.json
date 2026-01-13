@@ -53,6 +53,120 @@
     "joinFamily": "Familie beitreten",
     "createFamily": "Familie erstellen"
   },
+  "hero": {
+    "welcomeBack": "Willkommen zurück, {{name}}!",
+    "defaultName": "Freund",
+    "caringFor": "Pflege für {{name}}",
+    "manageFamilyCare": "Verwalten Sie die Pflege Ihrer Familie mit Leichtigkeit",
+    "createOrJoin": "Erstellen oder treten Sie einer Familie bei, um auf Pflegefunktionen zuzugreifen",
+    "managingCareFor": "Pflege verwalten für {{name}}",
+    "joinToStart": "Treten Sie einer Familie bei, um die Pflegekoordination zu starten",
+    "yourCareHub": "Ihr Pflegekoordinationszentrum",
+    "createToStart": "Erstellen Sie Ihre Familie, um zu beginnen"
+  },
+  "alerts": {
+    "joinFamily": {
+      "title": "Treten Sie einer Familie bei, um auf Pflegekoordinationsfunktionen zuzugreifen",
+      "description": "Klicken Sie oben auf \"Familie beitreten\" oder bitten Sie einen Familienadministrator, Sie einzuladen."
+    },
+    "createOrJoin": {
+      "title": "Erstellen oder treten Sie einer Familie bei, um zu beginnen",
+      "description": "Verwenden Sie die Schaltflächen oben, um eine Familie zu erstellen oder beizutreten."
+    },
+    "createFamily": {
+      "title": "Erstellen Sie Ihre Familie, um die Pflegekoordination zu starten",
+      "description": "Klicken Sie oben auf \"Familie erstellen\", um Ihr Pflegenetzwerk einzurichten."
+    }
+  },
+  "sectionTitles": {
+    "schedulingTime": "Terminplanung und Zeitmanagement",
+    "schedulingTimeTracking": "Terminplanung und Zeiterfassung",
+    "tasks": "Aufgaben",
+    "careNotes": "Pflegenotizen",
+    "dietTracking": "Ernährungsverfolgung",
+    "dietNutrition": "Ernährung und Diät",
+    "moneyTracking": "Finanzverfolgung",
+    "moneyExpenses": "Geld und Ausgaben",
+    "keyInformation": "Wichtige Informationen und Risikobewertungen",
+    "medications": "Medikamentenverwaltungsprotokoll (MAR)",
+    "appointments": "Termine",
+    "aiReports": "KI-Berichte"
+  },
+  "dashboardSections": {
+    "subtitle": "Wählen Sie, welche Abschnitte auf dem Dashboard Ihrer Familie erscheinen. Alle Familienmitglieder sehen dieselben Abschnitte.",
+    "scheduling": {
+      "label": "Terminplanung und Zeit",
+      "description": "Schichten und Zeiterfassung verwalten"
+    },
+    "tasks": {
+      "label": "Aufgaben",
+      "description": "Aufgaben und Zuweisungen verfolgen"
+    },
+    "notes": {
+      "label": "Pflegenotizen",
+      "description": "Tägliche Pflegeaktivitäten dokumentieren"
+    },
+    "diet": {
+      "label": "Ernährungsverfolgung",
+      "description": "Mahlzeiten und Ernährung protokollieren"
+    },
+    "money": {
+      "label": "Finanzverfolgung",
+      "description": "Ausgaben und Einnahmen verfolgen"
+    },
+    "keyInformation": {
+      "label": "Wichtige Informationen",
+      "description": "Wichtige Details und Kontakte"
+    },
+    "medications": {
+      "label": "Medikamente (MAR)",
+      "description": "Medikamentenverwaltungsprotokolle"
+    },
+    "appointments": {
+      "label": "Termine",
+      "description": "Kommende Termine verwalten"
+    },
+    "aiReports": {
+      "label": "KI-Berichte",
+      "description": "Pflegezusammenfassungen erstellen"
+    }
+  },
+  "cards": {
+    "weeklyHours": {
+      "title": "Pflegestunden Diese Woche",
+      "subtitle": "Genehmigte Pflegezeit"
+    },
+    "pendingTasks": {
+      "title": "Ausstehende Aufgaben",
+      "subtitle": "Zu erledigende Aufgaben"
+    },
+    "recentNotes": {
+      "title": "Aktuelle Notizen",
+      "subtitle": "Diese Woche"
+    },
+    "pendingRequests": {
+      "title": "Ausstehende Anfragen",
+      "subtitle": "Anfragen des Pflegeteams anzeigen und verwalten"
+    }
+  },
+  "buttons": {
+    "inviteCareTeam": "Pflegeteam einladen",
+    "viewCarePlan": "Pflegeplan anzeigen",
+    "viewRequestsChanges": "Anfragen/Änderungen anzeigen"
+  },
+  "inviteDialog": {
+    "title": "Pflegeteam-Mitglied einladen",
+    "role": "Rolle",
+    "familyMemberAdmin": "Familienmitglied (Admin)",
+    "familyMemberViewer": "Familienmitglied (Betrachter)",
+    "generateCode": "Einladungscode generieren",
+    "shareCode": "Teilen Sie diesen Code:",
+    "sendCodeMessage": "Senden Sie diesen Code an Ihren {{role}}, damit er Ihrem Pflegeteam beitreten kann."
+  },
+  "errors": {
+    "loadWeeklyHours": "Fehler beim Laden der Wochenstunden",
+    "loadDashboard": "Fehler beim Laden der Dashboard-Daten"
+  },
   "settings": {
     "title": "Einstellungen",
     "dashboard": "Dashboard",

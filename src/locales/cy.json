@@ -53,6 +53,120 @@
     "joinFamily": "Ymuno â Theulu",
     "createFamily": "Creu Teulu"
   },
+  "hero": {
+    "welcomeBack": "Croeso nôl, {{name}}!",
+    "defaultName": "ffrind",
+    "caringFor": "Gofalu am {{name}}",
+    "manageFamilyCare": "Rheolwch ofal eich teulu yn hawdd",
+    "createOrJoin": "Crëwch neu ymunwch â theulu i gael mynediad at nodweddion gofal",
+    "managingCareFor": "Yn rheoli gofal ar gyfer {{name}}",
+    "joinToStart": "Ymunwch â theulu i ddechrau cydlynu gofal",
+    "yourCareHub": "Eich canolfan cydlynu gofal",
+    "createToStart": "Crëwch eich teulu i ddechrau"
+  },
+  "alerts": {
+    "joinFamily": {
+      "title": "Ymunwch â theulu i gael mynediad at nodweddion cydlynu gofal",
+      "description": "Cliciwch ar \"Ymuno â Theulu\" uchod neu gofynnwch i weinyddwr teulu eich gwahodd."
+    },
+    "createOrJoin": {
+      "title": "Crëwch neu ymunwch â theulu i ddechrau",
+      "description": "Defnyddiwch y botymau uchod i greu neu ymuno â theulu."
+    },
+    "createFamily": {
+      "title": "Crëwch eich teulu i ddechrau cydlynu gofal",
+      "description": "Cliciwch ar \"Creu Teulu\" uchod i sefydlu eich rhwydwaith gofal."
+    }
+  },
+  "sectionTitles": {
+    "schedulingTime": "Amserlennu a Rheoli Amser",
+    "schedulingTimeTracking": "Amserlennu a Thracio Amser",
+    "tasks": "Tasgau",
+    "careNotes": "Nodiadau Gofal",
+    "dietTracking": "Tracio Deiet",
+    "dietNutrition": "Deiet a Maeth",
+    "moneyTracking": "Tracio Arian",
+    "moneyExpenses": "Arian a Threuliau",
+    "keyInformation": "Gwybodaeth Allweddol ac Asesiadau Risg",
+    "medications": "Cofnod Gweinyddu Meddyginiaeth (MAR)",
+    "appointments": "Apwyntiadau",
+    "aiReports": "Adroddiadau AI"
+  },
+  "dashboardSections": {
+    "subtitle": "Dewiswch pa adrannau sy'n ymddangos ar ddangosfwrdd eich teulu. Bydd yr holl aelodau teulu yn gweld yr un adrannau.",
+    "scheduling": {
+      "label": "Amserlennu ac Amser",
+      "description": "Rheoli sifftiau a thracio amser"
+    },
+    "tasks": {
+      "label": "Tasgau",
+      "description": "Tracio eitemau i'w gwneud ac aseiniadau"
+    },
+    "notes": {
+      "label": "Nodiadau Gofal",
+      "description": "Dogfennu gweithgareddau gofal dyddiol"
+    },
+    "diet": {
+      "label": "Tracio Deiet",
+      "description": "Cofnodi prydau a maeth"
+    },
+    "money": {
+      "label": "Tracio Arian",
+      "description": "Tracio treuliau ac incwm"
+    },
+    "keyInformation": {
+      "label": "Gwybodaeth Allweddol",
+      "description": "Manylion pwysig a chysylltiadau"
+    },
+    "medications": {
+      "label": "Meddyginiaethau (MAR)",
+      "description": "Cofnodion gweinyddu meddyginiaeth"
+    },
+    "appointments": {
+      "label": "Apwyntiadau",
+      "description": "Rheoli apwyntiadau sydd i ddod"
+    },
+    "aiReports": {
+      "label": "Adroddiadau AI",
+      "description": "Cynhyrchu crynodebau gofal"
+    }
+  },
+  "cards": {
+    "weeklyHours": {
+      "title": "Oriau Gofal yr Wythnos Hon",
+      "subtitle": "Amser gofal a gymeradwywyd"
+    },
+    "pendingTasks": {
+      "title": "Tasgau ar y Gweill",
+      "subtitle": "Tasgau i'w cwblhau"
+    },
+    "recentNotes": {
+      "title": "Nodiadau Diweddar",
+      "subtitle": "Yr wythnos hon"
+    },
+    "pendingRequests": {
+      "title": "Ceisiadau ar y Gweill",
+      "subtitle": "Gweld a rheoli ceisiadau tîm gofal"
+    }
+  },
+  "buttons": {
+    "inviteCareTeam": "Gwahodd Tîm Gofal",
+    "viewCarePlan": "Gweld Cynllun Gofal",
+    "viewRequestsChanges": "Gweld Ceisiadau/Newidiadau"
+  },
+  "inviteDialog": {
+    "title": "Gwahodd Aelod o'r Tîm Gofal",
+    "role": "Rôl",
+    "familyMemberAdmin": "Aelod Teulu (Gweinyddwr)",
+    "familyMemberViewer": "Aelod Teulu (Gwyliwr)",
+    "generateCode": "Cynhyrchu Cod Gwahoddiad",
+    "shareCode": "Rhannwch y cod hwn:",
+    "sendCodeMessage": "Anfonwch y cod hwn at eich {{role}} fel y gallant ymuno â'ch tîm gofal."
+  },
+  "errors": {
+    "loadWeeklyHours": "Methwyd â llwytho'r oriau wythnosol",
+    "loadDashboard": "Methwyd â llwytho data'r dangosfwrdd"
+  },
   "settings": {
     "title": "Gosodiadau",
     "dashboard": "Dangosfwrdd",
