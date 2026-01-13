@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +66,7 @@ export const DisabledPersonDashboard = ({
   const [schedulingSectionTab, setSchedulingSectionTab] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadData = async () => {
@@ -210,8 +212,8 @@ export const DisabledPersonDashboard = ({
       {/* Main Content */}
       <div className="container mx-auto px-2 sm:px-4 py-6 space-y-6">
       <HeroBanner 
-        title={userFirstName ? `Welcome back, ${userFirstName}` : `Welcome back, there`}
-        subtitle={familyId ? "Your care coordination hub" : "Create your family to get started"}
+        title={t('hero.welcomeBack', { name: userFirstName || t('hero.defaultName') })}
+        subtitle={familyId ? t('hero.yourCareHub') : t('hero.createToStart')}
         profilePictureUrl={careRecipientPictureUrl || profilePictureUrl}
       />
 
@@ -219,8 +221,8 @@ export const DisabledPersonDashboard = ({
           <Alert>
             <UserPlus className="h-5 w-5" />
             <AlertDescription>
-              <p className="font-medium">Create your family to start coordinating care</p>
-              <p className="text-sm mt-1">Click "Create Family" above to set up your care network.</p>
+              <p className="font-medium">{t('alerts.createFamily.title')}</p>
+              <p className="text-sm mt-1">{t('alerts.createFamily.description')}</p>
             </AlertDescription>
           </Alert>
         )}
@@ -231,34 +233,34 @@ export const DisabledPersonDashboard = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week's Care Hours</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('cards.weeklyHours.title')}</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{weeklyHours}h</div>
-              <p className="text-xs text-muted-foreground">Approved care time</p>
+              <p className="text-xs text-muted-foreground">{t('cards.weeklyHours.subtitle')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('cards.pendingTasks.title')}</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingTasks}</div>
-              <p className="text-xs text-muted-foreground">Tasks to complete</p>
+              <p className="text-xs text-muted-foreground">{t('cards.pendingTasks.subtitle')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recent Notes</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('cards.recentNotes.title')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{recentNotes}</div>
-              <p className="text-xs text-muted-foreground">This week</p>
+              <p className="text-xs text-muted-foreground">{t('cards.recentNotes.subtitle')}</p>
             </CardContent>
           </Card>
         </div>
@@ -280,13 +282,13 @@ export const DisabledPersonDashboard = ({
           }}
         >
           <CardHeader>
-            <CardTitle>Pending Requests</CardTitle>
-            <CardDescription>View and manage care team requests</CardDescription>
+            <CardTitle>{t('cards.pendingRequests.title')}</CardTitle>
+            <CardDescription>{t('cards.pendingRequests.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="w-full h-16 flex flex-col items-center justify-center bg-card border border-border hover:bg-muted">
               <UserPlus className="w-6 h-6 mb-2" />
-              View Requests/Changes
+              {t('buttons.viewRequestsChanges')}
             </Button>
           </CardContent>
         </Card>
@@ -297,35 +299,35 @@ export const DisabledPersonDashboard = ({
             <DialogTrigger asChild>
               <Button className="h-16 flex flex-col items-center justify-center bg-card border border-border hover:bg-muted">
                 <UserPlus className="w-6 h-6 mb-2" />
-                Invite Care Team
+                {t('buttons.inviteCareTeam')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Invite Care Team Member</DialogTitle>
+                <DialogTitle>{t('inviteDialog.title')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">{t('inviteDialog.role')}</Label>
                   <Select value={inviteRole} onValueChange={(value: any) => setInviteRole(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="carer">Carer</SelectItem>
-                      <SelectItem value="family_admin">Family Member (Admin)</SelectItem>
-                      <SelectItem value="family_viewer">Family Member (Viewer)</SelectItem>
+                      <SelectItem value="carer">{t('roles.carer')}</SelectItem>
+                      <SelectItem value="family_admin">{t('inviteDialog.familyMemberAdmin')}</SelectItem>
+                      <SelectItem value="family_viewer">{t('inviteDialog.familyMemberViewer')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 {!generatedCode ? (
                   <Button onClick={generateInviteCode} className="w-full">
-                    Generate Invite Code
+                    {t('inviteDialog.generateCode')}
                   </Button>
                 ) : (
                   <div className="space-y-2">
-                    <Label>Share this code:</Label>
+                    <Label>{t('inviteDialog.shareCode')}</Label>
                     <div className="flex items-center gap-2">
                       <Input value={generatedCode} readOnly />
                       <Button size="sm" onClick={copyInviteCode}>
@@ -333,7 +335,7 @@ export const DisabledPersonDashboard = ({
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Send this code to your {inviteRole} so they can join your care team.
+                      {t('inviteDialog.sendCodeMessage', { role: inviteRole })}
                     </p>
                   </div>
                 )}
@@ -343,7 +345,7 @@ export const DisabledPersonDashboard = ({
 
           <Button className="h-16 flex flex-col items-center justify-center bg-card border border-border hover:bg-muted">
             <FileText className="w-6 h-6 mb-2" />
-            View Care Plan
+            {t('buttons.viewCarePlan')}
           </Button>
         </div>
 
@@ -351,7 +353,7 @@ export const DisabledPersonDashboard = ({
         <div className="space-y-4">
           <ExpandableDashboardSection
             id="scheduling"
-            title="Scheduling & Time Management"
+            titleKey="sectionTitles.schedulingTime"
             defaultOpen={true}
             icon={<Clock className="h-5 w-5" />}
           >
@@ -360,7 +362,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection
             id="tasks"
-            title="Tasks"
+            titleKey="sectionTitles.tasks"
             icon={<CheckSquare className="h-5 w-5" />}
           >
             <TasksSection familyId={familyId} userRole={userRole} />
@@ -368,7 +370,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection 
             id="notes"
-            title="Care Notes" 
+            titleKey="sectionTitles.careNotes"
             icon={<FileText className="h-5 w-5" />}
           >
             <NotesSection familyId={familyId} userRole={userRole} />
@@ -376,7 +378,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection 
             id="diet"
-            title="Diet Tracking" 
+            titleKey="sectionTitles.dietTracking"
             icon={<Utensils className="h-5 w-5" />}
           >
             <DietSection familyId={familyId} userRole={userRole} />
@@ -384,7 +386,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection 
             id="money"
-            title="Money Tracking" 
+            titleKey="sectionTitles.moneyTracking"
             icon={<Wallet className="h-5 w-5" />}
           >
             <MoneySection familyId={familyId} userRole={userRole} />
@@ -392,7 +394,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection
             id="key-information"
-            title="Key Information & Risk Assessments"
+            titleKey="sectionTitles.keyInformation"
             icon={<Users className="h-5 w-5" />}
           >
             <KeyInformationSection familyId={familyId} userRole="disabled_person" />
@@ -400,7 +402,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection
             id="medications"
-            title="Medications"
+            titleKey="sectionTitles.medications"
             icon={<Pill className="h-5 w-5" />}
           >
             <MedicationsSection familyId={familyId} userRole={userRole} />
@@ -408,7 +410,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection
             id="appointments"
-            title="Appointments"
+            titleKey="sectionTitles.appointments"
             icon={<Calendar className="h-5 w-5" />}
           >
             <AppointmentsSection familyId={familyId} userRole={userRole} />
@@ -416,7 +418,7 @@ export const DisabledPersonDashboard = ({
 
           <ExpandableDashboardSection
             id="ai-reports"
-            title="AI Reports"
+            titleKey="sectionTitles.aiReports"
             icon={<FileBarChart className="h-5 w-5" />}
           >
             <AIReportsSection familyId={familyId} userRole={userRole} />

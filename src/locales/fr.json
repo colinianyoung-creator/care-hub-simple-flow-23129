@@ -53,6 +53,120 @@
     "joinFamily": "Rejoindre une Famille",
     "createFamily": "Créer une Famille"
   },
+  "hero": {
+    "welcomeBack": "Bon retour, {{name}} !",
+    "defaultName": "ami",
+    "caringFor": "Prendre soin de {{name}}",
+    "manageFamilyCare": "Gérez les soins de votre famille en toute simplicité",
+    "createOrJoin": "Créez ou rejoignez une famille pour accéder aux fonctionnalités de soins",
+    "managingCareFor": "Gestion des soins pour {{name}}",
+    "joinToStart": "Rejoignez une famille pour commencer à coordonner les soins",
+    "yourCareHub": "Votre centre de coordination des soins",
+    "createToStart": "Créez votre famille pour commencer"
+  },
+  "alerts": {
+    "joinFamily": {
+      "title": "Rejoignez une famille pour accéder aux fonctionnalités de coordination des soins",
+      "description": "Cliquez sur \"Rejoindre une Famille\" ci-dessus ou demandez à un administrateur familial de vous inviter."
+    },
+    "createOrJoin": {
+      "title": "Créez ou rejoignez une famille pour commencer",
+      "description": "Utilisez les boutons ci-dessus pour créer ou rejoindre une famille."
+    },
+    "createFamily": {
+      "title": "Créez votre famille pour commencer à coordonner les soins",
+      "description": "Cliquez sur \"Créer une Famille\" ci-dessus pour configurer votre réseau de soins."
+    }
+  },
+  "sectionTitles": {
+    "schedulingTime": "Planification et Gestion du Temps",
+    "schedulingTimeTracking": "Planification et Suivi du Temps",
+    "tasks": "Tâches",
+    "careNotes": "Notes de Soins",
+    "dietTracking": "Suivi du Régime",
+    "dietNutrition": "Régime et Nutrition",
+    "moneyTracking": "Suivi des Finances",
+    "moneyExpenses": "Argent et Dépenses",
+    "keyInformation": "Informations Clés et Évaluations des Risques",
+    "medications": "Registre d'Administration des Médicaments (MAR)",
+    "appointments": "Rendez-vous",
+    "aiReports": "Rapports IA"
+  },
+  "dashboardSections": {
+    "subtitle": "Choisissez les sections qui apparaissent sur le tableau de bord de votre famille. Tous les membres de la famille verront les mêmes sections.",
+    "scheduling": {
+      "label": "Planification et Temps",
+      "description": "Gérer les quarts et le suivi du temps"
+    },
+    "tasks": {
+      "label": "Tâches",
+      "description": "Suivre les tâches à faire et les attributions"
+    },
+    "notes": {
+      "label": "Notes de Soins",
+      "description": "Documenter les activités de soins quotidiennes"
+    },
+    "diet": {
+      "label": "Suivi du Régime",
+      "description": "Enregistrer les repas et la nutrition"
+    },
+    "money": {
+      "label": "Suivi des Finances",
+      "description": "Suivre les dépenses et les revenus"
+    },
+    "keyInformation": {
+      "label": "Informations Clés",
+      "description": "Détails importants et contacts"
+    },
+    "medications": {
+      "label": "Médicaments (MAR)",
+      "description": "Registres d'administration des médicaments"
+    },
+    "appointments": {
+      "label": "Rendez-vous",
+      "description": "Gérer les rendez-vous à venir"
+    },
+    "aiReports": {
+      "label": "Rapports IA",
+      "description": "Générer des résumés de soins"
+    }
+  },
+  "cards": {
+    "weeklyHours": {
+      "title": "Heures de Soins Cette Semaine",
+      "subtitle": "Temps de soins approuvé"
+    },
+    "pendingTasks": {
+      "title": "Tâches en Attente",
+      "subtitle": "Tâches à accomplir"
+    },
+    "recentNotes": {
+      "title": "Notes Récentes",
+      "subtitle": "Cette semaine"
+    },
+    "pendingRequests": {
+      "title": "Demandes en Attente",
+      "subtitle": "Voir et gérer les demandes de l'équipe de soins"
+    }
+  },
+  "buttons": {
+    "inviteCareTeam": "Inviter l'Équipe de Soins",
+    "viewCarePlan": "Voir le Plan de Soins",
+    "viewRequestsChanges": "Voir Demandes/Changements"
+  },
+  "inviteDialog": {
+    "title": "Inviter un Membre de l'Équipe de Soins",
+    "role": "Rôle",
+    "familyMemberAdmin": "Membre de la Famille (Admin)",
+    "familyMemberViewer": "Membre de la Famille (Observateur)",
+    "generateCode": "Générer un Code d'Invitation",
+    "shareCode": "Partagez ce code :",
+    "sendCodeMessage": "Envoyez ce code à votre {{role}} pour qu'il puisse rejoindre votre équipe de soins."
+  },
+  "errors": {
+    "loadWeeklyHours": "Échec du chargement des heures hebdomadaires",
+    "loadDashboard": "Échec du chargement des données du tableau de bord"
+  },
   "settings": {
     "title": "Paramètres",
     "dashboard": "Tableau de Bord",

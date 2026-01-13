@@ -53,6 +53,120 @@
     "joinFamily": "Unirse a Familia",
     "createFamily": "Crear Familia"
   },
+  "hero": {
+    "welcomeBack": "¡Bienvenido de nuevo, {{name}}!",
+    "defaultName": "amigo",
+    "caringFor": "Cuidando a {{name}}",
+    "manageFamilyCare": "Gestiona el cuidado de tu familia con facilidad",
+    "createOrJoin": "Crea o únete a una familia para acceder a las funciones de cuidado",
+    "managingCareFor": "Gestionando el cuidado de {{name}}",
+    "joinToStart": "Únete a una familia para comenzar a coordinar el cuidado",
+    "yourCareHub": "Tu centro de coordinación de cuidados",
+    "createToStart": "Crea tu familia para comenzar"
+  },
+  "alerts": {
+    "joinFamily": {
+      "title": "Únete a una familia para acceder a las funciones de coordinación de cuidados",
+      "description": "Haz clic en \"Unirse a Familia\" arriba o pide a un administrador familiar que te invite."
+    },
+    "createOrJoin": {
+      "title": "Crea o únete a una familia para comenzar",
+      "description": "Usa los botones de arriba para crear o unirte a una familia."
+    },
+    "createFamily": {
+      "title": "Crea tu familia para comenzar a coordinar el cuidado",
+      "description": "Haz clic en \"Crear Familia\" arriba para configurar tu red de cuidados."
+    }
+  },
+  "sectionTitles": {
+    "schedulingTime": "Programación y Gestión del Tiempo",
+    "schedulingTimeTracking": "Programación y Seguimiento del Tiempo",
+    "tasks": "Tareas",
+    "careNotes": "Notas de Cuidado",
+    "dietTracking": "Seguimiento de Dieta",
+    "dietNutrition": "Dieta y Nutrición",
+    "moneyTracking": "Seguimiento de Dinero",
+    "moneyExpenses": "Dinero y Gastos",
+    "keyInformation": "Información Clave y Evaluaciones de Riesgo",
+    "medications": "Registro de Administración de Medicamentos (MAR)",
+    "appointments": "Citas",
+    "aiReports": "Informes de IA"
+  },
+  "dashboardSections": {
+    "subtitle": "Elige qué secciones aparecen en el panel de tu familia. Todos los miembros de la familia verán las mismas secciones.",
+    "scheduling": {
+      "label": "Programación y Tiempo",
+      "description": "Gestionar turnos y seguimiento del tiempo"
+    },
+    "tasks": {
+      "label": "Tareas",
+      "description": "Seguimiento de tareas pendientes y asignaciones"
+    },
+    "notes": {
+      "label": "Notas de Cuidado",
+      "description": "Documentar actividades de cuidado diarias"
+    },
+    "diet": {
+      "label": "Seguimiento de Dieta",
+      "description": "Registrar comidas y nutrición"
+    },
+    "money": {
+      "label": "Seguimiento de Dinero",
+      "description": "Seguimiento de gastos e ingresos"
+    },
+    "keyInformation": {
+      "label": "Información Clave",
+      "description": "Detalles importantes y contactos"
+    },
+    "medications": {
+      "label": "Medicamentos (MAR)",
+      "description": "Registros de administración de medicamentos"
+    },
+    "appointments": {
+      "label": "Citas",
+      "description": "Gestionar próximas citas"
+    },
+    "aiReports": {
+      "label": "Informes de IA",
+      "description": "Generar resúmenes de cuidado"
+    }
+  },
+  "cards": {
+    "weeklyHours": {
+      "title": "Horas de Cuidado Esta Semana",
+      "subtitle": "Tiempo de cuidado aprobado"
+    },
+    "pendingTasks": {
+      "title": "Tareas Pendientes",
+      "subtitle": "Tareas por completar"
+    },
+    "recentNotes": {
+      "title": "Notas Recientes",
+      "subtitle": "Esta semana"
+    },
+    "pendingRequests": {
+      "title": "Solicitudes Pendientes",
+      "subtitle": "Ver y gestionar solicitudes del equipo de cuidado"
+    }
+  },
+  "buttons": {
+    "inviteCareTeam": "Invitar Equipo de Cuidado",
+    "viewCarePlan": "Ver Plan de Cuidado",
+    "viewRequestsChanges": "Ver Solicitudes/Cambios"
+  },
+  "inviteDialog": {
+    "title": "Invitar Miembro del Equipo de Cuidado",
+    "role": "Rol",
+    "familyMemberAdmin": "Miembro Familiar (Admin)",
+    "familyMemberViewer": "Miembro Familiar (Visor)",
+    "generateCode": "Generar Código de Invitación",
+    "shareCode": "Comparte este código:",
+    "sendCodeMessage": "Envía este código a tu {{role}} para que pueda unirse a tu equipo de cuidado."
+  },
+  "errors": {
+    "loadWeeklyHours": "Error al cargar las horas semanales",
+    "loadDashboard": "Error al cargar los datos del panel"
+  },
   "settings": {
     "title": "Configuración",
     "dashboard": "Panel",
