@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,7 @@ interface NotesSectionProps {
 }
 
 export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
+  const { t } = useTranslation();
   console.log('[NotesSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -54,7 +56,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Create your personal care space or join a family to start adding care notes.
+          {t('sectionsUI.notes.emptyStates.noFamily')}
         </AlertDescription>
       </Alert>
     );

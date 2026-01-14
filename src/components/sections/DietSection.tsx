@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ interface DietSectionProps {
 }
 
 export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) => {
+  const { t } = useTranslation();
   console.log('[DietSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -40,7 +42,7 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Create your personal care space or join a family to track diet and nutrition.
+          {t('sectionsUI.diet.emptyStates.noFamily')}
         </AlertDescription>
       </Alert>
     );

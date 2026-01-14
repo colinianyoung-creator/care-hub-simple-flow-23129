@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,17 +46,17 @@ const calculateNextVisibleFrom = (recurrenceType: string): string => {
   }
 };
 
-// Get user-friendly label for when task will appear
-const getVisibleFromLabel = (recurrenceType: string): string => {
+// Get user-friendly label for when task will appear - now uses translation
+const getVisibleFromLabel = (recurrenceType: string, t: (key: string) => string): string => {
   switch (recurrenceType) {
     case 'daily':
-      return 'tomorrow';
+      return t('sectionsUI.tasks.visibleFrom.tomorrow');
     case 'weekly':
-      return 'next Monday';
+      return t('sectionsUI.tasks.visibleFrom.nextMonday');
     case 'monthly':
-      return '1st of next month';
+      return t('sectionsUI.tasks.visibleFrom.firstOfMonth');
     default:
-      return 'tomorrow';
+      return t('sectionsUI.tasks.visibleFrom.tomorrow');
   }
 };
 
@@ -66,13 +67,14 @@ interface TasksSectionProps {
 }
 
 export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
+  const { t } = useTranslation();
   console.log('[TasksSection] render:', { familyId, userRole });
 
   if (!familyId) {
     return (
       <div className="p-4 border rounded-lg bg-muted/50">
         <p className="text-sm text-muted-foreground">
-          Create your personal care space or join a family to start tracking tasks.
+          {t('sectionsUI.tasks.emptyStates.noFamily')}
         </p>
       </div>
     );
@@ -307,8 +309,8 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
       await loadTasks();
 
       const toastMessage = isRecurring 
-        ? `Task completed! Next occurrence will appear ${getVisibleFromLabel(task.recurrence_type)}.`
-        : "Task moved to Done tab";
+        ? t('sectionsUI.tasks.toast.completedRecurring', { nextOccurrence: getVisibleFromLabel(task.recurrence_type, t) })
+        : t('sectionsUI.tasks.toast.movedToDone');
 
       toast({
         title: "Task completed",
