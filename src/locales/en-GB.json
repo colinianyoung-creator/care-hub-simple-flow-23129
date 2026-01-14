@@ -651,7 +651,8 @@
       "emptyStates": {
         "noFamily": "Create your personal care space or join a family to start tracking schedules.",
         "noShifts": "No shifts scheduled",
-      "noRequests": "No pending requests"
+        "noRequests": "No pending requests"
+      }
     }
   },
   "instructions": {
