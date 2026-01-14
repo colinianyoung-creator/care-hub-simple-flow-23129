@@ -272,5 +272,376 @@
     "keyInfo": "Key Information",
     "aiReports": "AI Reports",
     "leave": "Leave"
+  },
+  "sectionsUI": {
+    "tasks": {
+      "tabs": {
+        "active": "Active",
+        "done": "Done"
+      },
+      "title": "Tasks",
+      "addTask": "Add Task",
+      "addNewTask": "Add New Task",
+      "form": {
+        "title": "Task title",
+        "description": "Task description (optional)",
+        "dueDate": "Due Date (optional)",
+        "assignTo": "Assign To (optional)",
+        "selectTeamMember": "Select team member"
+      },
+      "recurrence": {
+        "makeRecurring": "Make this a recurring task",
+        "repeat": "Repeat",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "nextDay": "When completed, a new task will be created for the next day",
+        "nextWeek": "When completed, a new task will be created for the next week",
+        "nextMonth": "When completed, a new task will be created for the next month"
+      },
+      "visibleFrom": {
+        "tomorrow": "tomorrow",
+        "nextMonday": "next Monday",
+        "firstOfMonth": "1st of next month"
+      },
+      "buttons": {
+        "createTask": "Create Task",
+        "markDone": "Mark Done",
+        "reopen": "Re-open"
+      },
+      "cards": {
+        "activeTasks": "Active Tasks",
+        "activeDescription": "Tasks that need to be completed",
+        "completedTasks": "Completed Tasks",
+        "completedDescription": "Tasks completed in the last 7 days (auto-deleted after 7 days)"
+      },
+      "labels": {
+        "assignedTo": "Assigned to:",
+        "due": "Due:",
+        "completed": "Completed:"
+      },
+      "emptyStates": {
+        "noFamily": "Create your personal care space or join a family to start tracking tasks.",
+        "joinFamily": "Please join or create a family to manage tasks.",
+        "noActive": "No active tasks",
+        "noCompleted": "No completed tasks"
+      },
+      "toast": {
+        "completed": "Task completed",
+        "completedRecurring": "Task completed! Next occurrence will appear {{nextOccurrence}}.",
+        "movedToDone": "Task moved to Done tab",
+        "reopened": "Task Reopened",
+        "reopenedDescription": "Task has been moved back to Active",
+        "deleted": "Task Deleted",
+        "deletedDescription": "Task has been deleted",
+        "created": "Task Created",
+        "createdDescription": "Task has been created successfully",
+        "createdRecurring": "Recurring {{type}} task created",
+        "error": "Error",
+        "errorComplete": "Failed to mark task as complete",
+        "errorReopen": "Failed to reopen task",
+        "errorDelete": "Failed to delete task",
+        "errorCreate": "Failed to create task",
+        "errorLoad": "Failed to load tasks",
+        "authRequired": "Authentication Required",
+        "authWait": "Please wait for authentication to complete"
+      },
+      "loading": "Loading tasks…"
+    },
+    "notes": {
+      "tabs": {
+        "today": "Today's Notes",
+        "bodyMap": "Body Map",
+        "archive": "Archive"
+      },
+      "addNote": "Add Daily Note",
+      "form": {
+        "activitySupport": "Activity / Support Provided *",
+        "activityPlaceholder": "Describe the activities and support provided...",
+        "quickTags": "Quick Tags",
+        "observations": "Observations / Behaviour",
+        "observationsPlaceholder": "Note any observations about behaviour, mood, or responses...",
+        "outcome": "Outcome / Response",
+        "outcomePlaceholder": "How did the person respond? What was achieved?",
+        "nextSteps": "Next Steps / Handover",
+        "nextStepsPlaceholder": "Any important information for the next carer...",
+        "eatingDrinkingNotes": "Eating/Drinking Notes",
+        "eatingDrinkingNotesPlaceholder": "Additional details about eating/drinking...",
+        "incidentDetails": "Describe the incident in detail..."
+      },
+      "tags": {
+        "personalCare": "Personal Care",
+        "mealPrep": "Meal Prep",
+        "medication": "Medication",
+        "outing": "Outing",
+        "exercise": "Exercise",
+        "social": "Social",
+        "medical": "Medical"
+      },
+      "wellbeing": {
+        "title": "Wellbeing Trackers",
+        "mood": "Mood",
+        "selectMood": "Select mood",
+        "eatingDrinking": "Eating / Drinking",
+        "selectStatus": "Select status",
+        "bathroomUsage": "Bathroom Usage"
+      },
+      "mood": {
+        "happy": "Happy",
+        "calm": "Calm",
+        "upset": "Upset",
+        "anxious": "Anxious",
+        "tired": "Tired"
+      },
+      "eating": {
+        "good": "Ate full meal",
+        "little": "Ate little",
+        "refused": "Refused food",
+        "fluidGood": "Fluid intake good",
+        "fluidPoor": "Fluid intake poor"
+      },
+      "bathroom": {
+        "normal": "Normal",
+        "assistance": "Needed assistance",
+        "constipated": "Constipated",
+        "diarrhoea": "Diarrhoea",
+        "accident": "Accident"
+      },
+      "incident": {
+        "markAsIncident": "Mark as incident",
+        "details": "Incident Details"
+      },
+      "labels": {
+        "activitySupport": "Activity/Support",
+        "observations": "Observations",
+        "outcome": "Outcome",
+        "nextSteps": "Next Steps",
+        "wellbeing": "Wellbeing",
+        "eating": "Eating:",
+        "bathroom": "Bathroom:",
+        "note": "Note",
+        "clickToEdit": "Click to view/edit"
+      },
+      "emptyStates": {
+        "noFamily": "Create your personal care space or join a family to start adding care notes.",
+        "joinFamily": "Please join or create a family to view care notes.",
+        "noNotes": "No care notes for today"
+      },
+      "toast": {
+        "added": "Note added",
+        "addedDescription": "The care note has been added successfully.",
+        "deleted": "Note deleted",
+        "deletedDescription": "The care note has been deleted successfully.",
+        "errorAdding": "Error adding note",
+        "errorAddingDescription": "There was an error adding the care note.",
+        "errorDeleting": "Error deleting note",
+        "errorDeletingDescription": "There was an error deleting the care note.",
+        "authRequired": "Authentication Required",
+        "authWait": "Please wait for authentication to complete"
+      },
+      "dialog": {
+        "editTitle": "Edit Care Note",
+        "newTitle": "New Care Note"
+      },
+      "loading": "Loading notes…"
+    },
+    "diet": {
+      "tabs": {
+        "today": "Today",
+        "archive": "Archive"
+      },
+      "meals": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snacks": "Snacks",
+        "drinks": "Drinks"
+      },
+      "addEntry": "Add {{meal}} Entry",
+      "form": {
+        "whatWasEaten": "What was eaten",
+        "whatWasEatenPlaceholder": "Describe the meal...",
+        "portionLeft": "Portion left uneaten",
+        "notes": "Notes",
+        "notesPlaceholder": "Any additional notes...",
+        "photo": "Photo (optional)",
+        "saveEntry": "Save Entry"
+      },
+      "portions": {
+        "none": "None - All eaten",
+        "some": "Some left",
+        "most": "Most left",
+        "all": "All left - Nothing eaten"
+      },
+      "labels": {
+        "portionLeft": "Portion left:"
+      },
+      "emptyStates": {
+        "noFamily": "Create your personal care space or join a family to track diet and nutrition.",
+        "joinFamily": "Please join or create a family to track diet entries.",
+        "noEntries": "No {{meal}} entries for today"
+      },
+      "toast": {
+        "success": "Success",
+        "added": "Diet entry added successfully",
+        "deleted": "Diet entry deleted",
+        "error": "Error",
+        "errorLoad": "Failed to load diet entries",
+        "errorAdd": "Failed to add diet entry",
+        "errorDelete": "Failed to delete entry"
+      },
+      "loading": "Loading..."
+    },
+    "medications": {
+      "tabs": {
+        "medications": "Medications",
+        "doseTracker": "Dose Tracker"
+      },
+      "addMedication": "Add New Medication",
+      "editMedication": "Edit Medication",
+      "form": {
+        "name": "Medication name",
+        "dosage": "Dosage (e.g., 10mg)",
+        "frequencyLabel": "Frequency per day",
+        "selectFrequency": "Select frequency",
+        "scheduledTimes": "Scheduled times",
+        "instructions": "Special instructions (optional)",
+        "startDate": "Start Date:",
+        "endDate": "End Date (optional):"
+      },
+      "frequency": {
+        "once": "Once daily (09:00)",
+        "twice": "Twice daily (09:00, 18:00)",
+        "thrice": "3 times daily (09:00, 13:00, 18:00)",
+        "four": "4 times daily (09:00, 13:00, 18:00, 21:00)"
+      },
+      "buttons": {
+        "add": "Add Medication",
+        "update": "Update Medication"
+      },
+      "labels": {
+        "frequency": "Frequency:",
+        "start": "Start:",
+        "end": "End:"
+      },
+      "emptyStates": {
+        "noFamily": "Please connect to a family to access medications.",
+        "joinFamily": "Please join or create a family to track medications.",
+        "noMedications": "No medications added yet"
+      },
+      "toast": {
+        "added": "Medication added",
+        "addedDescription": "Medication and doses have been scheduled successfully.",
+        "updated": "Medication updated",
+        "updatedDescription": "Medication and doses have been updated successfully.",
+        "removed": "Medication removed",
+        "removedDescription": "The medication has been removed successfully.",
+        "error": "Error",
+        "errorSaving": "There was an error saving the medication.",
+        "errorLoading": "There was an error loading the medications.",
+        "errorRemoving": "There was an error removing the medication.",
+        "noFamily": "No family selected",
+        "noFamilyDescription": "Please create or join a family first."
+      },
+      "loading": "Loading medications..."
+    },
+    "appointments": {
+      "tabs": {
+        "upcoming": "Upcoming",
+        "archive": "Archive"
+      },
+      "addAppointment": "Add New Appointment",
+      "editAppointment": "Edit Appointment",
+      "form": {
+        "title": "Appointment title",
+        "description": "Description (optional)",
+        "date": "Date:",
+        "time": "Time:",
+        "location": "Location:",
+        "locationPlaceholder": "Location (optional)"
+      },
+      "buttons": {
+        "add": "Add Appointment",
+        "update": "Update Appointment"
+      },
+      "status": {
+        "today": "Today",
+        "upcoming": "Upcoming",
+        "past": "Past"
+      },
+      "cards": {
+        "upcoming": "Upcoming Appointments",
+        "past": "Past Appointments"
+      },
+      "emptyStates": {
+        "noFamily": "Please connect to a family to access appointments.",
+        "noUpcoming": "No upcoming appointments",
+        "noPast": "No past appointments"
+      },
+      "toast": {
+        "added": "Appointment added",
+        "addedDescription": "The appointment has been added successfully.",
+        "updated": "Appointment updated",
+        "updatedDescription": "The appointment has been updated successfully.",
+        "deleted": "Appointment deleted",
+        "deletedDescription": "The appointment has been deleted successfully.",
+        "error": "Error",
+        "errorSaving": "There was an error saving the appointment.",
+        "errorLoading": "There was an error loading the appointments.",
+        "errorDeleting": "There was an error deleting the appointment.",
+        "authRequired": "Authentication Required",
+        "authWait": "Please wait for authentication to complete"
+      },
+      "loading": "Loading appointments…"
+    },
+    "timePayroll": {
+      "summary": "This Week's Summary",
+      "totalHours": "Total hours logged this week",
+      "exportPayroll": "Export Payroll",
+      "toast": {
+        "exported": "Timesheet exported",
+        "exportedDescription": "The timesheet has been downloaded successfully.",
+        "exportFailed": "Export failed",
+        "exportFailedDescription": "There was an error exporting the timesheet."
+      }
+    },
+    "scheduling": {
+      "tabs": {
+        "overview": "Overview",
+        "schedule": "Schedule",
+        "requests": "Requests",
+        "leave": "Leave",
+        "time": "Time"
+      },
+      "buttons": {
+        "addShift": "Add Shift",
+        "exportTimesheet": "Export Timesheet",
+        "manageCareTeam": "Manage Care Team",
+        "requestChange": "Request Change"
+      },
+      "views": {
+        "week": "Week",
+        "month": "Month",
+        "list": "List",
+        "singleFamily": "Single Family",
+        "allFamilies": "All My Families"
+      },
+      "filters": {
+        "filterByCarer": "Filter by carer",
+        "allCarers": "All carers"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "denied": "Denied",
+        "scheduled": "Scheduled",
+        "cancelled": "Cancelled"
+      },
+      "emptyStates": {
+        "noFamily": "Create your personal care space or join a family to start tracking schedules.",
+        "noShifts": "No shifts scheduled",
+        "noRequests": "No pending requests"
+      }
+    }
   }
 }

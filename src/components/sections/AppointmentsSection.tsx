@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ interface AppointmentsSectionProps {
 }
 
 export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionProps) => {
+  const { t } = useTranslation();
   console.log('[AppointmentsSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -38,7 +40,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Please connect to a family to access appointments.
+          {t('sectionsUI.appointments.emptyStates.noFamily')}
         </AlertDescription>
       </Alert>
     );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,6 +46,7 @@ interface MedicationsSectionProps {
 }
 
 export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionProps) => {
+  const { t } = useTranslation();
   console.log('[MedicationsSection] render:', { familyId, userRole });
 
   if (!familyId) {
@@ -52,7 +54,7 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Please connect to a family to access medications.
+          {t('sectionsUI.medications.emptyStates.noFamily')}
         </AlertDescription>
       </Alert>
     );
