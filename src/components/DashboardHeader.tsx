@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings } from 'lucide-react';
+import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings, Download } from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Share, Plus } from 'lucide-react';
 import { ProfileDialog } from './dialogs/ProfileDialog';
 import { ManageCareTeamDialog } from './dialogs/ManageCareTeamDialog';
 import { SettingsDialog } from './dialogs/SettingsDialog';
@@ -52,7 +55,17 @@ export const DashboardHeader = ({
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [userName, setUserName] = useState('');
+  const [showIOSInstallDialog, setShowIOSInstallDialog] = useState(false);
   const { unreadCount } = useUnreadMessages(familyId);
+  const { isIOS, isInstalled, isInstallable, promptInstall, canShowInstall } = usePWAInstall();
+
+  const handleInstallClick = async () => {
+    if (isIOS) {
+      setShowIOSInstallDialog(true);
+    } else {
+      await promptInstall();
+    }
+  };
 
   useEffect(() => {
     const loadUserName = async () => {
@@ -191,6 +204,12 @@ export const DashboardHeader = ({
                 {t('menu.switchFamily')}
               </DropdownMenuItem>
             )}
+            {canShowInstall && (
+              <DropdownMenuItem onClick={handleInstallClick}>
+                <Download className="mr-2 h-4 w-4" />
+                {t('menu.installApp')}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -229,6 +248,35 @@ export const DashboardHeader = ({
         familyId={familyId}
         userRole={userRole}
       />
+      
+      <Dialog open={showIOSInstallDialog} onOpenChange={setShowIOSInstallDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('pwa.iosTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              {t('pwa.description')}
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">1</span>
+                <span className="text-sm flex items-center gap-1">
+                  {t('pwa.iosStep1')}
+                  <Share className="h-4 w-4 inline mx-1 text-primary" />
+                </span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">2</span>
+                <span className="text-sm flex items-center gap-1">
+                  {t('pwa.iosStep2')}
+                  <Plus className="h-4 w-4 inline mx-1 text-primary" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };
