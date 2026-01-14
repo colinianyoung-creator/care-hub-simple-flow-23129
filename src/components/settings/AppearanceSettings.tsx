@@ -39,7 +39,7 @@ export const AppearanceSettings = ({
   ];
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 min-w-0 overflow-hidden">
       <div className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
         {t('settings.themeSubtitle')}
       </div>
