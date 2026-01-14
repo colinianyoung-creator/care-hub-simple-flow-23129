@@ -250,6 +250,7 @@
     "manageCareTeam": "Manage Care Team",
     "switchFamily": "Switch Family",
     "installApp": "Install App",
+    "help": "Help",
     "signOut": "Sign Out"
   },
   "pwa": {
@@ -663,6 +664,33 @@
       "skipTour": "Skip tour",
       "step": "Step",
       "new": "New"
+    },
+    "helpCenter": {
+      "title": "Help Centre",
+      "subtitle": "Select a section to learn more about its features",
+      "backToSections": "Back to sections",
+      "startTour": "Start Tour",
+      "tasks": {
+        "description": "Manage daily tasks and recurring activities"
+      },
+      "notes": {
+        "description": "Record care notes and track wellbeing"
+      },
+      "scheduling": {
+        "description": "View shifts, clock in/out, and manage requests"
+      },
+      "diet": {
+        "description": "Track meals, portions, and dietary intake"
+      },
+      "medications": {
+        "description": "Manage medications and track doses"
+      },
+      "appointments": {
+        "description": "Schedule and track appointments"
+      },
+      "timePayroll": {
+        "description": "View hours worked and export timesheets"
+      }
     },
     "tasks": {
       "modal": {

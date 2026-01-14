@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings, Download } from 'lucide-react';
+import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings, Download, HelpCircle } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Share, Plus } from 'lucide-react';
@@ -13,6 +13,7 @@ import { InviteMembersButton } from './InviteMembersButton';
 import { JoinFamilyButton } from './JoinFamilyButton';
 import { CreateFamilyButton } from './CreateFamilyButton';
 import { ChatDialog } from './chat/ChatDialog';
+import { HelpCenterModal } from './instructions/HelpCenterModal';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -54,6 +55,7 @@ export const DashboardHeader = ({
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [userName, setUserName] = useState('');
   const [showIOSInstallDialog, setShowIOSInstallDialog] = useState(false);
   const { unreadCount } = useUnreadMessages(familyId);
@@ -210,6 +212,10 @@ export const DashboardHeader = ({
                 {t('menu.installApp')}
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem onClick={() => setShowHelpCenter(true)}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              {t('menu.help')}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -247,6 +253,11 @@ export const DashboardHeader = ({
         onClose={() => setShowSettingsDialog(false)}
         familyId={familyId}
         userRole={userRole}
+      />
+
+      <HelpCenterModal
+        open={showHelpCenter}
+        onOpenChange={setShowHelpCenter}
       />
       
       <Dialog open={showIOSInstallDialog} onOpenChange={setShowIOSInstallDialog}>
