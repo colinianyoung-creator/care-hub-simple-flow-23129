@@ -272,5 +272,306 @@
     "keyInfo": "Wichtige Informationen",
     "aiReports": "KI-Berichte",
     "leave": "Urlaub"
+  },
+  "menu": {
+    "help": "Hilfe"
+  },
+  "instructions": {
+    "common": {
+      "guide": "Anleitung",
+      "help": "Hilfe",
+      "viewGuide": "Anleitung anzeigen",
+      "startTour": "Tour starten",
+      "replayTour": "Tour wiederholen",
+      "skipTour": "Überspringen",
+      "step": "Schritt {{current}} von {{total}}",
+      "new": "Neu"
+    },
+    "helpCenter": {
+      "title": "Hilfezentrum",
+      "subtitle": "Wählen Sie einen Bereich, um mehr über seine Funktionen zu erfahren",
+      "backToSections": "Zurück zu den Bereichen",
+      "startTour": "Interaktive Tour starten",
+      "tasks": {
+        "description": "Tägliche Aufgaben und wiederkehrende Aktivitäten verwalten"
+      },
+      "notes": {
+        "description": "Pflegenotizen aufzeichnen und Wohlbefinden verfolgen"
+      },
+      "scheduling": {
+        "description": "Schichten anzeigen, ein-/ausstempeln und Anfragen verwalten"
+      },
+      "diet": {
+        "description": "Mahlzeiten, Portionen und Nahrungsaufnahme verfolgen"
+      },
+      "medications": {
+        "description": "Medikamente verwalten und Dosen verfolgen"
+      },
+      "appointments": {
+        "description": "Termine planen und verfolgen"
+      },
+      "timePayroll": {
+        "description": "Arbeitsstunden anzeigen und Stundenzettel exportieren"
+      }
+    },
+    "tasks": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Aufgaben",
+          "text": "Der Aufgabenbereich hilft Ihnen, tägliche Aktivitäten und wiederkehrende Pflegeaufgaben zu verwalten."
+        },
+        "adding": {
+          "title": "Aufgaben hinzufügen",
+          "text": "Klicken Sie auf die '+'-Schaltfläche, um eine neue Aufgabe hinzuzufügen. Sie können Titel, Beschreibung, Fälligkeitsdatum festlegen und einem Teammitglied zuweisen."
+        },
+        "recurring": {
+          "title": "Wiederkehrende Aufgaben",
+          "text": "Richten Sie Aufgaben ein, die sich täglich, wöchentlich oder monatlich wiederholen."
+        },
+        "completing": {
+          "title": "Aufgaben abschließen",
+          "text": "Klicken Sie auf das Kontrollkästchen, um eine Aufgabe als erledigt zu markieren. Erledigte Aufgaben werden automatisch nach 24 Stunden archiviert."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Dies ist Ihre Aufgabenliste. Aufgaben sind nach Fälligkeitsdatum sortiert.",
+          "imageDescription": "Übersicht der Aufgabenliste"
+        },
+        "step2": {
+          "text": "Verwenden Sie die '+'-Schaltfläche, um schnell eine neue Aufgabe hinzuzufügen.",
+          "imageDescription": "Aufgaben-hinzufügen-Schaltfläche hervorgehoben"
+        },
+        "step3": {
+          "text": "Klicken Sie auf eine Aufgabe, um Details anzuzeigen, zu bearbeiten oder als erledigt zu markieren.",
+          "imageDescription": "Aufgabendetailansicht"
+        }
+      },
+      "tooltip": {
+        "addTask": "Neue Aufgabe hinzufügen",
+        "completeTask": "Diese Aufgabe als erledigt markieren"
+      }
+    },
+    "notes": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Pflegenotizen",
+          "text": "Pflegenotizen helfen Ihnen, tägliche Aktivitäten, Beobachtungen und wichtige Ereignisse zu dokumentieren."
+        },
+        "logging": {
+          "title": "Aktivitäten protokollieren",
+          "text": "Erfassen Sie durchgeführte Aktivitäten, Mahlzeiten, Toilettengänge und Vorfälle."
+        },
+        "wellbeing": {
+          "title": "Wohlbefinden verfolgen",
+          "text": "Notieren Sie Stimmung und allgemeines Wohlbefinden. Dies hilft, Muster zu verfolgen."
+        },
+        "reviewing": {
+          "title": "Notizen überprüfen",
+          "text": "Durchsuchen Sie vergangene Notizen, um die Pflegehistorie zu sehen."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Sehen Sie hier die letzten Pflegenotizen. Jede Notiz zeigt Aktivität, Stimmung und wer sie erfasst hat.",
+          "imageDescription": "Liste der Pflegenotizen"
+        },
+        "step2": {
+          "text": "Klicken Sie auf 'Notiz hinzufügen', um einen neuen Eintrag zu erstellen.",
+          "imageDescription": "Notiz-hinzufügen-Schaltfläche"
+        },
+        "step3": {
+          "text": "Füllen Sie die Details zu Aktivitäten, Mahlzeiten und Beobachtungen aus.",
+          "imageDescription": "Pflegenotiz-Formular"
+        }
+      },
+      "tooltip": {
+        "addNote": "Neue Pflegenotiz erstellen",
+        "viewArchive": "Archivierte Notizen anzeigen"
+      }
+    },
+    "scheduling": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Terminplanung",
+          "text": "Der Terminplanungsbereich zeigt Ihre Schichten, ermöglicht Ein-/Ausstempeln und Schichtänderungen."
+        },
+        "calendar": {
+          "title": "Kalenderansicht",
+          "text": "Sehen Sie Ihren Zeitplan in täglichem, wöchentlichem oder monatlichem Format."
+        },
+        "clockInOut": {
+          "title": "Ein-/Ausstempeln",
+          "text": "Beginnen und beenden Sie Ihre Schichten mit der Stempeluhr. Ihre tatsächlichen Zeiten werden für die Gehaltsabrechnung erfasst."
+        },
+        "requests": {
+          "title": "Schichtanfragen",
+          "text": "Fordern Sie Schichtänderungen oder Freizeit an. Administratoren prüfen die Anfragen."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Der Kalender zeigt alle geplanten Schichten. Ihre Schichten sind hervorgehoben.",
+          "imageDescription": "Terminplanungs-Kalenderansicht"
+        },
+        "step2": {
+          "text": "Verwenden Sie die Einstempeln-Schaltfläche bei Ankunft.",
+          "imageDescription": "Einstempeln-Schaltfläche"
+        },
+        "step3": {
+          "text": "Fordern Sie Änderungen an oder sehen Sie Ihren Stundenzettel im Menü.",
+          "imageDescription": "Schichtoptionen-Menü"
+        }
+      },
+      "tooltip": {
+        "clockIn": "Schicht beginnen",
+        "clockOut": "Schicht beenden",
+        "requestChange": "Schichtänderung anfordern"
+      }
+    },
+    "diet": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Ernährungsverfolgung",
+          "text": "Verfolgen Sie Mahlzeiten und Nahrungsaufnahme zur Ernährungsüberwachung."
+        },
+        "logging": {
+          "title": "Mahlzeiten protokollieren",
+          "text": "Fügen Sie Einträge für Frühstück, Mittagessen, Abendessen und Snacks hinzu. Geben Sie Portionsgrößen und Notizen an."
+        },
+        "photos": {
+          "title": "Fotos hinzufügen",
+          "text": "Machen oder laden Sie Fotos von Mahlzeiten für visuelle Dokumentation hoch."
+        },
+        "reviewing": {
+          "title": "Verlauf überprüfen",
+          "text": "Sehen Sie vergangene Einträge, um Essgewohnheiten zu verfolgen."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Die heutigen Mahlzeiten werden hier nach Mahlzeittyp sortiert angezeigt.",
+          "imageDescription": "Tägliche Mahlzeitenliste"
+        },
+        "step2": {
+          "text": "Tippen Sie, um einen neuen Mahlzeiteintrag mit Details und optionalem Foto hinzuzufügen.",
+          "imageDescription": "Mahlzeit-hinzufügen-Schaltfläche"
+        },
+        "step3": {
+          "text": "Erfassen Sie die gegessene Portion und relevante Notizen.",
+          "imageDescription": "Mahlzeiteintrag-Formular"
+        }
+      },
+      "tooltip": {
+        "addMeal": "Mahlzeit protokollieren",
+        "viewHistory": "Vergangene Einträge anzeigen"
+      }
+    },
+    "medications": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Medikamenten",
+          "text": "Das Medikamentenverwaltungsprotokoll (MAR) hilft, Medikamentenpläne zu verfolgen und zu bestätigen, dass Dosen korrekt verabreicht werden."
+        },
+        "schedule": {
+          "title": "Medikamentenplan",
+          "text": "Sehen Sie, welche Medikamente wann fällig sind. Überfällige Dosen werden hervorgehoben."
+        },
+        "administering": {
+          "title": "Verabreichung erfassen",
+          "text": "Erfassen Sie bei Medikamentengabe dies mit der Uhrzeit. Sie können auch verweigerte oder ausgelassene Dosen erfassen."
+        },
+        "history": {
+          "title": "Verlauf anzeigen",
+          "text": "Überprüfen Sie vergangene Verabreichungsaufzeichnungen für Compliance und Berichte."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Ausstehende Medikamente für heute werden mit ihren geplanten Zeiten angezeigt.",
+          "imageDescription": "Medikamentenplan-Liste"
+        },
+        "step2": {
+          "text": "Klicken Sie auf ein Medikament, um es als gegeben, verweigert oder ausgelassen zu erfassen.",
+          "imageDescription": "Medikamenten-Aktionsschaltflächen"
+        },
+        "step3": {
+          "text": "Fügen Sie bei Bedarf Notizen hinzu, besonders bei verweigerten oder ausgelassenen Dosen.",
+          "imageDescription": "Medikamenten-Notizfeld"
+        }
+      },
+      "tooltip": {
+        "markGiven": "Medikament als gegeben erfassen",
+        "addMedication": "Neues Medikament hinzufügen"
+      }
+    },
+    "appointments": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Terminen",
+          "text": "Behalten Sie medizinische Termine, Therapiesitzungen und andere geplante Ereignisse an einem Ort im Blick."
+        },
+        "adding": {
+          "title": "Termine hinzufügen",
+          "text": "Erstellen Sie neue Termine mit Datum, Uhrzeit, Ort und relevanten Notizen."
+        },
+        "viewing": {
+          "title": "Kommende anzeigen",
+          "text": "Sehen Sie alle kommenden Termine auf einen Blick. Vergangene Termine werden archiviert."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Kommende Termine sind hier mit Datum, Uhrzeit und Ort aufgelistet.",
+          "imageDescription": "Terminliste"
+        },
+        "step2": {
+          "text": "Klicken Sie, um einen neuen Termin mit allen Details hinzuzufügen.",
+          "imageDescription": "Termin-hinzufügen-Schaltfläche"
+        },
+        "step3": {
+          "text": "Bearbeiten oder löschen Sie Termine bei Planänderungen.",
+          "imageDescription": "Termin-Bearbeitungsoptionen"
+        }
+      },
+      "tooltip": {
+        "addAppointment": "Neuen Termin planen",
+        "viewDetails": "Termindetails anzeigen"
+      }
+    },
+    "timePayroll": {
+      "modal": {
+        "welcome": {
+          "title": "Willkommen bei Zeit & Lohn",
+          "text": "Sehen Sie Ihre geleisteten Stunden, ausstehende Einträge und exportieren Sie Stundenzettel für die Gehaltsabrechnung."
+        },
+        "hours": {
+          "title": "Stunden anzeigen",
+          "text": "Sehen Sie Ihre Gesamtstunden der Woche und des Monats. Ausstehende Einträge werden separat angezeigt."
+        },
+        "export": {
+          "title": "Stundenzettel exportieren",
+          "text": "Laden Sie Stundenzettel als CSV für die Gehaltsabrechnung herunter. Wählen Sie Datumsbereich und Format."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Ihre wöchentliche Stundenübersicht wird oben angezeigt.",
+          "imageDescription": "Stundenübersicht-Karte"
+        },
+        "step2": {
+          "text": "Ausstehende Zeiteinträge zur Genehmigung sind hier aufgelistet.",
+          "imageDescription": "Liste ausstehender Einträge"
+        },
+        "step3": {
+          "text": "Verwenden Sie die Export-Schaltfläche, um Stundenzettel herunterzuladen.",
+          "imageDescription": "Stundenzettel-Export-Schaltfläche"
+        }
+      },
+      "tooltip": {
+        "weeklyHours": "Diese Woche erfasste Gesamtpflegestunden",
+        "export": "Stundenzettel als CSV herunterladen"
+      }
+    }
   }
 }

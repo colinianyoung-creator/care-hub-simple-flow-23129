@@ -272,5 +272,306 @@
     "keyInfo": "Información Clave",
     "aiReports": "Informes IA",
     "leave": "Permisos"
+  },
+  "menu": {
+    "help": "Ayuda"
+  },
+  "instructions": {
+    "common": {
+      "guide": "Guía",
+      "help": "Ayuda",
+      "viewGuide": "Ver Guía",
+      "startTour": "Iniciar Recorrido",
+      "replayTour": "Repetir Recorrido",
+      "skipTour": "Omitir",
+      "step": "Paso {{current}} de {{total}}",
+      "new": "Nuevo"
+    },
+    "helpCenter": {
+      "title": "Centro de Ayuda",
+      "subtitle": "Selecciona una sección para conocer más sobre sus funciones",
+      "backToSections": "Volver a secciones",
+      "startTour": "Iniciar Recorrido Interactivo",
+      "tasks": {
+        "description": "Gestiona tareas diarias y actividades recurrentes"
+      },
+      "notes": {
+        "description": "Registra notas de cuidado y seguimiento del bienestar"
+      },
+      "scheduling": {
+        "description": "Ver turnos, fichar entrada/salida y gestionar solicitudes"
+      },
+      "diet": {
+        "description": "Seguimiento de comidas, porciones e ingesta dietética"
+      },
+      "medications": {
+        "description": "Gestionar medicamentos y seguimiento de dosis"
+      },
+      "appointments": {
+        "description": "Programar y seguir citas"
+      },
+      "timePayroll": {
+        "description": "Ver horas trabajadas y exportar hojas de tiempo"
+      }
+    },
+    "tasks": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido a Tareas",
+          "text": "La sección de Tareas te ayuda a gestionar actividades diarias y tareas de cuidado recurrentes. Mantén un seguimiento de lo que necesita hacerse y coordina con tu equipo."
+        },
+        "adding": {
+          "title": "Añadir Tareas",
+          "text": "Haz clic en el botón '+' para añadir una nueva tarea. Puedes establecer un título, descripción, fecha de vencimiento y asignarla a un miembro del equipo."
+        },
+        "recurring": {
+          "title": "Tareas Recurrentes",
+          "text": "Configura tareas para que se repitan diaria, semanal o mensualmente. Perfecto para actividades de cuidado rutinarias."
+        },
+        "completing": {
+          "title": "Completar Tareas",
+          "text": "Haz clic en la casilla para marcar una tarea como completada. Las tareas completadas se archivan automáticamente después de 24 horas."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Esta es tu lista de tareas. Las tareas están organizadas por fecha de vencimiento.",
+          "imageDescription": "Vista general de la lista de tareas"
+        },
+        "step2": {
+          "text": "Usa el botón '+' para añadir una nueva tarea rápidamente.",
+          "imageDescription": "Botón de añadir tarea resaltado"
+        },
+        "step3": {
+          "text": "Haz clic en cualquier tarea para ver detalles, editar o marcarla como completada.",
+          "imageDescription": "Vista de detalle de tarea"
+        }
+      },
+      "tooltip": {
+        "addTask": "Añadir una nueva tarea",
+        "completeTask": "Marcar esta tarea como completada"
+      }
+    },
+    "notes": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido a Notas de Cuidado",
+          "text": "Las Notas de Cuidado te ayudan a documentar actividades diarias, observaciones y eventos importantes."
+        },
+        "logging": {
+          "title": "Registrar Actividades",
+          "text": "Registra qué actividades se realizaron, comidas, uso del baño y cualquier incidente."
+        },
+        "wellbeing": {
+          "title": "Seguimiento del Bienestar",
+          "text": "Anota el estado de ánimo y bienestar general. Esto ayuda a seguir patrones a lo largo del tiempo."
+        },
+        "reviewing": {
+          "title": "Revisar Notas",
+          "text": "Navega por notas anteriores para ver el historial de cuidado. Usa el archivo para acceder a entradas antiguas."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Ve las notas de cuidado recientes aquí. Cada nota muestra la actividad, estado de ánimo y quién la registró.",
+          "imageDescription": "Lista de notas de cuidado"
+        },
+        "step2": {
+          "text": "Haz clic en 'Añadir Nota' para crear una nueva entrada.",
+          "imageDescription": "Botón añadir nota"
+        },
+        "step3": {
+          "text": "Completa los detalles sobre actividades, comidas y observaciones.",
+          "imageDescription": "Formulario de nota de cuidado"
+        }
+      },
+      "tooltip": {
+        "addNote": "Crear una nueva nota de cuidado",
+        "viewArchive": "Ver notas archivadas"
+      }
+    },
+    "scheduling": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido a Programación",
+          "text": "La sección de Programación muestra tus turnos, permite fichar entrada/salida y gestionar cambios de turno."
+        },
+        "calendar": {
+          "title": "Vista de Calendario",
+          "text": "Ve tu horario en formato diario, semanal o mensual. Ve los turnos de todos los miembros del equipo."
+        },
+        "clockInOut": {
+          "title": "Fichar Entrada/Salida",
+          "text": "Inicia y termina tus turnos con el botón de fichar. Tus tiempos reales se registran para la nómina."
+        },
+        "requests": {
+          "title": "Solicitudes de Turno",
+          "text": "Solicita cambios de turno o tiempo libre. Los administradores revisarán y aprobarán las solicitudes."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "El calendario muestra todos los turnos programados. Tus turnos están resaltados.",
+          "imageDescription": "Vista del calendario de programación"
+        },
+        "step2": {
+          "text": "Usa el botón Fichar Entrada cuando llegues para iniciar tu turno.",
+          "imageDescription": "Botón de fichar entrada"
+        },
+        "step3": {
+          "text": "Solicita cambios o ve tu hoja de tiempo desde el menú.",
+          "imageDescription": "Menú de opciones de turno"
+        }
+      },
+      "tooltip": {
+        "clockIn": "Iniciar tu turno",
+        "clockOut": "Terminar tu turno",
+        "requestChange": "Solicitar un cambio de turno"
+      }
+    },
+    "diet": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido al Seguimiento de Dieta",
+          "text": "Registra comidas e ingesta de alimentos para monitorear la nutrición."
+        },
+        "logging": {
+          "title": "Registrar Comidas",
+          "text": "Añade entradas para desayuno, almuerzo, cena y snacks. Incluye tamaños de porción y notas."
+        },
+        "photos": {
+          "title": "Añadir Fotos",
+          "text": "Toma o sube fotos de comidas para documentación visual."
+        },
+        "reviewing": {
+          "title": "Revisar Historial",
+          "text": "Ve entradas anteriores para seguir patrones de alimentación."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Las comidas de hoy se muestran aquí, organizadas por tipo de comida.",
+          "imageDescription": "Lista de comidas diarias"
+        },
+        "step2": {
+          "text": "Toca para añadir una nueva entrada de comida con detalles y foto opcional.",
+          "imageDescription": "Botón añadir comida"
+        },
+        "step3": {
+          "text": "Registra la porción comida y cualquier nota relevante.",
+          "imageDescription": "Formulario de entrada de comida"
+        }
+      },
+      "tooltip": {
+        "addMeal": "Registrar una comida",
+        "viewHistory": "Ver entradas anteriores"
+      }
+    },
+    "medications": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido a Medicamentos",
+          "text": "El Registro de Administración de Medicamentos (MAR) ayuda a seguir horarios de medicación y confirmar que las dosis se dan correctamente."
+        },
+        "schedule": {
+          "title": "Horario de Medicamentos",
+          "text": "Ve qué medicamentos están programados y cuándo. Las dosis atrasadas se resaltan."
+        },
+        "administering": {
+          "title": "Registrar Administración",
+          "text": "Al dar un medicamento, regístralo como dado con la hora. También puedes registrar si una dosis fue rechazada u omitida."
+        },
+        "history": {
+          "title": "Ver Historial",
+          "text": "Revisa registros de administración anteriores para cumplimiento e informes."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Los medicamentos pendientes para hoy se muestran con sus horas programadas.",
+          "imageDescription": "Lista de horario de medicamentos"
+        },
+        "step2": {
+          "text": "Haz clic en un medicamento para registrarlo como dado, rechazado u omitido.",
+          "imageDescription": "Botones de acción de medicamento"
+        },
+        "step3": {
+          "text": "Añade notas si es necesario, especialmente para dosis rechazadas u omitidas.",
+          "imageDescription": "Campo de notas de medicamento"
+        }
+      },
+      "tooltip": {
+        "markGiven": "Registrar medicamento como dado",
+        "addMedication": "Añadir un nuevo medicamento"
+      }
+    },
+    "appointments": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido a Citas",
+          "text": "Mantén un seguimiento de citas médicas, sesiones de terapia y otros eventos programados en un solo lugar."
+        },
+        "adding": {
+          "title": "Añadir Citas",
+          "text": "Crea nuevas citas con fecha, hora, ubicación y cualquier nota relevante."
+        },
+        "viewing": {
+          "title": "Ver Próximas",
+          "text": "Ve todas las próximas citas de un vistazo. Las citas pasadas se archivan para referencia."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Las próximas citas se listan aquí con fecha, hora y ubicación.",
+          "imageDescription": "Lista de citas"
+        },
+        "step2": {
+          "text": "Haz clic para añadir una nueva cita con todos los detalles.",
+          "imageDescription": "Botón añadir cita"
+        },
+        "step3": {
+          "text": "Edita o elimina citas según cambien los planes.",
+          "imageDescription": "Opciones de edición de cita"
+        }
+      },
+      "tooltip": {
+        "addAppointment": "Programar una nueva cita",
+        "viewDetails": "Ver detalles de la cita"
+      }
+    },
+    "timePayroll": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenido a Tiempo y Nómina",
+          "text": "Ve tus horas trabajadas, entradas pendientes y exporta hojas de tiempo para procesamiento de nómina."
+        },
+        "hours": {
+          "title": "Ver Horas",
+          "text": "Ve tus horas totales de la semana y mes. Las entradas pendientes de aprobación se muestran por separado."
+        },
+        "export": {
+          "title": "Exportar Hojas de Tiempo",
+          "text": "Descarga hojas de tiempo como CSV para nómina. Selecciona el rango de fechas y formato necesario."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Tu resumen de horas semanales se muestra arriba.",
+          "imageDescription": "Tarjeta de resumen de horas"
+        },
+        "step2": {
+          "text": "Las entradas de tiempo pendientes de aprobación se listan aquí.",
+          "imageDescription": "Lista de entradas pendientes"
+        },
+        "step3": {
+          "text": "Usa el botón de exportar para descargar hojas de tiempo para nómina.",
+          "imageDescription": "Botón exportar hoja de tiempo"
+        }
+      },
+      "tooltip": {
+        "weeklyHours": "Total de horas de cuidado registradas esta semana",
+        "export": "Descargar hoja de tiempo como CSV"
+      }
+    }
   }
 }

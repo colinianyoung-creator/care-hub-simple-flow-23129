@@ -272,5 +272,306 @@
     "keyInfo": "Informations Clés",
     "aiReports": "Rapports IA",
     "leave": "Congés"
+  },
+  "menu": {
+    "help": "Aide"
+  },
+  "instructions": {
+    "common": {
+      "guide": "Guide",
+      "help": "Aide",
+      "viewGuide": "Voir le Guide",
+      "startTour": "Démarrer la Visite",
+      "replayTour": "Rejouer la Visite",
+      "skipTour": "Passer",
+      "step": "Étape {{current}} sur {{total}}",
+      "new": "Nouveau"
+    },
+    "helpCenter": {
+      "title": "Centre d'Aide",
+      "subtitle": "Sélectionnez une section pour en savoir plus sur ses fonctionnalités",
+      "backToSections": "Retour aux sections",
+      "startTour": "Démarrer la Visite Interactive",
+      "tasks": {
+        "description": "Gérer les tâches quotidiennes et les activités récurrentes"
+      },
+      "notes": {
+        "description": "Enregistrer les notes de soins et suivre le bien-être"
+      },
+      "scheduling": {
+        "description": "Voir les quarts, pointer entrée/sortie et gérer les demandes"
+      },
+      "diet": {
+        "description": "Suivre les repas, portions et apport alimentaire"
+      },
+      "medications": {
+        "description": "Gérer les médicaments et suivre les doses"
+      },
+      "appointments": {
+        "description": "Planifier et suivre les rendez-vous"
+      },
+      "timePayroll": {
+        "description": "Voir les heures travaillées et exporter les feuilles de temps"
+      }
+    },
+    "tasks": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Tâches",
+          "text": "La section Tâches vous aide à gérer les activités quotidiennes et les tâches de soins récurrentes. Gardez une trace de ce qui doit être fait."
+        },
+        "adding": {
+          "title": "Ajouter des Tâches",
+          "text": "Cliquez sur le bouton '+' pour ajouter une nouvelle tâche. Vous pouvez définir un titre, une description, une date d'échéance et l'assigner à un membre."
+        },
+        "recurring": {
+          "title": "Tâches Récurrentes",
+          "text": "Configurez les tâches pour qu'elles se répètent quotidiennement, hebdomadairement ou mensuellement."
+        },
+        "completing": {
+          "title": "Compléter les Tâches",
+          "text": "Cochez la case pour marquer une tâche comme terminée. Les tâches terminées sont archivées automatiquement après 24 heures."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Voici votre liste de tâches. Les tâches sont organisées par date d'échéance.",
+          "imageDescription": "Vue d'ensemble de la liste des tâches"
+        },
+        "step2": {
+          "text": "Utilisez le bouton '+' pour ajouter rapidement une nouvelle tâche.",
+          "imageDescription": "Bouton d'ajout de tâche mis en évidence"
+        },
+        "step3": {
+          "text": "Cliquez sur n'importe quelle tâche pour voir les détails, modifier ou la marquer comme terminée.",
+          "imageDescription": "Vue détaillée de la tâche"
+        }
+      },
+      "tooltip": {
+        "addTask": "Ajouter une nouvelle tâche",
+        "completeTask": "Marquer cette tâche comme terminée"
+      }
+    },
+    "notes": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Notes de Soins",
+          "text": "Les Notes de Soins vous aident à documenter les activités quotidiennes, observations et événements importants."
+        },
+        "logging": {
+          "title": "Enregistrer les Activités",
+          "text": "Enregistrez les activités réalisées, les repas, l'utilisation des toilettes et tout incident."
+        },
+        "wellbeing": {
+          "title": "Suivi du Bien-être",
+          "text": "Notez l'humeur et le bien-être général. Cela aide à suivre les tendances."
+        },
+        "reviewing": {
+          "title": "Consulter les Notes",
+          "text": "Parcourez les notes passées pour voir l'historique des soins."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Consultez les notes de soins récentes ici. Chaque note montre l'activité, l'humeur et qui l'a enregistrée.",
+          "imageDescription": "Liste des notes de soins"
+        },
+        "step2": {
+          "text": "Cliquez sur 'Ajouter Note' pour créer une nouvelle entrée.",
+          "imageDescription": "Bouton ajouter note"
+        },
+        "step3": {
+          "text": "Remplissez les détails sur les activités, repas et observations.",
+          "imageDescription": "Formulaire de note de soins"
+        }
+      },
+      "tooltip": {
+        "addNote": "Créer une nouvelle note de soins",
+        "viewArchive": "Voir les notes archivées"
+      }
+    },
+    "scheduling": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Planification",
+          "text": "La section Planification affiche vos quarts, permet de pointer entrée/sortie et de gérer les changements."
+        },
+        "calendar": {
+          "title": "Vue Calendrier",
+          "text": "Consultez votre emploi du temps en format quotidien, hebdomadaire ou mensuel."
+        },
+        "clockInOut": {
+          "title": "Pointer Entrée/Sortie",
+          "text": "Commencez et terminez vos quarts avec le bouton de pointage. Vos heures réelles sont enregistrées."
+        },
+        "requests": {
+          "title": "Demandes de Quart",
+          "text": "Demandez des changements de quart ou des congés. Les administrateurs examineront les demandes."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Le calendrier affiche tous les quarts programmés. Vos quarts sont mis en évidence.",
+          "imageDescription": "Vue du calendrier de planification"
+        },
+        "step2": {
+          "text": "Utilisez le bouton Pointer Entrée quand vous arrivez.",
+          "imageDescription": "Bouton pointer entrée"
+        },
+        "step3": {
+          "text": "Demandez des changements ou consultez votre feuille de temps depuis le menu.",
+          "imageDescription": "Menu des options de quart"
+        }
+      },
+      "tooltip": {
+        "clockIn": "Commencer votre quart",
+        "clockOut": "Terminer votre quart",
+        "requestChange": "Demander un changement de quart"
+      }
+    },
+    "diet": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Suivi Alimentaire",
+          "text": "Suivez les repas et l'apport alimentaire pour surveiller la nutrition."
+        },
+        "logging": {
+          "title": "Enregistrer les Repas",
+          "text": "Ajoutez des entrées pour le petit-déjeuner, déjeuner, dîner et collations. Incluez les portions et notes."
+        },
+        "photos": {
+          "title": "Ajouter des Photos",
+          "text": "Prenez ou téléchargez des photos de repas pour documentation visuelle."
+        },
+        "reviewing": {
+          "title": "Consulter l'Historique",
+          "text": "Consultez les entrées passées pour suivre les habitudes alimentaires."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Les repas d'aujourd'hui sont affichés ici, organisés par type de repas.",
+          "imageDescription": "Liste des repas quotidiens"
+        },
+        "step2": {
+          "text": "Appuyez pour ajouter une nouvelle entrée de repas avec détails et photo optionnelle.",
+          "imageDescription": "Bouton ajouter repas"
+        },
+        "step3": {
+          "text": "Enregistrez la portion mangée et toute note pertinente.",
+          "imageDescription": "Formulaire d'entrée de repas"
+        }
+      },
+      "tooltip": {
+        "addMeal": "Enregistrer un repas",
+        "viewHistory": "Voir les entrées passées"
+      }
+    },
+    "medications": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Médicaments",
+          "text": "Le Registre d'Administration des Médicaments (MAR) aide à suivre les horaires et confirmer que les doses sont données correctement."
+        },
+        "schedule": {
+          "title": "Horaire des Médicaments",
+          "text": "Voyez quels médicaments sont prévus et quand. Les doses en retard sont mises en évidence."
+        },
+        "administering": {
+          "title": "Enregistrer l'Administration",
+          "text": "En donnant un médicament, enregistrez-le comme donné avec l'heure. Vous pouvez aussi enregistrer si une dose a été refusée ou sautée."
+        },
+        "history": {
+          "title": "Voir l'Historique",
+          "text": "Consultez les registres d'administration passés pour la conformité et les rapports."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Les médicaments en attente pour aujourd'hui sont affichés avec leurs heures prévues.",
+          "imageDescription": "Liste de l'horaire des médicaments"
+        },
+        "step2": {
+          "text": "Cliquez sur un médicament pour l'enregistrer comme donné, refusé ou sauté.",
+          "imageDescription": "Boutons d'action des médicaments"
+        },
+        "step3": {
+          "text": "Ajoutez des notes si nécessaire, surtout pour les doses refusées ou sautées.",
+          "imageDescription": "Champ de notes des médicaments"
+        }
+      },
+      "tooltip": {
+        "markGiven": "Enregistrer le médicament comme donné",
+        "addMedication": "Ajouter un nouveau médicament"
+      }
+    },
+    "appointments": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Rendez-vous",
+          "text": "Gardez une trace des rendez-vous médicaux, séances de thérapie et autres événements en un seul endroit."
+        },
+        "adding": {
+          "title": "Ajouter des Rendez-vous",
+          "text": "Créez de nouveaux rendez-vous avec date, heure, lieu et notes pertinentes."
+        },
+        "viewing": {
+          "title": "Voir les Prochains",
+          "text": "Consultez tous les prochains rendez-vous d'un coup d'œil. Les rendez-vous passés sont archivés."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Les prochains rendez-vous sont listés ici avec date, heure et lieu.",
+          "imageDescription": "Liste des rendez-vous"
+        },
+        "step2": {
+          "text": "Cliquez pour ajouter un nouveau rendez-vous avec tous les détails.",
+          "imageDescription": "Bouton ajouter rendez-vous"
+        },
+        "step3": {
+          "text": "Modifiez ou supprimez les rendez-vous selon les changements de plans.",
+          "imageDescription": "Options de modification du rendez-vous"
+        }
+      },
+      "tooltip": {
+        "addAppointment": "Planifier un nouveau rendez-vous",
+        "viewDetails": "Voir les détails du rendez-vous"
+      }
+    },
+    "timePayroll": {
+      "modal": {
+        "welcome": {
+          "title": "Bienvenue dans Temps et Paie",
+          "text": "Consultez vos heures travaillées, entrées en attente et exportez les feuilles de temps pour le traitement de la paie."
+        },
+        "hours": {
+          "title": "Voir les Heures",
+          "text": "Consultez vos heures totales de la semaine et du mois. Les entrées en attente d'approbation sont affichées séparément."
+        },
+        "export": {
+          "title": "Exporter les Feuilles de Temps",
+          "text": "Téléchargez les feuilles de temps en CSV pour la paie. Sélectionnez la plage de dates et le format nécessaire."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Votre résumé des heures hebdomadaires est affiché en haut.",
+          "imageDescription": "Carte récapitulative des heures"
+        },
+        "step2": {
+          "text": "Les entrées de temps en attente d'approbation sont listées ici.",
+          "imageDescription": "Liste des entrées en attente"
+        },
+        "step3": {
+          "text": "Utilisez le bouton d'export pour télécharger les feuilles de temps pour la paie.",
+          "imageDescription": "Bouton exporter feuille de temps"
+        }
+      },
+      "tooltip": {
+        "weeklyHours": "Total des heures de soins enregistrées cette semaine",
+        "export": "Télécharger la feuille de temps en CSV"
+      }
+    }
   }
 }

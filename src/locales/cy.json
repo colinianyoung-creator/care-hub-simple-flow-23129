@@ -272,5 +272,306 @@
     "keyInfo": "Gwybodaeth Allweddol",
     "aiReports": "Adroddiadau AI",
     "leave": "Absenoldeb"
+  },
+  "menu": {
+    "help": "Cymorth"
+  },
+  "instructions": {
+    "common": {
+      "guide": "Canllaw",
+      "help": "Cymorth",
+      "viewGuide": "Gweld Canllaw",
+      "startTour": "Dechrau'r Daith",
+      "replayTour": "Ailchwarae'r Daith",
+      "skipTour": "Sgipio",
+      "step": "Cam {{current}} o {{total}}",
+      "new": "Newydd"
+    },
+    "helpCenter": {
+      "title": "Canolfan Gymorth",
+      "subtitle": "Dewiswch adran i ddysgu mwy am ei nodweddion",
+      "backToSections": "Yn ôl i'r adrannau",
+      "startTour": "Dechrau Taith Ryngweithiol",
+      "tasks": {
+        "description": "Rheoli tasgau dyddiol a gweithgareddau cylchol"
+      },
+      "notes": {
+        "description": "Cofnodi nodiadau gofal a thracio lles"
+      },
+      "scheduling": {
+        "description": "Gweld sifftiau, cofnodi mewn/allan, a rheoli ceisiadau"
+      },
+      "diet": {
+        "description": "Tracio prydau, dognau, a chymeriant dietegol"
+      },
+      "medications": {
+        "description": "Rheoli meddyginiaethau a thracio dosau"
+      },
+      "appointments": {
+        "description": "Trefnu a thracio apwyntiadau"
+      },
+      "timePayroll": {
+        "description": "Gweld oriau a weithiwyd ac allforio taflenni amser"
+      }
+    },
+    "tasks": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Dasgau",
+          "text": "Mae'r adran Tasgau yn eich helpu i reoli gweithgareddau dyddiol a thasgau gofal cylchol."
+        },
+        "adding": {
+          "title": "Ychwanegu Tasgau",
+          "text": "Cliciwch y botwm '+' i ychwanegu tasg newydd. Gallwch osod teitl, disgrifiad, dyddiad cau, a'i neilltuo i aelod."
+        },
+        "recurring": {
+          "title": "Tasgau Cylchol",
+          "text": "Gosodwch dasgau i ailadrodd yn ddyddiol, wythnosol, neu fisol."
+        },
+        "completing": {
+          "title": "Cwblhau Tasgau",
+          "text": "Cliciwch y blwch i farcio tasg fel un wedi'i chwblhau. Mae tasgau wedi'u cwblhau yn cael eu harchifo'n awtomatig ar ôl 24 awr."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Dyma'ch rhestr dasgau. Mae tasgau wedi'u trefnu yn ôl dyddiad cau.",
+          "imageDescription": "Trosolwg o'r rhestr dasgau"
+        },
+        "step2": {
+          "text": "Defnyddiwch y botwm '+' i ychwanegu tasg newydd yn gyflym.",
+          "imageDescription": "Botwm ychwanegu tasg wedi'i amlygu"
+        },
+        "step3": {
+          "text": "Cliciwch ar unrhyw dasg i weld manylion, golygu, neu ei farcio fel un wedi'i chwblhau.",
+          "imageDescription": "Golwg manwl ar y dasg"
+        }
+      },
+      "tooltip": {
+        "addTask": "Ychwanegu tasg newydd",
+        "completeTask": "Marcio'r dasg hon fel un wedi'i chwblhau"
+      }
+    },
+    "notes": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Nodiadau Gofal",
+          "text": "Mae Nodiadau Gofal yn eich helpu i ddogfennu gweithgareddau dyddiol, arsylwadau, a digwyddiadau pwysig."
+        },
+        "logging": {
+          "title": "Cofnodi Gweithgareddau",
+          "text": "Cofnodwch pa weithgareddau a wnaed, prydau a fwytawyd, defnydd o'r ystafell ymolchi, ac unrhyw ddigwyddiadau."
+        },
+        "wellbeing": {
+          "title": "Tracio Lles",
+          "text": "Nodwch hwyliau a lles cyffredinol. Mae hyn yn helpu i dracio patrymau."
+        },
+        "reviewing": {
+          "title": "Adolygu Nodiadau",
+          "text": "Porwch drwy nodiadau blaenorol i weld hanes gofal."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Gwelwch nodiadau gofal diweddar yma. Mae pob nodyn yn dangos y gweithgaredd, hwyliau, a phwy a'i cofnododd.",
+          "imageDescription": "Rhestr nodiadau gofal"
+        },
+        "step2": {
+          "text": "Cliciwch 'Ychwanegu Nodyn' i greu cofnod newydd.",
+          "imageDescription": "Botwm ychwanegu nodyn"
+        },
+        "step3": {
+          "text": "Llenwch y manylion am weithgareddau, prydau, ac arsylwadau.",
+          "imageDescription": "Ffurflen nodyn gofal"
+        }
+      },
+      "tooltip": {
+        "addNote": "Creu nodyn gofal newydd",
+        "viewArchive": "Gweld nodiadau wedi'u harchifo"
+      }
+    },
+    "scheduling": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Amserlennu",
+          "text": "Mae'r adran Amserlennu yn dangos eich sifftiau, yn caniatáu cofnodi mewn/allan, ac yn helpu rheoli newidiadau."
+        },
+        "calendar": {
+          "title": "Golwg Calendr",
+          "text": "Gwelwch eich amserlen mewn fformat dyddiol, wythnosol, neu fisol."
+        },
+        "clockInOut": {
+          "title": "Cofnodi Mewn/Allan",
+          "text": "Dechreuwch a gorffennwch eich sifftiau gyda'r botwm cofnodi. Mae eich amseroedd gwirioneddol yn cael eu cofnodi ar gyfer y gyflogres."
+        },
+        "requests": {
+          "title": "Ceisiadau Sifft",
+          "text": "Gofynnwch am newidiadau sifft neu amser i ffwrdd. Bydd gweinyddwyr yn adolygu ceisiadau."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Mae'r calendr yn dangos pob sifft wedi'i drefnu. Mae eich sifftiau wedi'u hamlygu.",
+          "imageDescription": "Golwg calendr amserlennu"
+        },
+        "step2": {
+          "text": "Defnyddiwch y botwm Cofnodi Mewn pan fyddwch yn cyrraedd.",
+          "imageDescription": "Botwm cofnodi mewn"
+        },
+        "step3": {
+          "text": "Gofynnwch am newidiadau neu weld eich taflen amser o'r ddewislen.",
+          "imageDescription": "Dewislen opsiynau sifft"
+        }
+      },
+      "tooltip": {
+        "clockIn": "Dechrau eich sifft",
+        "clockOut": "Gorffen eich sifft",
+        "requestChange": "Gofyn am newid sifft"
+      }
+    },
+    "diet": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Dracio Deiet",
+          "text": "Traciwch brydau a chymeriant bwyd i fonitro maeth."
+        },
+        "logging": {
+          "title": "Cofnodi Prydau",
+          "text": "Ychwanegwch gofnodion ar gyfer brecwast, cinio, swper, a byrbrydau. Cynhwyswch feintiau dognau a nodiadau."
+        },
+        "photos": {
+          "title": "Ychwanegu Lluniau",
+          "text": "Tynnwch neu uwchlwythwch luniau o brydau ar gyfer dogfennaeth weledol."
+        },
+        "reviewing": {
+          "title": "Adolygu Hanes",
+          "text": "Gwelwch gofnodion blaenorol i dracio patrymau bwyta."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Mae prydau heddiw yn cael eu dangos yma, wedi'u trefnu yn ôl math o bryd.",
+          "imageDescription": "Rhestr prydau dyddiol"
+        },
+        "step2": {
+          "text": "Tapiwch i ychwanegu cofnod pryd newydd gyda manylion a llun dewisol.",
+          "imageDescription": "Botwm ychwanegu pryd"
+        },
+        "step3": {
+          "text": "Cofnodwch y dogn a fwytawyd ac unrhyw nodiadau perthnasol.",
+          "imageDescription": "Ffurflen cofnodi pryd"
+        }
+      },
+      "tooltip": {
+        "addMeal": "Cofnodi pryd",
+        "viewHistory": "Gweld cofnodion blaenorol"
+      }
+    },
+    "medications": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Feddyginiaethau",
+          "text": "Mae'r Cofnod Gweinyddu Meddyginiaethau (MAR) yn helpu i dracio amserlenni meddyginiaeth a chadarnhau bod dosau'n cael eu rhoi'n gywir."
+        },
+        "schedule": {
+          "title": "Amserlen Meddyginiaethau",
+          "text": "Gwelwch pa feddyginiaethau sydd i'w rhoi a phryd. Mae dosau hwyr wedi'u hamlygu."
+        },
+        "administering": {
+          "title": "Cofnodi Gweinyddu",
+          "text": "Wrth roi meddyginiaeth, cofnodwch hi fel un a roddwyd gyda'r amser. Gallwch hefyd gofnodi os gwrthodwyd neu hepgorwyd dos."
+        },
+        "history": {
+          "title": "Gweld Hanes",
+          "text": "Adolygwch gofnodion gweinyddu blaenorol ar gyfer cydymffurfiaeth ac adroddiadau."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Mae meddyginiaethau ar y gweill ar gyfer heddiw yn cael eu dangos gyda'u hamseroedd a drefnwyd.",
+          "imageDescription": "Rhestr amserlen meddyginiaethau"
+        },
+        "step2": {
+          "text": "Cliciwch ar feddyginiaeth i'w chofnodi fel un a roddwyd, a wrthodwyd, neu a hepgorwyd.",
+          "imageDescription": "Botymau gweithredu meddyginiaeth"
+        },
+        "step3": {
+          "text": "Ychwanegwch nodiadau os oes angen, yn enwedig ar gyfer dosau a wrthodwyd neu a hepgorwyd.",
+          "imageDescription": "Maes nodiadau meddyginiaeth"
+        }
+      },
+      "tooltip": {
+        "markGiven": "Cofnodi meddyginiaeth fel un a roddwyd",
+        "addMedication": "Ychwanegu meddyginiaeth newydd"
+      }
+    },
+    "appointments": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Apwyntiadau",
+          "text": "Cadwch olwg ar apwyntiadau meddygol, sesiynau therapi, a digwyddiadau eraill mewn un lle."
+        },
+        "adding": {
+          "title": "Ychwanegu Apwyntiadau",
+          "text": "Crëwch apwyntiadau newydd gyda dyddiad, amser, lleoliad, ac unrhyw nodiadau perthnasol."
+        },
+        "viewing": {
+          "title": "Gweld Rhai Sydd i Ddod",
+          "text": "Gwelwch yr holl apwyntiadau sydd i ddod ar un olwg. Mae apwyntiadau yn y gorffennol yn cael eu harchifo."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Mae apwyntiadau sydd i ddod wedi'u rhestru yma gyda dyddiad, amser, a lleoliad.",
+          "imageDescription": "Rhestr apwyntiadau"
+        },
+        "step2": {
+          "text": "Cliciwch i ychwanegu apwyntiad newydd gyda'r holl fanylion.",
+          "imageDescription": "Botwm ychwanegu apwyntiad"
+        },
+        "step3": {
+          "text": "Golygwch neu ddilëwch apwyntiadau wrth i gynlluniau newid.",
+          "imageDescription": "Opsiynau golygu apwyntiad"
+        }
+      },
+      "tooltip": {
+        "addAppointment": "Trefnu apwyntiad newydd",
+        "viewDetails": "Gweld manylion yr apwyntiad"
+      }
+    },
+    "timePayroll": {
+      "modal": {
+        "welcome": {
+          "title": "Croeso i Amser a Chyflogau",
+          "text": "Gwelwch eich oriau a weithiwyd, cofnodion ar y gweill, ac allforio taflenni amser ar gyfer prosesu cyflogau."
+        },
+        "hours": {
+          "title": "Gweld Oriau",
+          "text": "Gwelwch eich cyfanswm oriau ar gyfer yr wythnos a'r mis. Mae cofnodion sy'n aros am gymeradwyaeth yn cael eu dangos ar wahân."
+        },
+        "export": {
+          "title": "Allforio Taflenni Amser",
+          "text": "Lawrlwythwch daflenni amser fel CSV ar gyfer cyflogau. Dewiswch yr ystod dyddiadau a'r fformat sydd ei angen."
+        }
+      },
+      "walkthrough": {
+        "step1": {
+          "text": "Mae crynodeb eich oriau wythnosol yn cael ei ddangos ar y top.",
+          "imageDescription": "Cerdyn crynodeb oriau"
+        },
+        "step2": {
+          "text": "Mae cofnodion amser sy'n aros am gymeradwyaeth wedi'u rhestru yma.",
+          "imageDescription": "Rhestr cofnodion ar y gweill"
+        },
+        "step3": {
+          "text": "Defnyddiwch y botwm allforio i lawrlwytho taflenni amser ar gyfer cyflogau.",
+          "imageDescription": "Botwm allforio taflen amser"
+        }
+      },
+      "tooltip": {
+        "weeklyHours": "Cyfanswm oriau gofal a gofnodwyd yr wythnos hon",
+        "export": "Lawrlwytho taflen amser fel CSV"
+      }
+    }
   }
 }
