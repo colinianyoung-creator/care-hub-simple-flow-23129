@@ -650,8 +650,180 @@
       "emptyStates": {
         "noFamily": "Create your personal care space or join a family to start tracking schedules.",
         "noShifts": "No shifts scheduled",
-        "noRequests": "No pending requests"
+      "noRequests": "No pending requests"
+    }
+  },
+  "instructions": {
+    "common": {
+      "guide": "Guide",
+      "help": "Help",
+      "viewGuide": "View Full Guide",
+      "startTour": "Start Interactive Tour",
+      "replayTour": "Replay Tour",
+      "skipTour": "Skip tour",
+      "step": "Step",
+      "new": "New"
+    },
+    "tasks": {
+      "modal": {
+        "welcome": { "title": "Managing Tasks", "text": "Keep track of daily tasks and recurring activities. Assign tasks to carers and monitor completion status from a single dashboard." },
+        "addTask": { "title": "Adding a New Task", "text": "Click 'Add Task', enter a title and optional details, set a due date if needed, then save. Tasks appear in the Active tab." },
+        "recurring": { "title": "Recurring Tasks", "text": "Toggle 'Make recurring' to auto-create tasks daily, weekly, or monthly. When completed, the next occurrence is created automatically." },
+        "complete": { "title": "Completing Tasks", "text": "Click 'Mark Done' to complete a task. It moves to the Done tab and is auto-deleted after 7 days." },
+        "assign": { "title": "Assigning Tasks", "text": "Use the 'Assign To' dropdown to delegate tasks to specific care team members." }
+      },
+      "walkthrough": {
+        "step1": "Click 'Add Task' to create a new task.",
+        "step2": "Enter a clear, descriptive title for your task.",
+        "step3": "Optionally set a due date for the task.",
+        "step4": "Toggle this to make the task repeat automatically.",
+        "step5": "Click to save your new task.",
+        "step6": "View completed tasks in the Done tab."
+      },
+      "tooltip": {
+        "addTask": "Create a new task",
+        "activeTab": "View tasks still to complete",
+        "doneTab": "View completed tasks",
+        "recurring": "Make this task repeat automatically",
+        "assign": "Assign task to a team member"
+      }
+    },
+    "notes": {
+      "modal": {
+        "welcome": { "title": "Care Notes", "text": "Document daily care activities, observations, and handover notes. Track wellbeing with mood, eating, and bathroom indicators." },
+        "addNote": { "title": "Adding a Care Note", "text": "Click 'Add Daily Note', describe the activity/support provided, add observations and next steps for handover." },
+        "quickTags": { "title": "Quick Tags", "text": "Use colourful tags like Personal Care, Meal Prep, Medication, and Outing to categorise activities quickly." },
+        "wellbeing": { "title": "Wellbeing Trackers", "text": "Record mood, eating/drinking status, and bathroom usage for comprehensive care documentation." },
+        "bodyMap": { "title": "Body Map", "text": "Use the interactive body map to log and track physical observations, marks, or injuries with precise location recording." },
+        "archive": { "title": "Notes Archive", "text": "Access historical notes by date. Review past care documentation and track patterns over time." }
+      },
+      "walkthrough": {
+        "step1": "Click to add a new daily care note.",
+        "step2": "Describe the activity or support you provided.",
+        "step3": "Select quick tags to categorise the note.",
+        "step4": "Record the person's mood during your visit.",
+        "step5": "Use Body Map to log physical observations.",
+        "step6": "Access past notes in the Archive tab."
+      },
+      "tooltip": {
+        "todayTab": "View today's care notes",
+        "bodyMapTab": "Log physical observations on body map",
+        "archiveTab": "Browse historical notes",
+        "quickTags": "Quickly categorise care activities",
+        "incident": "Flag this note as an incident report"
+      }
+    },
+    "scheduling": {
+      "modal": {
+        "welcome": { "title": "Scheduling & Time", "text": "Manage carer shifts, track attendance, and handle schedule changes. View by week, month, or list format." },
+        "viewModes": { "title": "View Modes", "text": "Switch between Week, Month, and List views to see the schedule in your preferred format." },
+        "addShift": { "title": "Adding Shifts", "text": "Click 'Add Shift', select a carer, set date and times, then save. Assign recurring shifts for regular schedules." },
+        "clockInOut": { "title": "Clock In/Out", "text": "Carers use Clock In when starting and Clock Out when finishing. Times are recorded for payroll." },
+        "requests": { "title": "Change Requests", "text": "Review and approve or deny shift change requests from carers in the Requests tab." },
+        "export": { "title": "Export Timesheets", "text": "Export time entries to CSV for payroll processing. Select date range and download." }
+      },
+      "walkthrough": {
+        "step1": "View the schedule calendar with all shifts.",
+        "step2": "Switch between week, month, and list views.",
+        "step3": "Click to add a new shift to the schedule.",
+        "step4": "Clock in when starting your shift.",
+        "step5": "Review pending change requests here.",
+        "step6": "Export timesheets for payroll."
+      },
+      "tooltip": {
+        "overviewTab": "See schedule summary and stats",
+        "scheduleTab": "View and manage the full schedule",
+        "requestsTab": "Review shift change requests",
+        "leaveTab": "Manage leave and time off",
+        "clockIn": "Start your shift and record time"
+      }
+    },
+    "diet": {
+      "modal": {
+        "welcome": { "title": "Diet Tracking", "text": "Log meals and drinks throughout the day. Track portion sizes and add photos for visual records." },
+        "mealTypes": { "title": "Meal Categories", "text": "Entries are organised by meal type: Breakfast, Lunch, Dinner, Snacks, and Drinks." },
+        "addEntry": { "title": "Adding an Entry", "text": "Select a meal tab, click 'Add Entry', describe what was eaten, and note how much was left." },
+        "photos": { "title": "Photo Documentation", "text": "Optionally add a photo of the meal for visual reference and better documentation." },
+        "archive": { "title": "Diet Archive", "text": "Review past diet entries to track eating patterns and nutrition over time." }
+      },
+      "walkthrough": {
+        "step1": "Select the meal type (Breakfast, Lunch, etc.).",
+        "step2": "Click to add a new diet entry.",
+        "step3": "Describe what was eaten or drunk.",
+        "step4": "Select how much was left uneaten.",
+        "step5": "Optionally add a photo of the meal.",
+        "step6": "Save the diet entry."
+      },
+      "tooltip": {
+        "breakfast": "Log breakfast items",
+        "portion": "Record how much was eaten",
+        "photo": "Add a photo of the meal",
+        "archiveTab": "View past diet entries"
+      }
+    },
+    "medications": {
+      "modal": {
+        "welcome": { "title": "Medication Administration", "text": "Track medications with scheduled doses. Record when medications are given, missed, or refused." },
+        "addMed": { "title": "Adding Medications", "text": "Add medications with name, dosage, frequency, and scheduled times. Doses are auto-generated." },
+        "frequency": { "title": "Frequency Settings", "text": "Choose from 1x, 2x, 3x, or 4x daily. Time slots are preset but can be customised." },
+        "markDose": { "title": "Recording Doses", "text": "Mark each dose as Given, Missed, or Refused. Add notes for any special circumstances." },
+        "history": { "title": "MAR History", "text": "View complete medication administration history with timestamps and who administered each dose." }
+      },
+      "walkthrough": {
+        "step1": "Click to add a new medication.",
+        "step2": "Enter the medication name.",
+        "step3": "Enter the dosage amount.",
+        "step4": "Select how often it's taken daily.",
+        "step5": "Review or adjust the scheduled times.",
+        "step6": "Mark the dose as given, missed, or refused."
+      },
+      "tooltip": {
+        "medsTab": "View all active medications",
+        "marTab": "View medication administration record",
+        "doseCard": "See dose details and status",
+        "markTaken": "Record that the dose was given"
+      }
+    },
+    "appointments": {
+      "modal": {
+        "welcome": { "title": "Appointments", "text": "Manage upcoming medical appointments, therapy sessions, and other scheduled events." },
+        "addAppt": { "title": "Adding Appointments", "text": "Enter the appointment title, description, date, time, and location." },
+        "dateTime": { "title": "Date & Time", "text": "Use the calendar to select the date and time picker for the appointment time." },
+        "location": { "title": "Location", "text": "Add the appointment location for easy reference on the day." },
+        "status": { "title": "Status Tracking", "text": "Appointments show as Today (amber), Upcoming (green), or Past (grey)." }
+      },
+      "walkthrough": {
+        "step1": "Click to add a new appointment.",
+        "step2": "Enter the appointment title.",
+        "step3": "Select the appointment date.",
+        "step4": "Choose the appointment time.",
+        "step5": "Add the location details.",
+        "step6": "Save the appointment."
+      },
+      "tooltip": {
+        "upcomingTab": "View future appointments",
+        "pastTab": "View past appointments",
+        "status": "Shows when the appointment is"
+      }
+    },
+    "timePayroll": {
+      "modal": {
+        "welcome": { "title": "Time & Payroll", "text": "Track care hours and export timesheets for payroll processing." },
+        "weeklyHours": { "title": "Weekly Summary", "text": "See total hours logged this week at a glance." },
+        "calendarView": { "title": "Time Calendar", "text": "View time entries on a calendar. See which shifts have been completed." },
+        "export": { "title": "Export Payroll", "text": "Export time entries to CSV format for payroll processing and record keeping." }
+      },
+      "walkthrough": {
+        "step1": "View the weekly hours summary.",
+        "step2": "See time entries on the calendar.",
+        "step3": "Click an entry to see details.",
+        "step4": "Export timesheets for payroll."
+      },
+      "tooltip": {
+        "weeklyHours": "Total care hours logged this week",
+        "export": "Download timesheet as CSV"
       }
     }
   }
+}
 }
