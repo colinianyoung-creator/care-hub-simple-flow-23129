@@ -62,7 +62,7 @@ export const AppearanceSettings = ({
               </div>
               <div className="min-w-0">
                 <div className="font-medium text-sm sm:text-base">{t(option.labelKey)}</div>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground">
                   {t(option.descriptionKey)}
                 </p>
               </div>
