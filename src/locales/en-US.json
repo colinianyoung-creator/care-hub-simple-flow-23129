@@ -249,7 +249,17 @@
     "settings": "Settings",
     "manageCareTeam": "Manage Care Team",
     "switchFamily": "Switch Family",
+    "installApp": "Install App",
     "signOut": "Sign Out"
+  },
+  "pwa": {
+    "title": "Install CareHub",
+    "description": "Add to your home screen for quick access",
+    "installButton": "Install",
+    "iosTitle": "Install on iOS",
+    "iosStep1": "Tap the Share button",
+    "iosStep2": "Select 'Add to Home Screen'",
+    "dismiss": "Not now"
   },
   "notifications": {
     "preferenceSaved": "Preference saved",

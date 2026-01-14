@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
 import { useToast } from "@/hooks/use-toast";
 import Footer from "@/components/Footer";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -499,6 +500,7 @@ const Dashboard = () => {
         />
       </div>
       <Footer />
+      <PWAInstallPrompt />
     </div>
   );
 };
