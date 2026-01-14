@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieBanner from "./components/CookieBanner";
+import { WalkthroughProvider, WalkthroughStep } from "./components/instructions";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -18,20 +19,24 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <CookieBanner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-          </Routes>
-        </BrowserRouter>
+        <WalkthroughProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <CookieBanner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+            </Routes>
+          </BrowserRouter>
+          <WalkthroughStep />
+        </WalkthroughProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
 }
 
 export default App;
+
