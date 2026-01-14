@@ -132,7 +132,7 @@ export const SettingsDialog = ({
           </TabsList>
           
           <div className="flex-1 mt-4 overflow-y-auto min-h-0">
-            <div className="px-1 pb-4">
+            <div className="pl-1 pr-2 pb-4">
               {isAdmin && familyId && (
                 <TabsContent value="dashboard" className="mt-0">
                   {settingsLoading ? (
