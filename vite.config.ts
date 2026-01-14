@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Only cache static assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Increase limit for large JS bundles
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
         // Exclude API calls and dynamic content
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api/, /supabase/, /\.json$/],
