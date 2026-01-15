@@ -4,7 +4,6 @@ import {
   ChevronLeft, 
   ChevronRight, 
   HelpCircle, 
-  Lightbulb,
   CheckSquare,
   FileText,
   Calendar,
@@ -12,8 +11,7 @@ import {
   Pill,
   CalendarClock,
   Clock,
-  ArrowLeft,
-  Play
+  ArrowLeft
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,11 +24,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   instructions, 
   InstructionSection, 
-  getAllSections,
   getSectionDisplayNameKey 
 } from '@/lib/instructions';
 import { cn } from '@/lib/utils';
-import { useWalkthrough } from './WalkthroughProvider';
+
+// Import demo components
+import TasksDemo from '@/components/landing/TasksDemo';
+import NotesDemo from '@/components/landing/NotesDemo';
+import ScheduleDemo from '@/components/landing/ScheduleDemo';
+import DietDemo from '@/components/landing/DietDemo';
+import MARDemo from '@/components/landing/MARDemo';
+import AppointmentsDemo from '@/components/landing/AppointmentsDemo';
+import ExportDemo from '@/components/landing/ExportDemo';
 
 interface HelpCenterModalProps {
   open: boolean;
@@ -53,9 +58,19 @@ const sectionCards: SectionCardData[] = [
   { id: 'timePayroll', icon: Clock, descriptionKey: 'instructions.helpCenter.timePayroll.description' },
 ];
 
+// Map sections to their demo components
+const sectionDemos: Record<InstructionSection, React.ComponentType> = {
+  tasks: TasksDemo,
+  notes: NotesDemo,
+  scheduling: ScheduleDemo,
+  diet: DietDemo,
+  medications: MARDemo,
+  appointments: AppointmentsDemo,
+  timePayroll: ExportDemo,
+};
+
 export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) => {
   const { t } = useTranslation();
-  const { startWalkthrough } = useWalkthrough();
   const [selectedSection, setSelectedSection] = useState<InstructionSection | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   
@@ -75,13 +90,6 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
     setCurrentStep(0);
   };
 
-  const handleStartTour = () => {
-    if (selectedSection) {
-      handleClose();
-      startWalkthrough(selectedSection);
-    }
-  };
-
   const handleNext = () => {
     if (selectedSection) {
       const modalSteps = instructions[selectedSection].modal;
@@ -99,8 +107,8 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
 
   // Section Grid View
   const renderSectionGrid = () => (
-    <ScrollArea className="flex-1 pr-4">
-      <div className="space-y-4">
+    <ScrollArea className="flex-1">
+      <div className="space-y-4 px-1">
         <p className="text-muted-foreground text-sm">
           {t('instructions.helpCenter.subtitle')}
         </p>
@@ -144,7 +152,9 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
     const sectionInstructions = instructions[selectedSection];
     const modalSteps = sectionInstructions.modal;
     const currentInstruction = modalSteps[currentStep];
-    const hasWalkthrough = sectionInstructions.walkthrough.length > 0;
+    
+    // Get the demo component for this section
+    const DemoComponent = sectionDemos[selectedSection];
 
     return (
       <div className="flex flex-col h-full">
@@ -175,12 +185,11 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
             ))}
           </div>
           
-          {/* Image placeholder */}
-          <div className="bg-muted/50 rounded-lg p-6 flex flex-col items-center justify-center min-h-[140px] border border-dashed border-muted-foreground/20">
-            <Lightbulb className="h-10 w-10 text-muted-foreground/50 mb-2" />
-            <p className="text-xs text-muted-foreground text-center max-w-[280px]">
-              {currentInstruction.imageDescription}
-            </p>
+          {/* Demo component display */}
+          <div className="bg-muted/30 rounded-lg p-4 border border-border/50 min-h-[180px] flex items-center justify-center">
+            <div className="w-full max-w-[280px]">
+              <DemoComponent />
+            </div>
           </div>
           
           {/* Content */}
@@ -222,26 +231,13 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
               <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (
-            <div className="flex gap-2">
-              {hasWalkthrough && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleStartTour}
-                  className="gap-1"
-                >
-                  <Play className="h-3 w-3" />
-                  {t('instructions.helpCenter.startTour')}
-                </Button>
-              )}
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleClose}
-              >
-                {t('common.done')}
-              </Button>
-            </div>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleClose}
+            >
+              {t('common.done')}
+            </Button>
           )}
         </div>
       </div>

@@ -81,8 +81,16 @@ export const WalkthroughStep = () => {
         // Scroll element into view if needed
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
+        // Element not found - show centered fallback popover
+        console.warn(`Walkthrough element not found: ${stepData.elementSelector}`);
         setTargetPosition(null);
-        setPopoverPosition(null);
+        
+        const popoverWidth = 300;
+        const popoverHeight = 150;
+        setPopoverPosition({ 
+          top: window.innerHeight / 2 - popoverHeight / 2, 
+          left: window.innerWidth / 2 - popoverWidth / 2 
+        });
       }
     };
     
