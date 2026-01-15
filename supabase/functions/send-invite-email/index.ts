@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,10 +9,8 @@ const corsHeaders = {
 
 interface InviteEmailRequest {
   email: string;
-  inviterName: string;
-  familyName: string;
   inviteCode: string;
-  role: string;
+  role?: string;
   expiresIn?: string;
 }
 
@@ -131,26 +130,161 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
+  // Validate JWT and get authenticated user
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    console.error("No authorization header provided");
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized - no auth header" }),
+      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    console.error("Invalid or expired token:", userError);
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized - invalid token" }),
+      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  console.log(`Authenticated user: ${user.id}`);
+
   const resend = new Resend(RESEND_API_KEY);
 
   try {
     const {
       email,
-      inviterName,
-      familyName,
       inviteCode,
       role,
       expiresIn = "7 days",
     }: InviteEmailRequest = await req.json();
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      console.error("Invalid email format:", email);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!inviteCode) {
+      console.error("Missing invite code");
+      return new Response(
+        JSON.stringify({ success: false, error: "Invite code is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate invite code exists and get associated family
+    const { data: invite, error: inviteError } = await supabase
+      .from('invite_codes')
+      .select('id, family_id, code, created_by, role, used_at')
+      .eq('code', inviteCode.toUpperCase())
+      .single();
+
+    if (inviteError || !invite) {
+      console.error("Invalid invite code:", inviteError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid invite code" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (invite.used_at) {
+      console.error("Invite code already used");
+      return new Response(
+        JSON.stringify({ success: false, error: "This invite code has already been used" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Verify user has admin/disabled_person role in the family
+    const { data: membership, error: membershipError } = await supabase
+      .from('user_memberships')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('family_id', invite.family_id)
+      .single();
+
+    if (membershipError || !membership) {
+      console.error("User is not a member of this family:", membershipError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Not authorized for this family" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!['family_admin', 'disabled_person'].includes(membership.role)) {
+      console.error("User does not have admin privileges:", membership.role);
+      return new Response(
+        JSON.stringify({ success: false, error: "Only admins and care recipients can send invites" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Rate limiting: max 10 invite emails per hour per user
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, error: countError } = await supabase
+      .from('rate_limit_attempts')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', user.id)
+      .eq('action_type', 'send_invite_email')
+      .gte('attempted_at', oneHourAgo);
+
+    if (!countError && count !== null && count >= 10) {
+      console.error("Rate limit exceeded for user:", user.id);
+      return new Response(
+        JSON.stringify({ success: false, error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Record rate limit attempt
+    await supabase.from('rate_limit_attempts').insert({
+      identifier: user.id,
+      action_type: 'send_invite_email',
+      success: true,
+      metadata: { email, invite_code: inviteCode }
+    });
+
+    // Fetch inviter name from database (don't trust client)
+    const { data: inviterProfile } = await supabase
+      .from('profiles_secure')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    // Fetch family name from database (don't trust client)
+    const { data: family } = await supabase
+      .from('families')
+      .select('name')
+      .eq('id', invite.family_id)
+      .single();
+
+    const inviterName = inviterProfile?.full_name || 'A team member';
+    const familyName = family?.name || 'Care Team';
+    const inviteRole = role || invite.role || 'carer';
+
     console.log(`Sending invite email to ${email} for family ${familyName} with code ${inviteCode}`);
 
     const appUrl = req.headers.get("origin") || "https://lovable.dev";
-    const signupUrl = `${appUrl}/auth?invite=${encodeURIComponent(inviteCode.toUpperCase())}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role || "carer")}`;
+    const signupUrl = `${appUrl}/auth?invite=${encodeURIComponent(inviteCode.toUpperCase())}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(inviteRole)}`;
     const html = generateInviteHtml(
-      inviterName || "A team member",
-      familyName || "Care Team",
+      inviterName,
+      familyName,
       inviteCode.toUpperCase(),
-      role || "carer",
+      inviteRole,
       signupUrl,
       expiresIn,
     );

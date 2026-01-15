@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,10 +97,65 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
+  // IP-based rate limiting for unauthenticated requests
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
+  
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Rate limiting: max 5 welcome emails per hour per IP
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count, error: countError } = await supabase
+    .from('rate_limit_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('identifier', clientIp)
+    .eq('action_type', 'send_welcome_email')
+    .gte('attempted_at', oneHourAgo);
+
+  if (!countError && count !== null && count >= 5) {
+    console.error("Rate limit exceeded for IP:", clientIp);
+    return new Response(
+      JSON.stringify({ success: false, error: "Rate limit exceeded. Please try again later." }),
+      { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
   const resend = new Resend(RESEND_API_KEY);
 
   try {
     const { email, userName, userRole }: WelcomeEmailRequest = await req.json();
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      console.error("Invalid email format:", email);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate userName length
+    if (userName && userName.length > 100) {
+      console.error("User name too long");
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid user name" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Record rate limit attempt
+    await supabase.from('rate_limit_attempts').insert({
+      identifier: clientIp,
+      action_type: 'send_welcome_email',
+      success: true,
+      metadata: { email }
+    });
+
     console.log(`Sending welcome email to ${email} for user ${userName} with role ${userRole}`);
 
     const appUrl = req.headers.get("origin") || "https://lovable.dev";
