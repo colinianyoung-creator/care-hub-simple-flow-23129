@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -173,11 +174,27 @@ export const AIReportsSection = ({ familyId, userRole, careRecipientName }: AIRe
       return;
     }
     
+    // Convert markdown to basic HTML
+    const rawHtmlContent = text
+      .replace(/\n/g, '<br>')
+      .replace(/## (.+?)(<br>|$)/g, '<h2>$1</h2>')
+      .replace(/# (.+?)(<br>|$)/g, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Sanitize HTML content to prevent XSS attacks
+    const htmlContent = DOMPurify.sanitize(rawHtmlContent, {
+      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'p', 'strong', 'em', 'ul', 'ol', 'li', 'br', 'hr'],
+      ALLOWED_ATTR: []
+    });
+    
+    // Sanitize the family name for use in the title
+    const safeFamilyName = DOMPurify.sanitize(familyName, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Care Report - ${familyName}</title>
+        <title>Care Report - ${safeFamilyName}</title>
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; }
           h1 { color: #1a1a1a; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
@@ -187,7 +204,7 @@ export const AIReportsSection = ({ familyId, userRole, careRecipientName }: AIRe
         </style>
       </head>
       <body>
-        ${text.replace(/\n/g, '<br>').replace(/## /g, '<h2>').replace(/# /g, '<h1>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
+        ${htmlContent}
       </body>
       </html>
     `);
