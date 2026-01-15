@@ -107,8 +107,8 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
 
   // Section Grid View
   const renderSectionGrid = () => (
-    <ScrollArea className="flex-1">
-      <div className="space-y-4 px-1">
+    <ScrollArea className="flex-1 min-h-0">
+      <div className="space-y-4 px-1 pr-2">
         <p className="text-muted-foreground text-sm">
           {t('instructions.helpCenter.subtitle')}
         </p>
@@ -158,52 +158,57 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
 
     return (
       <div className="flex flex-col h-full">
-        {/* Back button */}
-        <button
-          onClick={handleBackToSections}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 w-fit"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('instructions.helpCenter.backToSections')}
-        </button>
+        {/* Back button - fixed at top */}
+        <div className="flex-shrink-0">
+          <button
+            onClick={handleBackToSections}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 w-fit"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t('instructions.helpCenter.backToSections')}
+          </button>
+        </div>
 
-        <div className="flex-1 overflow-y-auto space-y-4">
-          {/* Step indicator */}
-          <div className="flex justify-center gap-1.5">
-            {modalSteps.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentStep(index)}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all",
-                  index === currentStep 
-                    ? "bg-primary w-6" 
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                )}
-                aria-label={`Go to step ${index + 1}`}
-              />
-            ))}
-          </div>
-          
-          {/* Demo component display */}
-          <div className="bg-muted/30 rounded-lg p-4 border border-border/50 min-h-[180px] flex items-center justify-center">
-            <div className="w-full max-w-[280px]">
-              <DemoComponent />
+        {/* Scrollable content area */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-4 pr-2">
+            {/* Step indicator */}
+            <div className="flex justify-center gap-1.5">
+              {modalSteps.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentStep(index)}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all",
+                    index === currentStep 
+                      ? "bg-primary w-6" 
+                      : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                  )}
+                  aria-label={`Go to step ${index + 1}`}
+                />
+              ))}
+            </div>
+            
+            {/* Demo component display - fixed height */}
+            <div className="bg-muted/30 rounded-lg p-4 border border-border/50 h-[180px] flex items-center justify-center overflow-hidden">
+              <div className="w-full max-w-[280px]">
+                <DemoComponent />
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg">
+                {t(currentInstruction.titleKey)}
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {t(currentInstruction.textKey)}
+              </p>
             </div>
           </div>
-          
-          {/* Content */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">
-              {t(currentInstruction.titleKey)}
-            </h3>
-            <p className="text-muted-foreground leading-relaxed">
-              {t(currentInstruction.textKey)}
-            </p>
-          </div>
-        </div>
+        </ScrollArea>
         
-        {/* Navigation */}
+        {/* Navigation - fixed at bottom */}
         <div className="flex-shrink-0 flex items-center justify-between pt-4 border-t mt-4">
           <Button
             variant="ghost"
@@ -246,7 +251,7 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-lg h-[600px] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-primary" />
