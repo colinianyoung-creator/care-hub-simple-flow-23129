@@ -199,15 +199,10 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
 
     setIsSendingEmail(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from('profiles_secure').select('full_name').eq('id', user?.id).single();
-      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
-
+      // Server now fetches inviterName and familyName from database for security
       const { error } = await supabase.functions.invoke('send-invite-email', {
         body: {
           email: emailAddress,
-          inviterName: profile?.full_name || 'A team member',
-          familyName: family?.name || 'Care Team',
           inviteCode: code,
           role: roleLabels[role] || role,
           expiresIn: '7 days'
@@ -245,15 +240,10 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
 
     setIsSendingPlaceholderEmail(placeholder.id);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from('profiles_secure').select('full_name').eq('id', user?.id).single();
-      const { data: family } = await supabase.from('families').select('name').eq('id', familyId).single();
-
+      // Server now fetches inviterName and familyName from database for security
       const { error } = await supabase.functions.invoke('send-invite-email', {
         body: {
           email: placeholder.email,
-          inviterName: profile?.full_name || 'A team member',
-          familyName: family?.name || 'Care Team',
           inviteCode: code,
           role: 'Carer',
           expiresIn: '7 days'
