@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import DOMPurify from 'dompurify';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,6 @@ import {
   Loader2 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
 interface RiskAssessmentViewerProps {
   title: string;
   content: string;
@@ -100,12 +100,20 @@ export const RiskAssessmentViewer = ({
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      const htmlContent = convertMarkdownToHtml(content);
+      const rawHtmlContent = convertMarkdownToHtml(content);
+      // Sanitize HTML content to prevent XSS attacks
+      const htmlContent = DOMPurify.sanitize(rawHtmlContent, {
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'strong', 'em', 'ul', 'ol', 'li', 'br'],
+        ALLOWED_ATTR: ['class']
+      });
+      // Sanitize the title as well
+      const safeTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+      
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${title}</title>
+          <title>${safeTitle}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
             h1.main-title { color: #1f2937; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; font-size: 1.5rem; }
