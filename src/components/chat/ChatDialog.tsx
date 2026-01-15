@@ -32,6 +32,13 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
     getUser();
   }, []);
 
+  // Refetch conversations when dialog opens
+  useEffect(() => {
+    if (isOpen && familyId) {
+      refetch();
+    }
+  }, [isOpen, familyId, refetch]);
+
   // Auto-select conversation when it appears in the list
   useEffect(() => {
     if (pendingConversationId && conversations.length > 0) {

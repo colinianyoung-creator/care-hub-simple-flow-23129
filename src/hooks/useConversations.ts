@@ -249,6 +249,58 @@ export const useConversations = (familyId?: string) => {
 
   useEffect(() => {
     fetchConversations();
+
+    if (!familyId) return;
+
+    // Subscribe to conversation changes for real-time updates
+    const channel = supabase
+      .channel(`conversations-${familyId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversation_participants'
+        },
+        async (payload) => {
+          const { data: user } = await supabase.auth.getUser();
+          // If current user was added as a participant, refetch conversations
+          if (payload.new && (payload.new as { user_id: string }).user_id === user?.user?.id) {
+            fetchConversations();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversations',
+          filter: `family_id=eq.${familyId}`
+        },
+        () => {
+          // Refetch when new conversation created in this family
+          fetchConversations();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'conversations',
+          filter: `family_id=eq.${familyId}`
+        },
+        (payload) => {
+          // Remove deleted conversation from local state
+          setConversations(prev => prev.filter(c => c.id !== (payload.old as { id: string }).id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [familyId]);
 
   const createConversation = async (
