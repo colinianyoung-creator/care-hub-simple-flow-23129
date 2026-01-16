@@ -268,7 +268,7 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg h-[600px] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-lg h-[85vh] max-h-[700px] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-primary" />
@@ -279,7 +279,7 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden py-2">
+        <div className="flex-1 overflow-hidden flex flex-col py-2">
           {selectedSection ? renderSectionGuide() : renderSectionGrid()}
         </div>
       </DialogContent>
