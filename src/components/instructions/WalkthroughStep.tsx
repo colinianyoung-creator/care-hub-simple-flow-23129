@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useWalkthrough } from './WalkthroughProvider';
+import { useWalkthroughSafe } from './WalkthroughProvider';
 import { cn } from '@/lib/utils';
 
 interface Position {
@@ -23,7 +23,7 @@ export const WalkthroughStep = () => {
     previousStep,
     skipWalkthrough,
     getCurrentStepData
-  } = useWalkthrough();
+  } = useWalkthroughSafe();
   
   const [targetPosition, setTargetPosition] = useState<Position | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null);
