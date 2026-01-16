@@ -671,17 +671,23 @@
       "subtitle": "Select a section to learn more about its features",
       "backToSections": "Back to sections",
       "startTour": "Start Tour",
+      "scheduling": {
+        "description": "View shifts, clock in/out, and manage requests"
+      },
       "tasks": {
         "description": "Manage daily tasks and recurring activities"
       },
       "notes": {
         "description": "Record care notes and track wellbeing"
       },
-      "scheduling": {
-        "description": "View shifts, clock in/out, and manage requests"
-      },
       "diet": {
         "description": "Track meals, portions, and dietary intake"
+      },
+      "money": {
+        "description": "Track expenses, income, and manage receipts"
+      },
+      "keyInformation": {
+        "description": "Store emergency contacts and important details"
       },
       "medications": {
         "description": "Manage medications and track doses"
@@ -689,8 +695,14 @@
       "appointments": {
         "description": "Schedule and track appointments"
       },
+      "aiReports": {
+        "description": "Generate AI-powered care summaries and insights"
+      },
       "timePayroll": {
         "description": "View hours worked and export timesheets"
+      },
+      "installApp": {
+        "description": "Install the app on your device for quick access"
       }
     },
     "tasks": {
@@ -851,6 +863,40 @@
       "tooltip": {
         "weeklyHours": "Total care hours logged this week",
         "export": "Download timesheet as CSV"
+      }
+    },
+    "money": {
+      "modal": {
+        "welcome": { "title": "Money Tracking", "text": "Track expenses and income related to care. Log transactions with categories and attach receipt photos." },
+        "addEntry": { "title": "Adding Transactions", "text": "Click 'Add Entry', enter the amount, description, and select whether it's income or an expense." },
+        "categories": { "title": "Categories", "text": "Organise transactions with categories like Groceries, Transport, Medical, and Activities for easy tracking." },
+        "receipts": { "title": "Receipt Photos", "text": "Attach photos of receipts for documentation and easy reference when reviewing spending." },
+        "archive": { "title": "Transaction History", "text": "View past transactions grouped by month. Track spending patterns and totals over time." }
+      }
+    },
+    "keyInformation": {
+      "modal": {
+        "welcome": { "title": "Key Information", "text": "Store important details, emergency contacts, and risk assessments in one central location." },
+        "contacts": { "title": "Emergency Contacts", "text": "Add and manage emergency contacts including GPs, family members, and specialists with quick-dial access." },
+        "riskAssessments": { "title": "Risk Assessments", "text": "View and create risk assessments for activities and environments. Track mitigation strategies." },
+        "medicalInfo": { "title": "Medical Information", "text": "Document medical history, allergies, conditions, and care preferences for reference." },
+        "documents": { "title": "Important Documents", "text": "Store care plans, house rules, and other important documents accessible to the care team." }
+      }
+    },
+    "aiReports": {
+      "modal": {
+        "welcome": { "title": "AI Reports", "text": "Generate comprehensive care summaries powered by AI. Get insights and highlights from care data." },
+        "generate": { "title": "Generating Reports", "text": "Click 'Generate Report' to create an AI-powered summary of care activities, medications, and wellbeing." },
+        "dateRange": { "title": "Date Range", "text": "Select the time period for your report - weekly, monthly, or a custom date range." },
+        "export": { "title": "Export & Share", "text": "Download reports as documents or print them for reviews and meetings." }
+      }
+    },
+    "installApp": {
+      "modal": {
+        "welcome": { "title": "Install CareHub", "text": "Install CareHub on your device for faster access, offline support, and a native app experience." },
+        "benefits": { "title": "Benefits of Installing", "text": "Get quick access from your home screen, receive notifications, work offline, and enjoy faster load times." },
+        "android": { "title": "Install on Android/Chrome", "text": "When prompted, tap 'Install' or 'Add to Home Screen'. You can also tap the menu (three dots) and select 'Install app' or 'Add to Home Screen'." },
+        "ios": { "title": "Install on iPhone/iPad", "text": "Tap the Share button (box with arrow), scroll down and tap 'Add to Home Screen', then tap 'Add' to confirm." }
       }
     }
   }

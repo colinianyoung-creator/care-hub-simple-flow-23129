@@ -28,15 +28,125 @@ export interface SectionInstructions {
 }
 
 export type InstructionSection = 
+  | 'scheduling'
   | 'tasks' 
   | 'notes' 
-  | 'scheduling' 
   | 'diet' 
+  | 'money'
+  | 'keyInformation'
   | 'medications' 
   | 'appointments' 
-  | 'timePayroll';
+  | 'aiReports'
+  | 'timePayroll'
+  | 'installApp';
 
 export const instructions: Record<InstructionSection, SectionInstructions> = {
+  scheduling: {
+    modal: [
+      {
+        titleKey: 'instructions.scheduling.modal.welcome.title',
+        textKey: 'instructions.scheduling.modal.welcome.text',
+        imageDescription: 'Calendar view showing a week of shifts with different carers colour-coded'
+      },
+      {
+        titleKey: 'instructions.scheduling.modal.viewModes.title',
+        textKey: 'instructions.scheduling.modal.viewModes.text',
+        imageDescription: 'Toggle buttons showing Week, Month, and List view options'
+      },
+      {
+        titleKey: 'instructions.scheduling.modal.addShift.title',
+        textKey: 'instructions.scheduling.modal.addShift.text',
+        imageDescription: 'Shift creation form with date, start time, end time, and carer selection fields'
+      },
+      {
+        titleKey: 'instructions.scheduling.modal.clockInOut.title',
+        textKey: 'instructions.scheduling.modal.clockInOut.text',
+        imageDescription: 'Clock In/Out button with timestamp display and GPS icon indicator'
+      },
+      {
+        titleKey: 'instructions.scheduling.modal.requests.title',
+        textKey: 'instructions.scheduling.modal.requests.text',
+        imageDescription: 'Request cards showing pending shift change requests with approve/deny buttons'
+      },
+      {
+        titleKey: 'instructions.scheduling.modal.export.title',
+        textKey: 'instructions.scheduling.modal.export.text',
+        imageDescription: 'Export button with CSV file icon and date range selector'
+      }
+    ],
+    walkthrough: [
+      {
+        step: 1,
+        elementSelector: '[data-walkthrough="schedule-calendar"]',
+        elementLabel: 'Calendar',
+        textKey: 'instructions.scheduling.walkthrough.step1',
+        imageDescription: 'Calendar grid'
+      },
+      {
+        step: 2,
+        elementSelector: '[data-walkthrough="schedule-view-toggle"]',
+        elementLabel: 'View toggle',
+        textKey: 'instructions.scheduling.walkthrough.step2',
+        imageDescription: 'Toggle buttons'
+      },
+      {
+        step: 3,
+        elementSelector: '[data-walkthrough="add-shift-button"]',
+        elementLabel: 'Add Shift button',
+        textKey: 'instructions.scheduling.walkthrough.step3',
+        imageDescription: 'Plus icon'
+      },
+      {
+        step: 4,
+        elementSelector: '[data-walkthrough="clock-in-button"]',
+        elementLabel: 'Clock In button',
+        textKey: 'instructions.scheduling.walkthrough.step4',
+        imageDescription: 'Clock icon'
+      },
+      {
+        step: 5,
+        elementSelector: '[data-walkthrough="scheduling-requests-tab"]',
+        elementLabel: 'Requests tab',
+        textKey: 'instructions.scheduling.walkthrough.step5',
+        imageDescription: 'Request icon'
+      },
+      {
+        step: 6,
+        elementSelector: '[data-walkthrough="export-timesheet-button"]',
+        elementLabel: 'Export button',
+        textKey: 'instructions.scheduling.walkthrough.step6',
+        imageDescription: 'Download icon'
+      }
+    ],
+    tooltips: [
+      {
+        elementSelector: '[data-walkthrough="scheduling-overview-tab"]',
+        elementLabel: 'Overview tab',
+        textKey: 'instructions.scheduling.tooltip.overviewTab'
+      },
+      {
+        elementSelector: '[data-walkthrough="scheduling-schedule-tab"]',
+        elementLabel: 'Schedule tab',
+        textKey: 'instructions.scheduling.tooltip.scheduleTab'
+      },
+      {
+        elementSelector: '[data-walkthrough="scheduling-requests-tab"]',
+        elementLabel: 'Requests tab',
+        textKey: 'instructions.scheduling.tooltip.requestsTab'
+      },
+      {
+        elementSelector: '[data-walkthrough="scheduling-leave-tab"]',
+        elementLabel: 'Leave tab',
+        textKey: 'instructions.scheduling.tooltip.leaveTab'
+      },
+      {
+        elementSelector: '[data-walkthrough="clock-in-button"]',
+        elementLabel: 'Clock In button',
+        textKey: 'instructions.scheduling.tooltip.clockIn'
+      }
+    ]
+  },
+
   tasks: {
     modal: [
       {
@@ -244,112 +354,6 @@ export const instructions: Record<InstructionSection, SectionInstructions> = {
     ]
   },
 
-  scheduling: {
-    modal: [
-      {
-        titleKey: 'instructions.scheduling.modal.welcome.title',
-        textKey: 'instructions.scheduling.modal.welcome.text',
-        imageDescription: 'Calendar view showing a week of shifts with different carers colour-coded'
-      },
-      {
-        titleKey: 'instructions.scheduling.modal.viewModes.title',
-        textKey: 'instructions.scheduling.modal.viewModes.text',
-        imageDescription: 'Toggle buttons showing Week, Month, and List view options'
-      },
-      {
-        titleKey: 'instructions.scheduling.modal.addShift.title',
-        textKey: 'instructions.scheduling.modal.addShift.text',
-        imageDescription: 'Shift creation form with date, start time, end time, and carer selection fields'
-      },
-      {
-        titleKey: 'instructions.scheduling.modal.clockInOut.title',
-        textKey: 'instructions.scheduling.modal.clockInOut.text',
-        imageDescription: 'Clock In/Out button with timestamp display and GPS icon indicator'
-      },
-      {
-        titleKey: 'instructions.scheduling.modal.requests.title',
-        textKey: 'instructions.scheduling.modal.requests.text',
-        imageDescription: 'Request cards showing pending shift change requests with approve/deny buttons'
-      },
-      {
-        titleKey: 'instructions.scheduling.modal.export.title',
-        textKey: 'instructions.scheduling.modal.export.text',
-        imageDescription: 'Export button with CSV file icon and date range selector'
-      }
-    ],
-    walkthrough: [
-      {
-        step: 1,
-        elementSelector: '[data-walkthrough="schedule-calendar"]',
-        elementLabel: 'Calendar',
-        textKey: 'instructions.scheduling.walkthrough.step1',
-        imageDescription: 'Calendar grid'
-      },
-      {
-        step: 2,
-        elementSelector: '[data-walkthrough="schedule-view-toggle"]',
-        elementLabel: 'View toggle',
-        textKey: 'instructions.scheduling.walkthrough.step2',
-        imageDescription: 'Toggle buttons'
-      },
-      {
-        step: 3,
-        elementSelector: '[data-walkthrough="add-shift-button"]',
-        elementLabel: 'Add Shift button',
-        textKey: 'instructions.scheduling.walkthrough.step3',
-        imageDescription: 'Plus icon'
-      },
-      {
-        step: 4,
-        elementSelector: '[data-walkthrough="clock-in-button"]',
-        elementLabel: 'Clock In button',
-        textKey: 'instructions.scheduling.walkthrough.step4',
-        imageDescription: 'Clock icon'
-      },
-      {
-        step: 5,
-        elementSelector: '[data-walkthrough="scheduling-requests-tab"]',
-        elementLabel: 'Requests tab',
-        textKey: 'instructions.scheduling.walkthrough.step5',
-        imageDescription: 'Request icon'
-      },
-      {
-        step: 6,
-        elementSelector: '[data-walkthrough="export-timesheet-button"]',
-        elementLabel: 'Export button',
-        textKey: 'instructions.scheduling.walkthrough.step6',
-        imageDescription: 'Download icon'
-      }
-    ],
-    tooltips: [
-      {
-        elementSelector: '[data-walkthrough="scheduling-overview-tab"]',
-        elementLabel: 'Overview tab',
-        textKey: 'instructions.scheduling.tooltip.overviewTab'
-      },
-      {
-        elementSelector: '[data-walkthrough="scheduling-schedule-tab"]',
-        elementLabel: 'Schedule tab',
-        textKey: 'instructions.scheduling.tooltip.scheduleTab'
-      },
-      {
-        elementSelector: '[data-walkthrough="scheduling-requests-tab"]',
-        elementLabel: 'Requests tab',
-        textKey: 'instructions.scheduling.tooltip.requestsTab'
-      },
-      {
-        elementSelector: '[data-walkthrough="scheduling-leave-tab"]',
-        elementLabel: 'Leave tab',
-        textKey: 'instructions.scheduling.tooltip.leaveTab'
-      },
-      {
-        elementSelector: '[data-walkthrough="clock-in-button"]',
-        elementLabel: 'Clock In button',
-        textKey: 'instructions.scheduling.tooltip.clockIn'
-      }
-    ]
-  },
-
   diet: {
     modal: [
       {
@@ -444,6 +448,70 @@ export const instructions: Record<InstructionSection, SectionInstructions> = {
         textKey: 'instructions.diet.tooltip.archiveTab'
       }
     ]
+  },
+
+  money: {
+    modal: [
+      {
+        titleKey: 'instructions.money.modal.welcome.title',
+        textKey: 'instructions.money.modal.welcome.text',
+        imageDescription: 'Money tracking section showing income and expense summary with recent transactions'
+      },
+      {
+        titleKey: 'instructions.money.modal.addEntry.title',
+        textKey: 'instructions.money.modal.addEntry.text',
+        imageDescription: 'Form showing amount, description, category selector, and income/expense toggle'
+      },
+      {
+        titleKey: 'instructions.money.modal.categories.title',
+        textKey: 'instructions.money.modal.categories.text',
+        imageDescription: 'Category icons: Groceries, Transport, Medical, Activities, and more'
+      },
+      {
+        titleKey: 'instructions.money.modal.receipts.title',
+        textKey: 'instructions.money.modal.receipts.text',
+        imageDescription: 'Camera icon with receipt photo upload and thumbnail preview'
+      },
+      {
+        titleKey: 'instructions.money.modal.archive.title',
+        textKey: 'instructions.money.modal.archive.text',
+        imageDescription: 'Archive view showing transactions grouped by month with totals'
+      }
+    ],
+    walkthrough: [],
+    tooltips: []
+  },
+
+  keyInformation: {
+    modal: [
+      {
+        titleKey: 'instructions.keyInformation.modal.welcome.title',
+        textKey: 'instructions.keyInformation.modal.welcome.text',
+        imageDescription: 'Key information dashboard showing emergency contacts and important details'
+      },
+      {
+        titleKey: 'instructions.keyInformation.modal.contacts.title',
+        textKey: 'instructions.keyInformation.modal.contacts.text',
+        imageDescription: 'Contact cards with phone icons, names, and quick-dial buttons'
+      },
+      {
+        titleKey: 'instructions.keyInformation.modal.riskAssessments.title',
+        textKey: 'instructions.keyInformation.modal.riskAssessments.text',
+        imageDescription: 'Risk assessment cards with severity indicators and mitigation strategies'
+      },
+      {
+        titleKey: 'instructions.keyInformation.modal.medicalInfo.title',
+        textKey: 'instructions.keyInformation.modal.medicalInfo.text',
+        imageDescription: 'Medical history section with conditions, allergies, and GP details'
+      },
+      {
+        titleKey: 'instructions.keyInformation.modal.documents.title',
+        textKey: 'instructions.keyInformation.modal.documents.text',
+        imageDescription: 'Document icons showing care plans, house rules, and important files'
+      }
+    ],
+    walkthrough: [],
+    tooltips: []
   },
 
   medications: {
@@ -633,6 +701,33 @@ export const instructions: Record<InstructionSection, SectionInstructions> = {
     ]
   },
 
+  aiReports: {
+    modal: [
+      {
+        titleKey: 'instructions.aiReports.modal.welcome.title',
+        textKey: 'instructions.aiReports.modal.welcome.text',
+        imageDescription: 'AI Reports section showing generated summaries with insights and highlights'
+      },
+      {
+        titleKey: 'instructions.aiReports.modal.generate.title',
+        textKey: 'instructions.aiReports.modal.generate.text',
+        imageDescription: 'Generate button with AI sparkle icon and loading animation'
+      },
+      {
+        titleKey: 'instructions.aiReports.modal.dateRange.title',
+        textKey: 'instructions.aiReports.modal.dateRange.text',
+        imageDescription: 'Date range selector showing week, month, and custom options'
+      },
+      {
+        titleKey: 'instructions.aiReports.modal.export.title',
+        textKey: 'instructions.aiReports.modal.export.text',
+        imageDescription: 'Export and share options with download and print icons'
+      }
+    ],
+    walkthrough: [],
+    tooltips: []
+  },
+
   timePayroll: {
     modal: [
       {
@@ -698,6 +793,33 @@ export const instructions: Record<InstructionSection, SectionInstructions> = {
         textKey: 'instructions.timePayroll.tooltip.export'
       }
     ]
+  },
+
+  installApp: {
+    modal: [
+      {
+        titleKey: 'instructions.installApp.modal.welcome.title',
+        textKey: 'instructions.installApp.modal.welcome.text',
+        imageDescription: 'App icon being added to phone home screen with sparkle effect'
+      },
+      {
+        titleKey: 'instructions.installApp.modal.benefits.title',
+        textKey: 'instructions.installApp.modal.benefits.text',
+        imageDescription: 'Icons showing fast loading, offline access, and notifications benefits'
+      },
+      {
+        titleKey: 'instructions.installApp.modal.android.title',
+        textKey: 'instructions.installApp.modal.android.text',
+        imageDescription: 'Chrome browser showing install banner with Add to Home Screen option'
+      },
+      {
+        titleKey: 'instructions.installApp.modal.ios.title',
+        textKey: 'instructions.installApp.modal.ios.text',
+        imageDescription: 'Safari share menu highlighting Add to Home Screen option'
+      }
+    ],
+    walkthrough: [],
+    tooltips: []
   }
 };
 
@@ -709,13 +831,17 @@ export const getAllSections = (): InstructionSection[] => {
 // Helper to get section display name translation key
 export const getSectionDisplayNameKey = (section: InstructionSection): string => {
   const displayNames: Record<InstructionSection, string> = {
+    scheduling: 'sections.scheduling',
     tasks: 'sections.tasks',
     notes: 'sections.notes',
-    scheduling: 'sections.scheduling',
     diet: 'sections.diet',
+    money: 'sections.money',
+    keyInformation: 'sections.keyInfo',
     medications: 'sections.medications',
     appointments: 'sections.appointments',
-    timePayroll: 'sections.timePayroll'
+    aiReports: 'sections.aiReports',
+    timePayroll: 'sections.timePayroll',
+    installApp: 'menu.installApp'
   };
   return displayNames[section];
 };
