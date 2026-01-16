@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, recordRateLimitAttempt, createRateLimitResponse } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limit config: 5 risk assessments per hour per user
+const RATE_LIMIT_CONFIG = { maxAttempts: 5, windowMinutes: 60 };
 
 const SYSTEM_PROMPT = `You are an AI assistant embedded within CareHub, a UK-based care and support management platform.
 
@@ -125,6 +129,13 @@ serve(async (req) => {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Check rate limit before processing
+    const rateLimitResult = await checkRateLimit(user.id, 'generate_risk_assessment', RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn('Rate limit exceeded for user:', user.id);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Fetch context data from CareHub
@@ -309,6 +320,9 @@ Please create a thorough, person-centred risk assessment following your standard
 
     console.log('Risk assessment generated successfully');
 
+    // Record successful rate limit attempt
+    await recordRateLimitAttempt(user.id, 'generate_risk_assessment', true);
+
     return new Response(JSON.stringify({
       title,
       assessmentContent,
@@ -319,7 +333,7 @@ Please create a thorough, person-centred risk assessment following your standard
 
   } catch (error) {
     console.error('Error generating risk assessment:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     }), {
       status: 500,
