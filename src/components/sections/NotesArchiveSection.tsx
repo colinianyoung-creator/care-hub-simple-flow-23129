@@ -7,8 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ChevronLeft, ChevronRight, Heart, Frown, Meh, Smile, Trash2, CalendarIcon, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Frown, Meh, Smile, Trash2, CalendarIcon, RotateCcw, AlertTriangle } from "lucide-react";
 import { format, subDays, addDays, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { IncidentReportSummary } from '@/components/IncidentReportSummary';
 
 interface CareNote {
   id: string;
@@ -411,8 +412,20 @@ export const NotesArchiveSection = ({ familyId, userRole, currentUserId }: Notes
                 {/* Incidents */}
                 {note.is_incident && note.incidents && (
                   <div className="border-t pt-2 border-red-200">
-                    <h4 className="text-sm font-medium text-red-600">Incident Details</h4>
+                    <h4 className="text-sm font-medium text-red-600">Incident Notes</h4>
                     <p className="text-sm">{note.incidents}</p>
+                  </div>
+                )}
+
+                {/* Incident Report Summary */}
+                {note.is_incident && (
+                  <div className="border-t pt-3 border-red-200 mt-2">
+                    <IncidentReportSummary
+                      careNoteId={note.id}
+                      familyId={familyId}
+                      canEdit={userRole !== 'family_viewer'}
+                      onUpdate={() => loadNotesForDate(selectedDate, isRangeMode && rangeEnd ? rangeEnd : undefined)}
+                    />
                   </div>
                 )}
 

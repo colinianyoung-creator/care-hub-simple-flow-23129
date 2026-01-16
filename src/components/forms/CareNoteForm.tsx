@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import IncidentReportModal from "@/components/dialogs/IncidentReportModal";
+
+interface IncidentReport {
+  id: string;
+  care_note_id: string;
+  family_id: string;
+  incident_type: string;
+  incident_date: string;
+  incident_time: string | null;
+  location: string | null;
+  people_involved: string[] | null;
+  witnesses: string | null;
+  description: string;
+  immediate_actions: string | null;
+  medical_attention_required: boolean;
+  medical_attention_details: string | null;
+  outcome: string | null;
+  follow_up_required: boolean;
+  follow_up_details: string | null;
+  reported_to: string[] | null;
+  reported_to_other: string | null;
+  reported_by: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface CareNoteFormProps {
   familyId: string;
@@ -25,6 +51,8 @@ export default function CareNoteForm({
   onDelete 
 }: CareNoteFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [existingIncidentReport, setExistingIncidentReport] = useState<IncidentReport | null>(null);
   const [formData, setFormData] = useState({
     activity_support: editData?.activity_support || "",
     observations: editData?.observations || "",
@@ -37,6 +65,60 @@ export default function CareNoteForm({
     incidents: editData?.incidents || "",
     is_incident: editData?.is_incident || false,
   });
+
+  // Load existing incident report if editing a care note
+  useEffect(() => {
+    const loadIncidentReport = async () => {
+      if (!editData?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('incident_reports')
+          .select('*')
+          .eq('care_note_id', editData.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        setExistingIncidentReport(data);
+      } catch (error) {
+        console.error('Error loading incident report:', error);
+      }
+    };
+
+    loadIncidentReport();
+  }, [editData?.id]);
+
+  const handleIncidentReportSuccess = async () => {
+    // Reload the incident report after save
+    if (editData?.id) {
+      const { data } = await supabase
+        .from('incident_reports')
+        .select('*')
+        .eq('care_note_id', editData.id)
+        .maybeSingle();
+      setExistingIncidentReport(data);
+    }
+    setShowIncidentModal(false);
+  };
+
+  const handleDeleteIncidentReport = async () => {
+    if (!existingIncidentReport) return;
+    
+    try {
+      const { error } = await supabase
+        .from('incident_reports')
+        .delete()
+        .eq('id', existingIncidentReport.id);
+
+      if (error) throw error;
+      
+      setExistingIncidentReport(null);
+      toast.success("Incident report deleted");
+    } catch (error) {
+      console.error('Error deleting incident report:', error);
+      toast.error("Failed to delete incident report");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,18 +307,46 @@ export default function CareNoteForm({
         </div>
 
         {/* Is Incident Flag */}
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="is_incident"
-            checked={formData.is_incident}
-            onCheckedChange={(checked) => setFormData({ ...formData, is_incident: checked as boolean })}
-          />
-          <Label 
-            htmlFor="is_incident" 
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Mark as incident requiring follow-up
-          </Label>
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="is_incident"
+              checked={formData.is_incident}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_incident: checked as boolean })}
+            />
+            <Label 
+              htmlFor="is_incident" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Mark as incident
+            </Label>
+          </div>
+          
+          {/* Add Incident Details Button - only show when is_incident is checked and we're editing */}
+          {formData.is_incident && editData?.id && (
+            <div className="ml-6">
+              <Button 
+                type="button" 
+                variant="outline"
+                className={existingIncidentReport ? "border-destructive text-destructive hover:bg-destructive/10" : "border-orange-300 text-orange-700 hover:bg-orange-50"}
+                onClick={() => setShowIncidentModal(true)}
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {existingIncidentReport ? 'Edit Incident Report' : 'Add Incident Details'}
+              </Button>
+              {existingIncidentReport && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Incident report attached ({existingIncidentReport.incident_type})
+                </p>
+              )}
+            </div>
+          )}
+          
+          {formData.is_incident && !editData?.id && (
+            <p className="text-xs text-muted-foreground ml-6">
+              Save this note first, then you can add detailed incident information.
+            </p>
+          )}
         </div>
       </div>
 
@@ -270,6 +380,21 @@ export default function CareNoteForm({
           </Button>
         </div>
       </div>
+
+      {/* Incident Report Modal */}
+      {editData?.id && (
+        <IncidentReportModal
+          open={showIncidentModal}
+          onOpenChange={setShowIncidentModal}
+          careNoteId={editData.id}
+          familyId={familyId}
+          incidentDate={editData.created_at ? format(new Date(editData.created_at), 'yyyy-MM-dd') : undefined}
+          existingReport={existingIncidentReport}
+          onSuccess={handleIncidentReportSuccess}
+          onDelete={existingIncidentReport ? handleDeleteIncidentReport : undefined}
+          canEdit={true}
+        />
+      )}
     </form>
   );
 }

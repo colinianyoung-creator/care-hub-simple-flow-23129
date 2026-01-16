@@ -610,6 +610,93 @@ export type Database = {
           },
         ]
       }
+      incident_reports: {
+        Row: {
+          care_note_id: string
+          created_at: string
+          description: string
+          family_id: string
+          follow_up_details: string | null
+          follow_up_required: boolean | null
+          id: string
+          immediate_actions: string | null
+          incident_date: string
+          incident_time: string | null
+          incident_type: string
+          location: string | null
+          medical_attention_details: string | null
+          medical_attention_required: boolean | null
+          outcome: string | null
+          people_involved: string[] | null
+          reported_by: string
+          reported_to: string[] | null
+          reported_to_other: string | null
+          updated_at: string
+          witnesses: string | null
+        }
+        Insert: {
+          care_note_id: string
+          created_at?: string
+          description: string
+          family_id: string
+          follow_up_details?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          immediate_actions?: string | null
+          incident_date: string
+          incident_time?: string | null
+          incident_type: string
+          location?: string | null
+          medical_attention_details?: string | null
+          medical_attention_required?: boolean | null
+          outcome?: string | null
+          people_involved?: string[] | null
+          reported_by: string
+          reported_to?: string[] | null
+          reported_to_other?: string | null
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Update: {
+          care_note_id?: string
+          created_at?: string
+          description?: string
+          family_id?: string
+          follow_up_details?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          immediate_actions?: string | null
+          incident_date?: string
+          incident_time?: string | null
+          incident_type?: string
+          location?: string | null
+          medical_attention_details?: string | null
+          medical_attention_required?: boolean | null
+          outcome?: string | null
+          people_involved?: string[] | null
+          reported_by?: string
+          reported_to?: string[] | null
+          reported_to_other?: string | null
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_reports_care_note_id_fkey"
+            columns: ["care_note_id"]
+            isOneToOne: false
+            referencedRelation: "care_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_reports_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_codes: {
         Row: {
           code: string
