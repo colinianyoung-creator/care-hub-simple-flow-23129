@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle, Loader2, FileText } from "lucide-react";
+import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle, Loader2, FileText, AlertTriangle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sanitizeError } from "@/lib/errorHandler";
 import { BodyMapTracker } from '@/components/BodyMapTracker';
 import CareNoteForm from '@/components/forms/CareNoteForm';
+import { IncidentReportSummary } from '@/components/IncidentReportSummary';
 
 interface CareNote {
   id: string;
@@ -645,8 +646,20 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
                 {/* Incidents */}
                 {note.is_incident && note.incidents && (
                   <div className="border-t pt-2 border-red-200">
-                    <h4 className="text-sm font-medium text-red-600">Incident Details</h4>
+                    <h4 className="text-sm font-medium text-red-600">Incident Notes</h4>
                     <p className="text-sm">{note.incidents}</p>
+                  </div>
+                )}
+
+                {/* Incident Report Summary */}
+                {note.is_incident && (
+                  <div className="border-t pt-3 border-red-200 mt-2">
+                    <IncidentReportSummary
+                      careNoteId={note.id}
+                      familyId={familyId}
+                      canEdit={canEdit}
+                      onUpdate={() => loadNotes()}
+                    />
                   </div>
                 )}
 
