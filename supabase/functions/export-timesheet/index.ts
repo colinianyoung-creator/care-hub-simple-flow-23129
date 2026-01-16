@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { checkRateLimit, recordRateLimitAttempt, createRateLimitResponse } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Rate limit config: 20 exports per hour per user
+const RATE_LIMIT_CONFIG = { maxAttempts: 20, windowMinutes: 60 };
 
 // Input validation helper functions
 function escapeHtml(unsafe: string): string {
@@ -42,15 +46,18 @@ function validateUrl(url: string): boolean {
 function validateTimesheetData(data: any): boolean {
   if (!data || typeof data !== 'object') return false;
   
-  // Validate required string fields
+  // Validate required string fields with max length
   if (typeof data.employerName !== 'string' || data.employerName.length > 200) return false;
   if (typeof data.employeeName !== 'string' || data.employeeName.length > 200) return false;
   if (typeof data.periodEnding !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(data.periodEnding)) return false;
   
-  // Validate weeks array
+  // Validate weeks array with maximum length (DoS prevention)
   if (!Array.isArray(data.weeks)) return false;
+  if (data.weeks.length > 52) return false; // Max 52 weeks (1 year)
+  
   for (const week of data.weeks) {
-    if (typeof week.weekEnding !== 'string') return false;
+    // Validate weekEnding format and length
+    if (typeof week.weekEnding !== 'string' || week.weekEnding.length > 50) return false;
     if (typeof week.basic !== 'number' || week.basic < 0 || week.basic > 168) return false;
     if (typeof week.cover !== 'number' || week.cover < 0 || week.cover > 168) return false;
     if (week.sickness !== undefined && (typeof week.sickness !== 'number' || week.sickness < 0 || week.sickness > 168)) return false;
@@ -62,7 +69,7 @@ function validateTimesheetData(data: any): boolean {
   if (!data.totals || typeof data.totals !== 'object') return false;
   const totals = ['basic', 'cover', 'sickness', 'annual_leave', 'public_holiday'];
   for (const key of totals) {
-    if (data.totals[key] !== undefined && (typeof data.totals[key] !== 'number' || data.totals[key] < 0 || data.totals[key] > 1000)) return false;
+    if (data.totals[key] !== undefined && (typeof data.totals[key] !== 'number' || data.totals[key] < 0 || data.totals[key] > 10000)) return false;
   }
   
   return true;
@@ -116,6 +123,13 @@ serve(async (req) => {
         JSON.stringify({ error: 'Authentication failed' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Check rate limit before processing
+    const rateLimitResult = await checkRateLimit(user.id, 'export_timesheet', RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn('Rate limit exceeded for user:', user.id);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     const { familyId, format, timesheetData, signatures, exportDate } = await req.json();
@@ -197,6 +211,9 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Record successful rate limit attempt
+    await recordRateLimitAttempt(user.id, 'export_timesheet', true);
 
     if (format === 'pdf') {
       return generatePDF(timesheetData, signatures, exportDate);

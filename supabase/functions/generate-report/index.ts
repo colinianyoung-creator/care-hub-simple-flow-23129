@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, recordRateLimitAttempt, createRateLimitResponse } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limit config: 10 reports per hour per user
+const RATE_LIMIT_CONFIG = { maxAttempts: 10, windowMinutes: 60 };
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -47,6 +51,13 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Check rate limit before processing
+    const rateLimitResult = await checkRateLimit(user.id, 'generate_report', RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn('Rate limit exceeded for user:', user.id);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Verify user is a member of the requested family
@@ -288,6 +299,9 @@ End with: "Report generated automatically by CareHub AI."`;
     const reportText = aiData.choices?.[0]?.message?.content || 'Failed to generate report content.';
 
     console.log('Report generated successfully');
+
+    // Record successful rate limit attempt
+    await recordRateLimitAttempt(user.id, 'generate_report', true);
 
     return new Response(JSON.stringify({ 
       report: reportText,

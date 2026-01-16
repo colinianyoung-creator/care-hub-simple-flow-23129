@@ -1,9 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit, recordRateLimitAttempt, createRateLimitResponse } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limit config: 3 delete attempts per hour per user (critical operation)
+const RATE_LIMIT_CONFIG = { maxAttempts: 3, windowMinutes: 60 };
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -58,7 +62,14 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Token valid for user: ${user.id} (${user.email})`);
 
-    // Step 3: Create admin client with service role for deletion
+    // Step 3: Check rate limit before proceeding with deletion
+    const rateLimitResult = await checkRateLimit(user.id, 'delete_user', RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn('❌ Rate limit exceeded for user:', user.id);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
+    }
+
+    // Step 4: Create admin client with service role for deletion
     const supabaseAdmin = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -67,7 +78,7 @@ Deno.serve(async (req) => {
 
     console.log(`🗑️ Attempting to delete user: ${user.id}`);
 
-    // Step 4: Delete the user
+    // Step 5: Delete the user
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
 
     if (deleteError) {
@@ -84,6 +95,9 @@ Deno.serve(async (req) => {
     }
 
     console.log(`✅ User deleted successfully: ${user.id}`);
+
+    // Record successful deletion attempt
+    await recordRateLimitAttempt(user.id, 'delete_user', true);
 
     return new Response(
       JSON.stringify({ success: true, message: 'Account deleted successfully' }),
