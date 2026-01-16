@@ -140,8 +140,27 @@ export const WalkthroughProvider = ({ children }: WalkthroughProviderProps) => {
 
 export const useWalkthrough = () => {
   const context = useContext(WalkthroughContext);
+  return context;
+};
+
+// Safe hook that returns null values if not within provider
+export const useWalkthroughSafe = () => {
+  const context = useContext(WalkthroughContext);
   if (!context) {
-    throw new Error('useWalkthrough must be used within a WalkthroughProvider');
+    return {
+      isActive: false,
+      currentSection: null,
+      currentStep: 0,
+      totalSteps: 0,
+      startWalkthrough: () => {},
+      nextStep: () => {},
+      previousStep: () => {},
+      skipWalkthrough: () => {},
+      endWalkthrough: () => {},
+      getCurrentStepData: () => null,
+      markSectionCompleted: () => {},
+      isSectionCompleted: () => false
+    };
   }
   return context;
 };
