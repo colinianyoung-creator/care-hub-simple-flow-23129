@@ -11,7 +11,11 @@ import {
   Pill,
   CalendarClock,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  Wallet,
+  Users,
+  FileBarChart,
+  Smartphone
 } from 'lucide-react';
 import {
   Dialog,
@@ -36,6 +40,10 @@ import DietDemo from '@/components/landing/DietDemo';
 import MARDemo from '@/components/landing/MARDemo';
 import AppointmentsDemo from '@/components/landing/AppointmentsDemo';
 import ExportDemo from '@/components/landing/ExportDemo';
+import MoneyDemo from '@/components/landing/MoneyDemo';
+import KeyInfoDemo from '@/components/landing/KeyInfoDemo';
+import AIReportsDemo from '@/components/landing/AIReportsDemo';
+import PWAInstallDemo from '@/components/landing/PWAInstallDemo';
 
 interface HelpCenterModalProps {
   open: boolean;
@@ -48,25 +56,34 @@ interface SectionCardData {
   descriptionKey: string;
 }
 
+// Ordered to match dashboard layout
 const sectionCards: SectionCardData[] = [
+  { id: 'scheduling', icon: Calendar, descriptionKey: 'instructions.helpCenter.scheduling.description' },
   { id: 'tasks', icon: CheckSquare, descriptionKey: 'instructions.helpCenter.tasks.description' },
   { id: 'notes', icon: FileText, descriptionKey: 'instructions.helpCenter.notes.description' },
-  { id: 'scheduling', icon: Calendar, descriptionKey: 'instructions.helpCenter.scheduling.description' },
   { id: 'diet', icon: UtensilsCrossed, descriptionKey: 'instructions.helpCenter.diet.description' },
+  { id: 'money', icon: Wallet, descriptionKey: 'instructions.helpCenter.money.description' },
+  { id: 'keyInformation', icon: Users, descriptionKey: 'instructions.helpCenter.keyInformation.description' },
   { id: 'medications', icon: Pill, descriptionKey: 'instructions.helpCenter.medications.description' },
   { id: 'appointments', icon: CalendarClock, descriptionKey: 'instructions.helpCenter.appointments.description' },
+  { id: 'aiReports', icon: FileBarChart, descriptionKey: 'instructions.helpCenter.aiReports.description' },
   { id: 'timePayroll', icon: Clock, descriptionKey: 'instructions.helpCenter.timePayroll.description' },
+  { id: 'installApp', icon: Smartphone, descriptionKey: 'instructions.helpCenter.installApp.description' },
 ];
 
 // Map sections to their demo components
 const sectionDemos: Record<InstructionSection, React.ComponentType> = {
+  scheduling: ScheduleDemo,
   tasks: TasksDemo,
   notes: NotesDemo,
-  scheduling: ScheduleDemo,
   diet: DietDemo,
+  money: MoneyDemo,
+  keyInformation: KeyInfoDemo,
   medications: MARDemo,
   appointments: AppointmentsDemo,
+  aiReports: AIReportsDemo,
   timePayroll: ExportDemo,
+  installApp: PWAInstallDemo,
 };
 
 export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) => {
