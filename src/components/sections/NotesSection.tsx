@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Heart, Frown, Meh, Smile, Laugh, Archive, AlertCircle, Loader2, FileText, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Heart, Frown, Meh, Smile, Archive, AlertCircle, Loader2, FileText } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { NotesArchiveSection } from './NotesArchiveSection';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sanitizeError } from "@/lib/errorHandler";
 import { BodyMapTracker } from '@/components/BodyMapTracker';
-import CareNoteForm from '@/components/forms/CareNoteForm';
+import UnifiedNoteForm from '@/components/forms/UnifiedNoteForm';
 import { IncidentReportSummary } from '@/components/IncidentReportSummary';
 
 interface CareNote {
@@ -67,26 +62,9 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   const isMobile = useIsMobile();
   const [notes, setNotes] = useState<CareNote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<CareNote | null>(null);
   const [showNoteDetails, setShowNoteDetails] = useState(false);
-  
-  
-  // New note form state
-  const [newNote, setNewNote] = useState({
-    activity_support: '',
-    activity_tags: [] as string[],
-    observations: '',
-    outcome_response: '',
-    next_steps: '',
-    mood: '',
-    eating_drinking: '',
-    eating_drinking_notes: '',
-    bathroom_usage: '',
-    incidents: '',
-    is_incident: false
-  });
 
   const loadNotes = async (signal?: AbortSignal) => {
     try {
@@ -147,62 +125,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!newNote.activity_support.trim()) return;
-
-    // Verify user is authenticated before attempting save
-    if (!currentUserId) {
-      toast({
-        title: "Authentication Required",
-        description: "Please wait for authentication to complete",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('care_notes')
-        .insert([{
-          family_id: familyId,
-          content: `Activity: ${newNote.activity_support}${newNote.observations ? '\nObservations: ' + newNote.observations : ''}`,
-          author_id: currentUserId,
-          title: newNote.activity_support,
-          category: 'Activity Support'
-        }] as any);
-
-      if (error) throw error;
-
-      setNewNote({
-        activity_support: '',
-        activity_tags: [],
-        observations: '',
-        outcome_response: '',
-        next_steps: '',
-        mood: '',
-        eating_drinking: '',
-        eating_drinking_notes: '',
-        bathroom_usage: '',
-        incidents: '',
-        is_incident: false
-      });
-      setShowAddForm(false);
-      loadNotes();
-      
-      toast({
-        title: "Note added",
-        description: "The care note has been added successfully.",
-      });
-    } catch (error) {
-      console.error('Error adding note:', error);
-      toast({
-        title: "Error adding note",
-        description: "There was an error adding the care note.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -298,16 +220,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
     }
   };
 
-  const toggleActivityTag = (tag: string) => {
-    setNewNote(prev => ({
-      ...prev,
-      activity_tags: prev.activity_tags.includes(tag)
-        ? prev.activity_tags.filter(t => t !== tag)
-        : [...prev.activity_tags, tag]
-    }));
-  };
-
-  const predefinedTags = ['Personal Care', 'Meal Prep', 'Medication', 'Outing', 'Exercise', 'Social', 'Medical'];
 
   if (!familyId) {
     return (
@@ -349,184 +261,19 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
       </TabsList>
 
       <TabsContent value="today" className="space-y-6">
-        {/* Add Note Form */}
-        {familyId && canEdit && showAddForm ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add Daily Note</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Activity Support */}
-            <div className="space-y-2">
-              <Label>Activity / Support Provided *</Label>
-              <Textarea
-                placeholder="Describe the activities and support provided..."
-                value={newNote.activity_support}
-                onChange={(e) => setNewNote(prev => ({ ...prev, activity_support: e.target.value }))}
-                rows={2}
-              />
-            </div>
-
-            {/* Activity Tags */}
-            <div className="space-y-2">
-              <Label>Quick Tags</Label>
-              <div className="flex flex-wrap gap-2">
-                {predefinedTags.map(tag => (
-                  <Badge
-                    key={tag}
-                    variant={newNote.activity_tags.includes(tag) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleActivityTag(tag)}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Observations */}
-            <div className="space-y-2">
-              <Label>Observations / Behaviour</Label>
-              <Textarea
-                placeholder="Note any observations about behaviour, mood, or responses..."
-                value={newNote.observations}
-                onChange={(e) => setNewNote(prev => ({ ...prev, observations: e.target.value }))}
-                rows={2}
-              />
-            </div>
-
-            {/* Outcome */}
-            <div className="space-y-2">
-              <Label>Outcome / Response</Label>
-              <Textarea
-                placeholder="How did the person respond? What was achieved?"
-                value={newNote.outcome_response}
-                onChange={(e) => setNewNote(prev => ({ ...prev, outcome_response: e.target.value }))}
-                rows={2}
-              />
-            </div>
-
-            {/* Next Steps */}
-            <div className="space-y-2">
-              <Label>Next Steps / Handover</Label>
-              <Textarea
-                placeholder="Any important information for the next carer..."
-                value={newNote.next_steps}
-                onChange={(e) => setNewNote(prev => ({ ...prev, next_steps: e.target.value }))}
-                rows={2}
-              />
-            </div>
-
-            {/* Wellbeing Trackers */}
-            <div className="space-y-4 border-t pt-4">
-              <h4 className="font-medium">Wellbeing Trackers</h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Mood */}
-                <div className="space-y-2">
-                  <Label>Mood</Label>
-                  <Select value={newNote.mood} onValueChange={(value) => setNewNote(prev => ({ ...prev, mood: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select mood" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="happy">😊 Happy</SelectItem>
-                      <SelectItem value="calm">😌 Calm</SelectItem>
-                      <SelectItem value="upset">😢 Upset</SelectItem>
-                      <SelectItem value="anxious">😰 Anxious</SelectItem>
-                      <SelectItem value="tired">😴 Tired</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Eating/Drinking */}
-                <div className="space-y-2">
-                  <Label>Eating / Drinking</Label>
-                  <Select value={newNote.eating_drinking} onValueChange={(value) => setNewNote(prev => ({ ...prev, eating_drinking: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="good">Ate full meal</SelectItem>
-                      <SelectItem value="little">Ate little</SelectItem>
-                      <SelectItem value="refused">Refused food</SelectItem>
-                      <SelectItem value="fluid_good">Fluid intake good</SelectItem>
-                      <SelectItem value="fluid_poor">Fluid intake poor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Bathroom */}
-                <div className="space-y-2">
-                  <Label>Bathroom Usage</Label>
-                  <Select value={newNote.bathroom_usage} onValueChange={(value) => setNewNote(prev => ({ ...prev, bathroom_usage: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="assistance">Needed assistance</SelectItem>
-                      <SelectItem value="constipated">Constipated</SelectItem>
-                      <SelectItem value="diarrhoea">Diarrhoea</SelectItem>
-                      <SelectItem value="accident">Accident</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Additional Notes for Eating */}
-              {newNote.eating_drinking && (
-                <div className="space-y-2">
-                  <Label>Eating/Drinking Notes</Label>
-                  <Input
-                    placeholder="Additional details about eating/drinking..."
-                    value={newNote.eating_drinking_notes}
-                    onChange={(e) => setNewNote(prev => ({ ...prev, eating_drinking_notes: e.target.value }))}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Incidents */}
-            <div className="space-y-2 border-t pt-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_incident"
-                  checked={newNote.is_incident}
-                  onCheckedChange={(checked) => setNewNote(prev => ({ ...prev, is_incident: !!checked }))}
-                />
-                <Label htmlFor="is_incident">Mark as incident</Label>
-              </div>
-              
-              {newNote.is_incident && (
-                <Textarea
-                  placeholder="Describe the incident in detail..."
-                  value={newNote.incidents}
-                  onChange={(e) => setNewNote(prev => ({ ...prev, incidents: e.target.value }))}
-                  rows={3}
-                />
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleAddNote} disabled={!newNote.activity_support.trim() || !currentUserId}>
-                Add Note
-              </Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : familyId && canEdit ? (
-        <Button 
-          onClick={() => setShowAddForm(true)} 
-          className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Daily Note
-        </Button>
-      ) : null}
+        {/* Add Note Button */}
+        {familyId && canEdit && (
+          <Button 
+            onClick={() => {
+              setSelectedNote(null);
+              setShowNoteDetails(true);
+            }} 
+            className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Daily Note
+          </Button>
+        )}
 
       {/* Notes List */}
       <div className="space-y-4">
@@ -704,10 +451,10 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedNote ? 'Edit Care Note' : 'New Care Note'}
+              {selectedNote ? (selectedNote.is_incident ? 'Edit Incident Report' : 'Edit Daily Note') : 'Add Note'}
             </DialogTitle>
           </DialogHeader>
-          <CareNoteForm
+          <UnifiedNoteForm
             familyId={familyId}
             editData={selectedNote}
             onSuccess={() => {
