@@ -164,20 +164,20 @@ export default function IncidentReportForm({
           .eq('id', existingReport.id);
 
         if (error) throw error;
-        toast.success("Incident report updated");
+        toast.success("Incident record updated");
       } else {
         const { error } = await supabase
           .from('incident_reports')
           .insert([reportData]);
 
         if (error) throw error;
-        toast.success("Incident report created");
+        toast.success("Incident record created");
       }
 
       onSuccess();
     } catch (error) {
       console.error('Error saving incident report:', error);
-      toast.error("Failed to save incident report");
+      toast.error("Failed to save incident record");
     } finally {
       setIsSubmitting(false);
     }

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, Clock, RotateCcw, Trash2, Plus, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -495,18 +496,21 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Assign To (optional)</label>
-                <select
-                  className="w-full p-2 border rounded-md"
+                <Select
                   value={newTask.assigned_to}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, assigned_to: e.target.value }))}
+                  onValueChange={(value) => setNewTask(prev => ({ ...prev, assigned_to: value }))}
                 >
-                  <option value="">Select team member</option>
-                  {teamMembers.map((member) => (
-                    <option key={member.user_id} value={member.user_id}>
-                      {member.profiles.full_name || 'Unnamed User'}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.user_id} value={member.user_id}>
+                        {member.profiles.full_name || 'Unnamed User'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
@@ -530,15 +534,19 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               {newTask.is_recurring && (
                 <div>
                   <label className="text-sm font-medium mb-1 block">Repeat</label>
-                  <select
-                    className="w-full p-2 border rounded-md"
+                  <Select
                     value={newTask.recurrence_type}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, recurrence_type: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
+                    onValueChange={(value) => setNewTask(prev => ({ ...prev, recurrence_type: value as 'daily' | 'weekly' | 'monthly' }))}
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <p className="text-xs text-muted-foreground mt-1">
                     When completed, a new task will be created for the next {newTask.recurrence_type === 'daily' ? 'day' : newTask.recurrence_type === 'weekly' ? 'week' : 'month'}
                   </p>

@@ -269,7 +269,7 @@ export default function UnifiedNoteForm({
           if (incidentError) throw incidentError;
         }
 
-        toast.success(editData ? "Incident report updated" : "Incident report created");
+        toast.success(editData ? "Incident record updated" : "Incident record created");
       } else {
         // Daily note mode
         if (!dailyNoteData.activity_support.trim()) {
@@ -333,7 +333,7 @@ export default function UnifiedNoteForm({
           </TabsTrigger>
           <TabsTrigger value="incident" className="flex items-center gap-2 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">
             <AlertTriangle className="h-4 w-4" />
-            Incident Report
+            Incident Record
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -451,7 +451,6 @@ export default function UnifiedNoteForm({
           </>
         ) : (
           <>
-            {/* Incident Report Fields */}
             <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
               <p className="text-sm text-destructive font-medium flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
@@ -674,7 +673,7 @@ export default function UnifiedNoteForm({
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editData ? 'Update' : 'Save'} {formMode === 'incident' ? 'Incident Report' : 'Note'}
+            {editData ? 'Update' : 'Save'} {formMode === 'incident' ? 'Incident Record' : 'Note'}
           </Button>
         </div>
       </div>

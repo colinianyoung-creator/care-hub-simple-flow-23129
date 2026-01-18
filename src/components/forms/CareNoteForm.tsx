@@ -113,10 +113,10 @@ export default function CareNoteForm({
       if (error) throw error;
       
       setExistingIncidentReport(null);
-      toast.success("Incident report deleted");
+      toast.success("Incident record deleted");
     } catch (error) {
       console.error('Error deleting incident report:', error);
-      toast.error("Failed to delete incident report");
+      toast.error("Failed to delete incident record");
     }
   };
 
@@ -332,11 +332,11 @@ export default function CareNoteForm({
                 onClick={() => setShowIncidentModal(true)}
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
-                {existingIncidentReport ? 'Edit Incident Report' : 'Add Incident Details'}
+                {existingIncidentReport ? 'Edit Incident Record' : 'Add Incident Details'}
               </Button>
               {existingIncidentReport && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Incident report attached ({existingIncidentReport.incident_type})
+                  Incident record attached ({existingIncidentReport.incident_type})
                 </p>
               )}
             </div>
