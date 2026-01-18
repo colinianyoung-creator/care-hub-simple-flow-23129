@@ -34,6 +34,8 @@ export const MobileDayView = ({
   allFamiliesShifts = [],
   refreshTrigger = 0
 }: MobileDayViewProps) => {
+  // IMPORTANT: All hooks must be called before any conditional returns
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dayShifts, setDayShifts] = useState<any[]>([]);
   const [upcomingShifts, setUpcomingShifts] = useState<any[]>([]);
@@ -82,16 +84,7 @@ export const MobileDayView = ({
     };
   }, [currentDate, familyId, showListView, viewMode, allFamiliesShiftsLength, refreshTrigger]);
 
-  useEffect(() => {
-    const handleToggleListView = () => {
-      onToggleListView();
-    };
-
-    window.addEventListener('mobile-toggle-list-view', handleToggleListView);
-    return () => {
-      window.removeEventListener('mobile-toggle-list-view', handleToggleListView);
-    };
-  }, [onToggleListView]);
+  // Removed: custom event listener for list view toggle - now handled directly via props
 
   const loadDayShifts = async (signal?: AbortSignal) => {
     try {
@@ -483,7 +476,7 @@ export const MobileDayView = ({
     );
   }
 
-  const isMobile = useIsMobile();
+  // isMobile is now declared at the top of the component (before early returns)
   const isToday = format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
   return (
