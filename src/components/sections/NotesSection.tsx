@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Heart, Frown, Meh, Smile, Archive, AlertCircle, Loader2, FileText } from "lucide-react";
@@ -64,7 +63,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<CareNote | null>(null);
-  const [showNoteDetails, setShowNoteDetails] = useState(false);
+  const [showNoteForm, setShowNoteForm] = useState(false);
 
   const loadNotes = async (signal?: AbortSignal) => {
     try {
@@ -246,7 +245,6 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
 
   return (
-    <>
     <Tabs defaultValue="today" className="space-y-6">
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="today" className="flex items-center gap-2">
@@ -261,173 +259,210 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
       </TabsList>
 
       <TabsContent value="today" className="space-y-6">
-        {/* Add Note Button */}
-        {familyId && canEdit && (
-          <Button 
-            onClick={() => {
-              setSelectedNote(null);
-              setShowNoteDetails(true);
-            }} 
-            className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Daily Note
-          </Button>
-        )}
-
-      {/* Notes List */}
-      <div className="space-y-4">
-        {notes.length === 0 ? (
+        {/* Inline Note Form */}
+        {showNoteForm ? (
           <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No care notes for today</p>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  {selectedNote ? (selectedNote.is_incident ? 'Edit Incident Record' : 'Edit Daily Note') : 'Add Note'}
+                </h3>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <UnifiedNoteForm
+                familyId={familyId}
+                editData={selectedNote}
+                onSuccess={() => {
+                  setShowNoteForm(false);
+                  setSelectedNote(null);
+                  loadNotes();
+                }}
+                onCancel={() => {
+                  setShowNoteForm(false);
+                  setSelectedNote(null);
+                }}
+                onDelete={selectedNote ? () => {
+                  handleDeleteNote(selectedNote.id);
+                  setShowNoteForm(false);
+                } : undefined}
+              />
             </CardContent>
           </Card>
         ) : (
-          notes.map((note) => (
-            <Card 
-              key={note.id} 
-              className={`cursor-pointer hover:shadow-md transition-shadow ${note.is_incident ? "border-red-200" : ""}`}
-              onClick={() => {
-                setSelectedNote(note);
-                setShowNoteDetails(true);
-              }}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium">
-                        {note.profiles?.full_name || 'Unknown User'}
-                      </p>
-                      {note.is_incident && (
-                        <Badge variant="destructive" className="text-xs">Incident</Badge>
-                      )}
-                      {note.mood && getMoodIcon(note.mood)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(note.created_at), 'MMM d, yyyy')} at {format(new Date(note.created_at), 'h:mm a')}
-                    </p>
-                  </div>
-                  {canDeleteNote(note) && (
-                    <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteNote(note.id)}
-                        className="mobile-section-button md:w-auto"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="note-content">
-                  {/* Activity and Tags */}
-                  {note.activity_support && (
-                    <div>
-                      <h4 className="text-sm font-medium">Activity/Support</h4>
-                      <p className="text-sm">{note.activity_support}</p>
-                      {note.activity_tags && note.activity_tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {note.activity_tags.map(tag => (
-                            <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                          ))}
+          <>
+            {/* Add Note Button */}
+            {familyId && canEdit && (
+              <Button 
+                onClick={() => {
+                  setSelectedNote(null);
+                  setShowNoteForm(true);
+                }} 
+                className="add-button w-full h-12 md:h-10 text-sm md:text-base px-4 py-3 md:px-6 md:py-2 min-h-[44px]"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Daily Note
+              </Button>
+            )}
+
+            {/* Notes List */}
+            <div className="space-y-4">
+              {notes.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-muted-foreground">No care notes for today</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                notes.map((note) => (
+                  <Card 
+                    key={note.id} 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${note.is_incident ? "border-red-200" : ""}`}
+                    onClick={() => {
+                      setSelectedNote(note);
+                      setShowNoteForm(true);
+                    }}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">
+                              {note.profiles?.full_name || 'Unknown User'}
+                            </p>
+                            {note.is_incident && (
+                              <Badge variant="destructive" className="text-xs">Incident</Badge>
+                            )}
+                            {note.mood && getMoodIcon(note.mood)}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(note.created_at), 'MMM d, yyyy')} at {format(new Date(note.created_at), 'h:mm a')}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  )}
+                        {canDeleteNote(note) && (
+                          <div className="mobile-button-stack md:absolute md:top-4 md:right-4 md:mt-0 md:border-t-0 md:pt-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteNote(note.id);
+                              }}
+                              className="mobile-section-button md:w-auto"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="note-content">
+                        {/* Activity and Tags */}
+                        {note.activity_support && (
+                          <div>
+                            <h4 className="text-sm font-medium">Activity/Support</h4>
+                            <p className="text-sm">{note.activity_support}</p>
+                            {note.activity_tags && note.activity_tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {note.activity_tags.map(tag => (
+                                  <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-                {/* Observations */}
-                {note.observations && (
-                  <div>
-                    <h4 className="text-sm font-medium">Observations</h4>
-                    <p className="text-sm">{note.observations}</p>
-                  </div>
-                )}
+                        {/* Observations */}
+                        {note.observations && (
+                          <div>
+                            <h4 className="text-sm font-medium">Observations</h4>
+                            <p className="text-sm">{note.observations}</p>
+                          </div>
+                        )}
 
-                {/* Outcome */}
-                {note.outcome_response && (
-                  <div>
-                    <h4 className="text-sm font-medium">Outcome</h4>
-                    <p className="text-sm">{note.outcome_response}</p>
-                  </div>
-                )}
+                        {/* Outcome */}
+                        {note.outcome_response && (
+                          <div>
+                            <h4 className="text-sm font-medium">Outcome</h4>
+                            <p className="text-sm">{note.outcome_response}</p>
+                          </div>
+                        )}
 
-                {/* Next Steps */}
-                {note.next_steps && (
-                  <div>
-                    <h4 className="text-sm font-medium">Next Steps</h4>
-                    <p className="text-sm">{note.next_steps}</p>
-                  </div>
-                )}
+                        {/* Next Steps */}
+                        {note.next_steps && (
+                          <div>
+                            <h4 className="text-sm font-medium">Next Steps</h4>
+                            <p className="text-sm">{note.next_steps}</p>
+                          </div>
+                        )}
 
-                {/* Wellbeing Trackers */}
-                {(note.mood || note.eating_drinking || note.bathroom_usage) && (
-                  <div className="border-t pt-2">
-                    <h4 className="text-sm font-medium mb-2">Wellbeing</h4>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {note.mood && (
-                        <div className="flex items-center gap-1">
-                          {getMoodIcon(note.mood)}
-                          <span className="capitalize">{note.mood}</span>
-                        </div>
-                      )}
-                      {note.eating_drinking && (
-                        <div>
-                          <span className="font-medium">Eating:</span> {note.eating_drinking?.replace('_', ' ') || note.eating_drinking}
-                          {note.eating_drinking_notes && <span> - {note.eating_drinking_notes}</span>}
-                        </div>
-                      )}
-                      {note.bathroom_usage && (
-                        <div>
-                          <span className="font-medium">Bathroom:</span> {note.bathroom_usage}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                        {/* Wellbeing Trackers */}
+                        {(note.mood || note.eating_drinking || note.bathroom_usage) && (
+                          <div className="border-t pt-2">
+                            <h4 className="text-sm font-medium mb-2">Wellbeing</h4>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {note.mood && (
+                                <div className="flex items-center gap-1">
+                                  {getMoodIcon(note.mood)}
+                                  <span className="capitalize">{note.mood}</span>
+                                </div>
+                              )}
+                              {note.eating_drinking && (
+                                <div>
+                                  <span className="font-medium">Eating:</span> {note.eating_drinking?.replace('_', ' ') || note.eating_drinking}
+                                  {note.eating_drinking_notes && <span> - {note.eating_drinking_notes}</span>}
+                                </div>
+                              )}
+                              {note.bathroom_usage && (
+                                <div>
+                                  <span className="font-medium">Bathroom:</span> {note.bathroom_usage}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
-                {/* Incidents */}
-                {note.is_incident && note.incidents && (
-                  <div className="border-t pt-2 border-red-200">
-                    <h4 className="text-sm font-medium text-red-600">Incident Notes</h4>
-                    <p className="text-sm">{note.incidents}</p>
-                  </div>
-                )}
+                        {/* Incidents */}
+                        {note.is_incident && note.incidents && (
+                          <div className="border-t pt-2 border-red-200">
+                            <h4 className="text-sm font-medium text-red-600">Incident Notes</h4>
+                            <p className="text-sm">{note.incidents}</p>
+                          </div>
+                        )}
 
-                {/* Incident Report Summary */}
-                {note.is_incident && (
-                  <div className="border-t pt-3 border-red-200 mt-2">
-                    <IncidentReportSummary
-                      careNoteId={note.id}
-                      familyId={familyId}
-                      canEdit={canEdit}
-                      onUpdate={() => loadNotes()}
-                    />
-                  </div>
-                )}
+                        {/* Incident Record Summary */}
+                        {note.is_incident && (
+                          <div className="border-t pt-3 border-red-200 mt-2">
+                            <IncidentReportSummary
+                              careNoteId={note.id}
+                              familyId={familyId}
+                              canEdit={canEdit}
+                              onUpdate={() => loadNotes()}
+                            />
+                          </div>
+                        )}
 
-                {/* Fallback for old notes without new fields */}
-                {!note.activity_support && !note.observations && note.content && (
-                  <div>
-                    <h4 className="text-sm font-medium">Note</h4>
-                    <p className="text-sm">{note.content}</p>
-                  </div>
-                )}
-                </div>
+                        {/* Fallback for old notes without new fields */}
+                        {!note.activity_support && !note.observations && note.content && (
+                          <div>
+                            <h4 className="text-sm font-medium">Note</h4>
+                            <p className="text-sm">{note.content}</p>
+                          </div>
+                        )}
+                      </div>
 
-                {/* Click to view/edit hint */}
-                <div className="text-xs text-muted-foreground text-right mt-2">
-                  Click to view/edit
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                      {/* Click to view/edit hint */}
+                      <div className="text-xs text-muted-foreground text-right mt-2">
+                        Click to view/edit
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </>
         )}
-      </div>
       </TabsContent>
 
       <TabsContent value="body-map">
@@ -445,34 +480,5 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
         />
       </TabsContent>
     </Tabs>
-
-      {/* Note Details Modal */}
-      <Dialog open={showNoteDetails} onOpenChange={setShowNoteDetails}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedNote ? (selectedNote.is_incident ? 'Edit Incident Report' : 'Edit Daily Note') : 'Add Note'}
-            </DialogTitle>
-          </DialogHeader>
-          <UnifiedNoteForm
-            familyId={familyId}
-            editData={selectedNote}
-            onSuccess={() => {
-              setShowNoteDetails(false);
-              setSelectedNote(null);
-              loadNotes();
-            }}
-            onCancel={() => {
-              setShowNoteDetails(false);
-              setSelectedNote(null);
-            }}
-            onDelete={selectedNote ? () => {
-              handleDeleteNote(selectedNote.id);
-              setShowNoteDetails(false);
-            } : undefined}
-          />
-        </DialogContent>
-      </Dialog>
-    </>
   );
 };

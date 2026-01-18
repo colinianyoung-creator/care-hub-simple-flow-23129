@@ -77,7 +77,7 @@ export default function IncidentReportModal({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            {existingReport ? 'Edit Incident Report' : 'New Incident Report'}
+            {existingReport ? 'Edit Incident Record' : 'New Incident Record'}
           </DialogTitle>
         </DialogHeader>
         
