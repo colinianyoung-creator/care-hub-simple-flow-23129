@@ -323,13 +323,14 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
               onChange={(e) => setNewAppointment(prev => ({ ...prev, description: e.target.value }))}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Date:</label>
                 <Input
                   type="date"
                   value={newAppointment.appointment_date}
                   onChange={(e) => setNewAppointment(prev => ({ ...prev, appointment_date: e.target.value }))}
+                  className="w-full"
                 />
               </div>
               <div>
@@ -338,6 +339,7 @@ export const AppointmentsSection = ({ familyId, userRole }: AppointmentsSectionP
                   type="time"
                   value={newAppointment.appointment_time}
                   onChange={(e) => setNewAppointment(prev => ({ ...prev, appointment_time: e.target.value }))}
+                  className="w-full"
                 />
               </div>
             </div>

@@ -327,13 +327,13 @@ export default function UnifiedNoteForm({
       {/* Mode Toggle */}
       <Tabs value={formMode} onValueChange={(v) => setFormMode(v as 'daily_note' | 'incident')}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="daily_note" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Daily Note
+          <TabsTrigger value="daily_note" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+            <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Daily Note</span>
           </TabsTrigger>
-          <TabsTrigger value="incident" className="flex items-center gap-2 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">
-            <AlertTriangle className="h-4 w-4" />
-            Incident Record
+          <TabsTrigger value="incident" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">Incident</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -477,7 +477,7 @@ export default function UnifiedNoteForm({
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="incident_date">Date *</Label>
                 <Input
@@ -486,6 +486,7 @@ export default function UnifiedNoteForm({
                   value={incidentData.incident_date}
                   onChange={(e) => setIncidentData({ ...incidentData, incident_date: e.target.value })}
                   required
+                  className="w-full"
                 />
               </div>
               <div>
@@ -495,6 +496,7 @@ export default function UnifiedNoteForm({
                   type="time"
                   value={incidentData.incident_time}
                   onChange={(e) => setIncidentData({ ...incidentData, incident_time: e.target.value })}
+                  className="w-full"
                 />
               </div>
             </div>
@@ -648,32 +650,34 @@ export default function UnifiedNoteForm({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 justify-between pt-4 border-t">
-        <div>
+      <div className="flex flex-col sm:flex-row gap-2 sm:justify-between pt-4 border-t">
+        <div className="order-2 sm:order-1">
           {editData && onDelete && (
             <Button 
               type="button" 
               variant="destructive" 
               onClick={onDelete}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 order-1 sm:order-2">
           <Button 
             type="button" 
             variant="outline" 
             onClick={onCancel} 
             disabled={isSubmitting}
+            className="flex-1 sm:flex-none"
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editData ? 'Update' : 'Save'} {formMode === 'incident' ? 'Incident Record' : 'Note'}
+            {editData ? 'Update' : 'Save'}
           </Button>
         </div>
       </div>

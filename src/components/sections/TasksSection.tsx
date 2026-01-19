@@ -485,13 +485,14 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               value={newTask.description}
               onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Due Date (optional)</label>
                 <Input
                   type="date"
                   value={newTask.due_date}
                   onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
+                  className="w-full"
                 />
               </div>
               <div>
@@ -500,7 +501,7 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
                   value={newTask.assigned_to}
                   onValueChange={(value) => setNewTask(prev => ({ ...prev, assigned_to: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select team member" />
                   </SelectTrigger>
                   <SelectContent>

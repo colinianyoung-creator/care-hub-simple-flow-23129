@@ -63,7 +63,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showShiftAbsenceForm, setShowShiftAbsenceForm] = useState(false);
   const [showMonthView, setShowMonthView] = useState(false);
-  const [showListView, setShowListView] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -97,7 +96,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
     }
   }, [defaultActiveTab]);
 
-  console.log('showListView state:', showListView);
+  
 
   // Debug: Log modal states whenever they change
   useEffect(() => {
@@ -1650,17 +1649,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                   >
                     Month View
                   </Button>
-                  <Button 
-                    onClick={() => {
-                      const event = new CustomEvent('mobile-toggle-list-view');
-                      window.dispatchEvent(event);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="h-10 px-3 min-h-[44px] lg:hidden text-sm"
-                  >
-                    {showListView ? 'Day View' : 'List'}
-                  </Button>
                 </div>
               </div>
             </div>
@@ -1674,14 +1662,6 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
               instances={instances}
               onRefresh={loadSchedulingData}
               onEditShift={canEdit ? onEditShift : undefined}
-              showListView={(() => {
-                console.log('Passing showListView to ScheduleCalendar:', showListView);
-                return showListView;
-              })()}
-              onToggleListView={() => {
-                console.log('Toggle list view called from ScheduleCalendar');
-                setShowListView(!showListView);
-              }}
               viewMode={viewMode}
               allFamiliesShifts={allFamiliesShifts}
               currentUserId={currentUserId || undefined}
