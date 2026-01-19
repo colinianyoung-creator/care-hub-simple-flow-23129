@@ -738,10 +738,10 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
         if (!carersError && carerMemberships) {
           const carerMap: Record<string, string> = {};
           
-          // Fetch all carer profiles in one query
+          // Fetch all carer profiles in one query (using profiles_limited for security)
           const carerUserIds = carerMemberships.map(m => m.user_id);
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_limited')
             .select('id, full_name')
             .in('id', carerUserIds);
           
@@ -1007,9 +1007,9 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
           .select('id, clock_in, shift_type')
           .in('id', timeEntryIds);
         
-        // Fetch requester profiles
+        // Fetch requester profiles (using profiles_limited for security)
         const { data: requesterProfiles } = await supabase
-          .from('profiles')
+          .from('profiles_limited')
           .select('id, full_name')
           .in('id', requesterIds);
         
