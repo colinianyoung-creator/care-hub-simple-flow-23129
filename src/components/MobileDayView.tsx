@@ -16,8 +16,6 @@ interface MobileDayViewProps {
   userRole: string;
   careRecipientNameHint?: string;
   carersMap?: Record<string, string>;
-  onToggleListView: () => void;
-  showListView: boolean;
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
   refreshTrigger?: number;
@@ -28,8 +26,6 @@ export const MobileDayView = ({
   userRole,
   careRecipientNameHint,
   carersMap,
-  onToggleListView,
-  showListView,
   viewMode = 'single-family',
   allFamiliesShifts = [],
   refreshTrigger = 0
@@ -59,11 +55,7 @@ export const MobileDayView = ({
           }
         }, 5000);
 
-        if (showListView) {
-          await loadUpcomingShifts(abortController.signal);
-        } else {
-          await loadDayShifts(abortController.signal);
-        }
+        await loadDayShifts(abortController.signal);
       } catch (error: any) {
         if (error?.name === 'AbortError') {
           console.log('Fetch aborted');
@@ -82,9 +74,7 @@ export const MobileDayView = ({
       abortController.abort();
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [currentDate, familyId, showListView, viewMode, allFamiliesShiftsLength, refreshTrigger]);
-
-  // Removed: custom event listener for list view toggle - now handled directly via props
+  }, [currentDate, familyId, viewMode, allFamiliesShiftsLength, refreshTrigger]);
 
   const loadDayShifts = async (signal?: AbortSignal) => {
     try {
@@ -414,67 +404,6 @@ export const MobileDayView = ({
     window.dispatchEvent(event);
   };
 
-  if (showListView) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Upcoming Shifts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4 text-muted-foreground">Loading...</div>
-          ) : upcomingShifts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No upcoming shifts scheduled
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {(() => {
-                const groupedShifts = upcomingShifts.reduce((acc, shift) => {
-                  const dateKey = shift.scheduled_date;
-                  if (!acc[dateKey]) {
-                    acc[dateKey] = [];
-                  }
-                  acc[dateKey].push(shift);
-                  return acc;
-                }, {} as Record<string, any[]>);
-
-                return Object.entries(groupedShifts).map(([date, shifts]: [string, any[]]) => (
-                  <div key={date} className="space-y-2">
-                    <h4 className="text-sm font-medium text-muted-foreground border-b pb-1">
-                      {format(new Date(date), 'EEE, MMM d')}
-                    </h4>
-                    <div className="space-y-2">
-                      {shifts.map((shift) => (
-                        <Badge 
-                          key={shift.id}
-                          className={`${getShiftTypeColor(shift)} text-xs cursor-pointer p-3 h-auto justify-start hover:opacity-80 transition-opacity w-full overflow-hidden`}
-                          onClick={() => handleShiftClick(shift)}
-                        >
-                          <div className="flex flex-col gap-1 w-full min-w-0">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3 w-3 flex-shrink-0" />
-                              <span className="font-medium text-xs md:text-sm truncate">
-                                {shift.start_time?.slice(0,5)} - {shift.end_time?.slice(0,5)}
-                              </span>
-                            </div>
-                            <div className="flex flex-col items-start">
-                              <span className="text-xs md:text-sm truncate">{formatShiftType(shift.shift_type || shift.type || 'basic')}</span>
-                              <span className="text-[10px] md:text-xs opacity-90 truncate">{getDisplayName(shift)}</span>
-                            </div>
-                          </div>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
 
   // isMobile is now declared at the top of the component (before early returns)
   const isToday = format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');

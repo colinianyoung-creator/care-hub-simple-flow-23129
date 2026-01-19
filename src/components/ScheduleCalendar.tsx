@@ -25,8 +25,6 @@ interface ScheduleCalendarProps {
   onEditShift?: (shift: any) => void;
   onDeleteShift?: (shiftId: string) => void;
   carersMap?: Record<string, string>;
-  showListView?: boolean;
-  onToggleListView?: () => void;
   viewMode?: 'single-family' | 'all-families';
   allFamiliesShifts?: any[];
   currentUserId?: string;
@@ -44,8 +42,6 @@ export const ScheduleCalendar = ({
   onEditShift,
   onDeleteShift,
   carersMap,
-  showListView = false,
-  onToggleListView,
   viewMode = 'single-family',
   allFamiliesShifts = [],
   currentUserId,
@@ -374,8 +370,6 @@ useEffect(() => {
         userRole={userRole}
         careRecipientNameHint={careRecipientNameHint}
         carersMap={carers}
-        onToggleListView={onToggleListView}
-        showListView={showListView}
         refreshTrigger={refreshTrigger}
         viewMode={viewMode}
         allFamiliesShifts={allFamiliesShifts}
@@ -558,31 +552,6 @@ useEffect(() => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-4 pt-4 border-t gap-4">
             {/* Shift count removed - was showing incorrect total */}
           </div>
-
-          {/* List view for carers */}
-          {userRole === 'carer' && showListView && instances.length > 0 && (
-            <div className="mt-6 pt-4 border-t">
-              <h4 className="font-medium mb-3">This Week's Shifts</h4>
-              <div className="space-y-2">
-                {instances.map((shift) => (
-                  <div key={shift.id} className="flex items-center justify-between p-3 bg-muted/50 rounded">
-                    <div>
-                      <span className="font-medium">{format(new Date(shift.scheduled_date), 'EEE, MMM d')}</span>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        {shift.start_time?.slice(0, 5)} - {shift.end_time?.slice(0, 5)}
-                      </span>
-                    </div>
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs px-2 py-1 text-white ${getCarerColor(shift.carer_id)}`}
-                    >
-                      {getDisplayNames(shift)}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
