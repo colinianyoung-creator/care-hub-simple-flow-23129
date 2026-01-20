@@ -148,9 +148,9 @@ export const DashboardHeader = ({
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />
         )}
         
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="shrink-0 relative">
+            <Button variant="outline" size="sm" className="shrink-0 relative touch-manipulation">
               <Menu className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('menu.menu')}</span>
               {unreadCount > 0 && (
@@ -160,7 +160,7 @@ export const DashboardHeader = ({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="min-w-[200px]">
             {showInviteButton && familyId && (
               <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click(); }}>
                 <Users className="mr-2 h-4 w-4" />
