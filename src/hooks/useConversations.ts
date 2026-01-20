@@ -142,9 +142,9 @@ export const useConversations = (familyId?: string) => {
       // Get unique user IDs
       const userIds = [...new Set((allParticipants || []).map(p => p.user_id))];
 
-      // Batch fetch all profiles at once
+      // Batch fetch all profiles at once using profiles_limited (allows viewing family members)
       const { data: profiles } = await supabase
-        .from('profiles_secure')
+        .from('profiles_limited')
         .select('id, full_name, profile_picture_url')
         .in('id', userIds);
 

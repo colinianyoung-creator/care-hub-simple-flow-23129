@@ -47,10 +47,10 @@ export const useMessages = (conversationId?: string) => {
         return;
       }
 
-      // Get unique sender IDs and batch fetch profiles
+      // Get unique sender IDs and batch fetch profiles using profiles_limited (allows viewing family members)
       const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
       const { data: profiles } = await supabase
-        .from('profiles_secure')
+        .from('profiles_limited')
         .select('id, full_name, profile_picture_url')
         .in('id', senderIds);
 
@@ -129,7 +129,7 @@ export const useMessages = (conversationId?: string) => {
           };
 
           const { data: profile } = await supabase
-            .from('profiles_secure')
+            .from('profiles_limited')
             .select('full_name, profile_picture_url')
             .eq('id', newMsg.sender_id)
             .single();
