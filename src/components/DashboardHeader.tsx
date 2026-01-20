@@ -51,6 +51,7 @@ export const DashboardHeader = ({
   onFamilySelected
 }: DashboardHeaderProps) => {
   const { t } = useTranslation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
@@ -61,11 +62,14 @@ export const DashboardHeader = ({
   const { unreadCount } = useUnreadMessages(familyId);
   const { isIOS, isInstalled, isInstallable, promptInstall, canShowInstall } = usePWAInstall();
 
-  const handleInstallClick = async () => {
+  const closeMenu = () => setMenuOpen(false);
+
+  const handleInstallClick = () => {
+    closeMenu();
     if (isIOS) {
       setShowIOSInstallDialog(true);
     } else {
-      await promptInstall();
+      promptInstall();
     }
   };
 
@@ -144,7 +148,7 @@ export const DashboardHeader = ({
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />
         )}
         
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="shrink-0 relative">
               <Menu className="h-4 w-4 md:mr-2" />
@@ -158,25 +162,25 @@ export const DashboardHeader = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {showInviteButton && familyId && (
-              <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click()}>
+              <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click(); }}>
                 <Users className="mr-2 h-4 w-4" />
                 {t('menu.inviteMembers')}
               </DropdownMenuItem>
             )}
             {showJoinButton && (
-              <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-join-button]')?.click()}>
+              <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-join-button]')?.click(); }}>
                 <Users className="mr-2 h-4 w-4" />
                 {t('menu.joinFamily')}
               </DropdownMenuItem>
             )}
             {showCreateButton && (
-              <DropdownMenuItem onClick={() => document.querySelector<HTMLButtonElement>('[data-create-button]')?.click()}>
+              <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-create-button]')?.click(); }}>
                 <Users className="mr-2 h-4 w-4" />
                 {t('menu.createFamily')}
               </DropdownMenuItem>
             )}
             {familyId && (
-              <DropdownMenuItem onClick={() => setShowChatDialog(true)}>
+              <DropdownMenuItem onSelect={() => { closeMenu(); setShowChatDialog(true); }}>
                 <MessageCircle className="mr-2 h-4 w-4" />
                 {t('menu.messages')}
                 {unreadCount > 0 && (
@@ -186,38 +190,38 @@ export const DashboardHeader = ({
                 )}
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => setShowProfileDialog(true)}>
+            <DropdownMenuItem onSelect={() => { closeMenu(); setShowProfileDialog(true); }}>
               <User className="mr-2 h-4 w-4" />
               {t('menu.profile')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
+            <DropdownMenuItem onSelect={() => { closeMenu(); setShowSettingsDialog(true); }}>
               <Settings className="mr-2 h-4 w-4" />
               {t('menu.settings')}
             </DropdownMenuItem>
             {familyId && (userRole === 'family_admin' || userRole === 'disabled_person') && (
-              <DropdownMenuItem onClick={() => setShowCareTeamDialog(true)}>
+              <DropdownMenuItem onSelect={() => { closeMenu(); setShowCareTeamDialog(true); }}>
                 <Users className="mr-2 h-4 w-4" />
                 {t('menu.manageCareTeam')}
               </DropdownMenuItem>
             )}
             {userRole === 'carer' && onSwitchFamily && (
-              <DropdownMenuItem onClick={onSwitchFamily}>
+              <DropdownMenuItem onSelect={() => { closeMenu(); onSwitchFamily(); }}>
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
                 {t('menu.switchFamily')}
               </DropdownMenuItem>
             )}
             {canShowInstall && (
-              <DropdownMenuItem onClick={handleInstallClick}>
+              <DropdownMenuItem onSelect={handleInstallClick}>
                 <Download className="mr-2 h-4 w-4" />
                 {t('menu.installApp')}
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => setShowHelpCenter(true)}>
+            <DropdownMenuItem onSelect={() => { closeMenu(); setShowHelpCenter(true); }}>
               <HelpCircle className="mr-2 h-4 w-4" />
               {t('menu.help')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onSignOut}>
+            <DropdownMenuItem onSelect={() => { closeMenu(); onSignOut(); }}>
               <LogOut className="mr-2 h-4 w-4" />
               {t('menu.signOut')}
             </DropdownMenuItem>
