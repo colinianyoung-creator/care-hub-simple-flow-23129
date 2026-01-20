@@ -57,11 +57,15 @@ DropdownMenuSubContent.displayName =
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ className, sideOffset = 4, onInteractOutside, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}
+      onInteractOutside={(e) => {
+        // Ensure outside clicks/taps always close the menu
+        onInteractOutside?.(e);
+      }}
       className={cn(
         "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
         className
@@ -81,7 +85,14 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-3 text-sm outline-none min-h-[44px] focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent active:bg-accent/70 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-3 text-sm outline-none min-h-[44px]",
+      "transition-colors duration-75",
+      "focus:bg-accent focus:text-accent-foreground",
+      "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+      "active:bg-primary/20 active:scale-[0.98]",
+      "hover:bg-accent hover:text-accent-foreground",
+      "[&:active]:bg-primary/20",
+      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       inset && "pl-8",
       className
     )}
