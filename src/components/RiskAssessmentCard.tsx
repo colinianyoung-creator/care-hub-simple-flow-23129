@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Trash2, CheckCircle, Calendar } from "lucide-react";
+import { Eye, Trash2, CheckCircle, Calendar, Archive, ArchiveRestore } from "lucide-react";
 import { format } from "date-fns";
 
 interface RiskAssessment {
@@ -13,6 +13,7 @@ interface RiskAssessment {
   location: string;
   residual_risk_level: string | null;
   is_approved: boolean;
+  is_archived: boolean;
   next_review_date: string | null;
   created_at: string;
 }
@@ -21,14 +22,18 @@ interface RiskAssessmentCardProps {
   assessment: RiskAssessment;
   onView: (id: string) => void;
   onDelete: (id: string) => void;
+  onArchive: (id: string, archive: boolean) => void;
   canDelete: boolean;
+  canEdit: boolean;
 }
 
 export const RiskAssessmentCard = ({ 
   assessment, 
   onView, 
   onDelete,
-  canDelete 
+  onArchive,
+  canDelete,
+  canEdit 
 }: RiskAssessmentCardProps) => {
   const getRiskBadgeVariant = (level: string | null) => {
     switch (level?.toLowerCase()) {
@@ -57,13 +62,19 @@ export const RiskAssessmentCard = ({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={`hover:shadow-md transition-shadow ${assessment.is_archived ? 'opacity-70' : ''}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-sm font-medium line-clamp-2">
             {assessment.title}
           </CardTitle>
-          <div className="flex gap-1 flex-shrink-0">
+          <div className="flex gap-1 flex-shrink-0 flex-wrap">
+            {assessment.is_archived && (
+              <Badge variant="outline" className="bg-muted text-muted-foreground">
+                <Archive className="h-3 w-3 mr-1" />
+                Archived
+              </Badge>
+            )}
             {assessment.is_approved && (
               <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
                 <CheckCircle className="h-3 w-3 mr-1" />
@@ -95,7 +106,7 @@ export const RiskAssessmentCard = ({
           )}
         </div>
         
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2 flex-wrap">
           <Button 
             variant="outline" 
             size="sm" 
@@ -105,7 +116,21 @@ export const RiskAssessmentCard = ({
             <Eye className="h-3 w-3 mr-1" />
             View
           </Button>
-          {canDelete && (
+          {canEdit && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onArchive(assessment.id, !assessment.is_archived)}
+              title={assessment.is_archived ? "Restore from archive" : "Archive"}
+            >
+              {assessment.is_archived ? (
+                <ArchiveRestore className="h-3 w-3" />
+              ) : (
+                <Archive className="h-3 w-3" />
+              )}
+            </Button>
+          )}
+          {canDelete && !assessment.is_archived && (
             <Button 
               variant="outline" 
               size="sm"

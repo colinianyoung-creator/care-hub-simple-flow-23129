@@ -108,21 +108,28 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
 
   const loadCarers = async () => {
     try {
-      // Load registered carers
-      const { data: familyMembers } = await supabase
+      // Step 1: Load carer memberships (user_ids only)
+      const { data: carerMemberships } = await supabase
         .from('user_memberships')
-        .select(`
-          user_id,
-          role,
-          profiles!inner(full_name)
-        `)
+        .select('user_id')
         .eq('family_id', familyId)
         .eq('role', 'carer');
 
-      const registeredCarers = familyMembers?.map(m => ({
-        user_id: m.user_id,
-        full_name: m.profiles?.full_name || 'Unnamed Carer'
-      })) || [];
+      const userIds = carerMemberships?.map(m => m.user_id).filter(Boolean) || [];
+
+      // Step 2: Fetch names from profiles_limited
+      let registeredCarers: CarerOption[] = [];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles_limited')
+          .select('id, full_name')
+          .in('id', userIds);
+
+        registeredCarers = (profiles || []).map(p => ({
+          user_id: p.id,
+          full_name: p.full_name || 'Unnamed Carer'
+        }));
+      }
 
       // Load placeholder carers (unlinked only)
       const { data: placeholderCarers } = await supabase
@@ -167,19 +174,35 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
     try {
       setLoading(true);
       
-      // Get employer and employee names
+      // Step 1: Get memberships for employer and employee user_ids
       const { data: familyMembers } = await supabase
         .from('user_memberships')
-        .select(`
-          user_id,
-          role,
-          profiles!inner(full_name)
-        `)
+        .select('user_id, role')
         .eq('family_id', familyId)
         .in('role', ['family_admin', 'disabled_person', 'carer']);
 
-      const employer = familyMembers?.find(m => m.role === 'disabled_person' || m.role === 'family_admin');
-      const targetEmployee = familyMembers?.find(m => m.user_id === selectedCarerId && m.role === 'carer');
+      const employerMember = familyMembers?.find(m => m.role === 'disabled_person' || m.role === 'family_admin');
+      const targetEmployeeMember = familyMembers?.find(m => m.user_id === selectedCarerId && m.role === 'carer');
+      
+      // Step 2: Fetch names from profiles_limited
+      const userIdsToFetch = [employerMember?.user_id, targetEmployeeMember?.user_id].filter(Boolean) as string[];
+      let employerName = 'Employer';
+      let employeeName = 'Employee';
+      
+      if (userIdsToFetch.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles_limited')
+          .select('id, full_name')
+          .in('id', userIdsToFetch);
+        
+        const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+        if (employerMember?.user_id) {
+          employerName = profileMap.get(employerMember.user_id) || 'Employer';
+        }
+        if (targetEmployeeMember?.user_id) {
+          employeeName = profileMap.get(targetEmployeeMember.user_id) || 'Employee';
+        }
+      }
 
       // Get shift instances and time entries for the date range
       const shiftQuery = supabase
@@ -384,8 +407,8 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
       );
 
       setTimesheetData({
-        employerName: employer?.profiles?.full_name || 'Employer',
-        employeeName: targetEmployee?.profiles?.full_name || 'Employee',
+        employerName,
+        employeeName,
         periodEnding: format(endDate, 'dd/MM/yyyy'),
         weeks: weekData,
         totals

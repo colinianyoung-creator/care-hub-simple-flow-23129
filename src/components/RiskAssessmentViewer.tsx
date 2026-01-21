@@ -16,7 +16,9 @@ import {
   Copy, 
   Printer, 
   CheckCircle,
-  Loader2 
+  Loader2,
+  Archive,
+  ArchiveRestore 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 interface RiskAssessmentViewerProps {
@@ -24,6 +26,7 @@ interface RiskAssessmentViewerProps {
   content: string;
   residualRiskLevel: string;
   isApproved: boolean;
+  isArchived: boolean;
   nextReviewDate: string | null;
   onBack: () => void;
   onSave: (updates: {
@@ -33,6 +36,7 @@ interface RiskAssessmentViewerProps {
     isApproved: boolean;
     nextReviewDate: string | null;
   }) => Promise<void>;
+  onArchive: (archive: boolean) => void;
   canEdit: boolean;
   isSaving: boolean;
 }
@@ -42,9 +46,11 @@ export const RiskAssessmentViewer = ({
   content,
   residualRiskLevel,
   isApproved,
+  isArchived,
   nextReviewDate,
   onBack,
   onSave,
+  onArchive,
   canEdit,
   isSaving
 }: RiskAssessmentViewerProps) => {
@@ -193,10 +199,32 @@ export const RiskAssessmentViewer = ({
                 Print
               </Button>
               {canEdit && (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onArchive(!isArchived)}
+                    title={isArchived ? "Restore from archive" : "Archive"}
+                  >
+                    {isArchived ? (
+                      <>
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        Restore
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="h-4 w-4 mr-2" />
+                        Archive
+                      </>
+                    )}
+                  </Button>
+                  {!isArchived && (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
+                </>
               )}
             </>
           )}
@@ -257,6 +285,12 @@ export const RiskAssessmentViewer = ({
           </>
         ) : (
           <>
+            {isArchived && (
+              <Badge variant="outline" className="bg-muted text-muted-foreground">
+                <Archive className="h-3 w-3 mr-1" />
+                Archived
+              </Badge>
+            )}
             <Badge className={getRiskBadgeClass(residualRiskLevel)}>
               {residualRiskLevel.charAt(0).toUpperCase() + residualRiskLevel.slice(1)} Residual Risk
             </Badge>
