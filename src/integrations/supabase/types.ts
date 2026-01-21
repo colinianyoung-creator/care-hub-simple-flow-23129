@@ -1735,6 +1735,7 @@ export type Database = {
           family_id: string
           id: string
           is_approved: boolean | null
+          is_archived: boolean | null
           last_reviewed_at: string | null
           location: string
           main_hazards: string
@@ -1755,6 +1756,7 @@ export type Database = {
           family_id: string
           id?: string
           is_approved?: boolean | null
+          is_archived?: boolean | null
           last_reviewed_at?: string | null
           location: string
           main_hazards: string
@@ -1775,6 +1777,7 @@ export type Database = {
           family_id?: string
           id?: string
           is_approved?: boolean | null
+          is_archived?: boolean | null
           last_reviewed_at?: string | null
           location?: string
           main_hazards?: string

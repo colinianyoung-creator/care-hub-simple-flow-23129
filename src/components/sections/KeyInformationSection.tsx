@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Save, X, AlertCircle, Loader2, FileWarning, Info } from "lucide-react";
+import { Plus, Edit, Save, X, AlertCircle, Loader2, FileWarning, Info, Archive } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RiskAssessmentForm } from "@/components/forms/RiskAssessmentForm";
 import { RiskAssessmentCard } from "@/components/RiskAssessmentCard";
@@ -29,6 +29,7 @@ interface RiskAssessment {
   assessment_content: string;
   residual_risk_level: string | null;
   is_approved: boolean;
+  is_archived: boolean;
   next_review_date: string | null;
   created_at: string;
 }
@@ -81,6 +82,7 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
   const [viewingAssessment, setViewingAssessment] = useState<RiskAssessment | null>(null);
   const [isSavingAssessment, setIsSavingAssessment] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showArchivedAssessments, setShowArchivedAssessments] = useState(false);
 
   const canEdit = userRole === 'family_admin' || userRole === 'disabled_person';
   const canDelete = userRole === 'family_admin' || userRole === 'disabled_person';
@@ -143,7 +145,12 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRiskAssessments(data || []);
+      // Add is_archived default for any records missing it
+      const assessmentsWithArchived = (data || []).map(a => ({
+        ...a,
+        is_archived: a.is_archived ?? false
+      }));
+      setRiskAssessments(assessmentsWithArchived);
     } catch (error) {
       console.error('Error loading risk assessments:', error);
       toast({
@@ -153,6 +160,38 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
       });
     } finally {
       setLoadingAssessments(false);
+    }
+  };
+  
+  const handleArchiveAssessment = async (id: string, archive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('risk_assessments')
+        .update({ is_archived: archive, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: archive ? "Archived" : "Restored",
+        description: archive 
+          ? "Risk assessment has been archived" 
+          : "Risk assessment has been restored"
+      });
+      
+      // If we're viewing this assessment, update its state
+      if (viewingAssessment?.id === id) {
+        setViewingAssessment({ ...viewingAssessment, is_archived: archive });
+      }
+      
+      loadRiskAssessments();
+    } catch (error) {
+      console.error('Error archiving assessment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive risk assessment",
+        variant: "destructive"
+      });
     }
   };
 
@@ -691,9 +730,11 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
             content={viewingAssessment.assessment_content}
             residualRiskLevel={viewingAssessment.residual_risk_level || 'medium'}
             isApproved={viewingAssessment.is_approved}
+            isArchived={viewingAssessment.is_archived}
             nextReviewDate={viewingAssessment.next_review_date}
             onBack={() => setViewingAssessment(null)}
             onSave={handleUpdateAssessment}
+            onArchive={(archive) => handleArchiveAssessment(viewingAssessment.id, archive)}
             canEdit={canEdit}
             isSaving={isSavingAssessment}
           />
@@ -703,9 +744,11 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
             content={generatedAssessment.content}
             residualRiskLevel={generatedAssessment.residualRiskLevel}
             isApproved={false}
+            isArchived={false}
             nextReviewDate={null}
             onBack={() => setGeneratedAssessment(null)}
             onSave={handleSaveGeneratedAssessment}
+            onArchive={() => {}}
             canEdit={true}
             isSaving={isSavingAssessment}
           />
@@ -738,10 +781,21 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
           <>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h3 className="text-lg font-semibold">Risk Assessments</h3>
-              <Button onClick={() => setShowCreateForm(true)} className="w-full sm:w-auto shrink-0">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Assessment
-              </Button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowArchivedAssessments(!showArchivedAssessments)}
+                  className="text-xs"
+                >
+                  <Archive className="h-3 w-3 mr-1" />
+                  {showArchivedAssessments ? 'Hide Archived' : 'Show Archived'}
+                </Button>
+                <Button onClick={() => setShowCreateForm(true)} className="flex-1 sm:flex-none sm:w-auto shrink-0">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Assessment
+                </Button>
+              </div>
             </div>
 
             <Alert>
@@ -755,17 +809,25 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : riskAssessments.length === 0 ? (
+            ) : riskAssessments.filter(a => showArchivedAssessments || !a.is_archived).length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   <FileWarning className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No risk assessments yet.</p>
-                  <p className="text-sm mt-1">Create your first AI-powered risk assessment.</p>
+                  <p>{showArchivedAssessments ? 'No risk assessments found.' : 'No active risk assessments.'}</p>
+                  <p className="text-sm mt-1">
+                    {showArchivedAssessments 
+                      ? 'Create your first AI-powered risk assessment.' 
+                      : riskAssessments.some(a => a.is_archived) 
+                        ? 'Click "Show Archived" to view archived assessments.'
+                        : 'Create your first AI-powered risk assessment.'}
+                  </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {riskAssessments.map((assessment) => (
+                {riskAssessments
+                  .filter(a => showArchivedAssessments || !a.is_archived)
+                  .map((assessment) => (
                   <RiskAssessmentCard
                     key={assessment.id}
                     assessment={assessment}
@@ -774,7 +836,9 @@ export const KeyInformationSection = ({ familyId, userRole }: KeyInformationSect
                       if (found) setViewingAssessment(found);
                     }}
                     onDelete={handleDeleteAssessment}
+                    onArchive={handleArchiveAssessment}
                     canDelete={canDelete}
+                    canEdit={canEdit}
                   />
                 ))}
               </div>

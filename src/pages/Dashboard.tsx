@@ -259,32 +259,7 @@ const Dashboard = () => {
       // Load care recipient picture for hero banner - use selected family or first
       if (memberships && memberships.length > 0) {
         const targetFamilyId = selectedFamilyId || memberships[0].family_id;
-        
-        // Query for disabled_person in this family
-        const { data: careRecipients } = await supabase
-          .from('user_memberships')
-          .select('user_id, profiles!inner(profile_picture_url)')
-          .eq('family_id', targetFamilyId)
-          .eq('role', 'disabled_person')
-          .limit(1);
-        
-        if (careRecipients && careRecipients.length > 0) {
-          const careRecipient = careRecipients[0] as any;
-          setCareRecipientPictureUrl(careRecipient.profiles?.profile_picture_url || '');
-        } else {
-          // Fallback: use family admin's picture if no disabled person
-          const { data: admins } = await supabase
-            .from('user_memberships')
-            .select('user_id, profiles!inner(profile_picture_url)')
-            .eq('family_id', targetFamilyId)
-            .eq('role', 'family_admin')
-            .limit(1);
-          
-          if (admins && admins.length > 0) {
-            const admin = admins[0] as any;
-            setCareRecipientPictureUrl(admin.profiles?.profile_picture_url || '');
-          }
-        }
+        await loadCareRecipientPicture(targetFamilyId);
       }
 
       // Set role from membership OR fall back to profile ui_preference
@@ -344,38 +319,35 @@ const Dashboard = () => {
     try {
       console.log('🖼️ Loading care recipient picture for family:', targetFamilyId);
       
-      // Query for disabled_person in this family
-      const { data: careRecipients } = await supabase
+      // Step 1: Get user_id of disabled_person or family_admin
+      const { data: members } = await supabase
         .from('user_memberships')
-        .select('user_id, profiles!inner(profile_picture_url)')
+        .select('user_id, role')
         .eq('family_id', targetFamilyId)
-        .eq('role', 'disabled_person')
-        .limit(1);
+        .in('role', ['disabled_person', 'family_admin'])
+        .limit(2);
       
-      if (careRecipients && careRecipients.length > 0) {
-        const careRecipient = careRecipients[0] as any;
-        setCareRecipientPictureUrl(careRecipient.profiles?.profile_picture_url || '');
-        console.log('✅ Set care recipient picture from disabled_person');
-      } else {
-        // Fallback: use family admin's picture if no disabled person
-        const { data: admins } = await supabase
-          .from('user_memberships')
-          .select('user_id, profiles!inner(profile_picture_url)')
-          .eq('family_id', targetFamilyId)
-          .eq('role', 'family_admin')
-          .limit(1);
-        
-        if (admins && admins.length > 0) {
-          const admin = admins[0] as any;
-          setCareRecipientPictureUrl(admin.profiles?.profile_picture_url || '');
-          console.log('✅ Set care recipient picture from family_admin fallback');
-        } else {
-          setCareRecipientPictureUrl('');
-          console.log('⚠️ No care recipient picture found');
-        }
+      // Prefer disabled_person, fallback to family_admin
+      const careRecipient = members?.find(m => m.role === 'disabled_person') || members?.[0];
+      
+      if (!careRecipient) {
+        setCareRecipientPictureUrl('');
+        console.log('⚠️ No care recipient or admin found');
+        return;
       }
+      
+      // Step 2: Fetch profile picture from profiles_limited view
+      const { data: profile } = await supabase
+        .from('profiles_limited')
+        .select('profile_picture_url')
+        .eq('id', careRecipient.user_id)
+        .single();
+      
+      setCareRecipientPictureUrl(profile?.profile_picture_url || '');
+      console.log('✅ Set care recipient picture from profiles_limited');
     } catch (error) {
       console.error('❌ Error loading care recipient picture:', error);
+      setCareRecipientPictureUrl('');
     }
   };
 
