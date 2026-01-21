@@ -57,45 +57,19 @@ DropdownMenuSubContent.displayName =
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, onInteractOutside, onPointerDownOutside, ...props }, ref) => {
-  const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
-
-  return (
-    <DropdownMenuPrimitive.Portal>
-      {/* Invisible backdrop for iOS PWA touch events */}
-      {isTouchDevice && (
-        <div
-          className="fixed inset-0 z-40"
-          aria-hidden="true"
-          onTouchStart={(e) => {
-            // Find the dropdown content and trigger close
-            const dropdownContent = document.querySelector('[data-radix-dropdown-menu-content]');
-            if (dropdownContent && !dropdownContent.contains(e.target as Node)) {
-              // Dispatch escape key to close the menu
-              document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-            }
-          }}
-        />
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        className
       )}
-      <DropdownMenuPrimitive.Content
-        ref={ref}
-        sideOffset={sideOffset}
-        data-radix-dropdown-menu-content
-        onInteractOutside={(e) => {
-          onInteractOutside?.(e);
-        }}
-        onPointerDownOutside={(e) => {
-          onPointerDownOutside?.(e);
-        }}
-        className={cn(
-          "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
-          className
-        )}
-        {...props}
-      />
-    </DropdownMenuPrimitive.Portal>
-  );
-})
+      {...props}
+    />
+  </DropdownMenuPrimitive.Portal>
+))
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 const DropdownMenuItem = React.forwardRef<
