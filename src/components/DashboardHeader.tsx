@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -62,7 +62,38 @@ export const DashboardHeader = ({
   const { unreadCount } = useUnreadMessages(familyId);
   const { isIOS, isInstalled, isInstallable, promptInstall, canShowInstall } = usePWAInstall();
 
+  // Refs for iOS PWA outside-touch dismissal
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const closeMenu = () => setMenuOpen(false);
+
+  // iOS PWA: Manual outside-touch listener for reliable menu dismissal
+  useEffect(() => {
+    // Only apply this fix for iOS PWA (standalone mode)
+    const isIOSPWA = isIOS && isInstalled;
+    if (!isIOSPWA || !menuOpen) return;
+
+    const handleTouchOutside = (e: TouchEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+
+      // Check if touch is inside the trigger or content
+      const isInsideTrigger = triggerRef.current?.contains(target);
+      const isInsideContent = contentRef.current?.contains(target);
+
+      if (!isInsideTrigger && !isInsideContent) {
+        setMenuOpen(false);
+      }
+    };
+
+    // Use capture phase for more reliable interception on iOS
+    document.addEventListener('touchstart', handleTouchOutside, { capture: true, passive: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchOutside, { capture: true });
+    };
+  }, [menuOpen, isIOS, isInstalled]);
 
   const handleInstallClick = () => {
     closeMenu();
@@ -148,9 +179,9 @@ export const DashboardHeader = ({
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />
         )}
         
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={!(isIOS && isInstalled)}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="shrink-0 relative touch-manipulation">
+            <Button ref={triggerRef} variant="outline" size="sm" className="shrink-0 relative touch-manipulation">
               <Menu className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('menu.menu')}</span>
               {unreadCount > 0 && (
@@ -160,7 +191,7 @@ export const DashboardHeader = ({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[200px]">
+          <DropdownMenuContent ref={contentRef} align="end" className="min-w-[200px]">
             {showInviteButton && familyId && (
               <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click(); }}>
                 <Users className="mr-2 h-4 w-4" />
