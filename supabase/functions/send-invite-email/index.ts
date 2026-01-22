@@ -193,12 +193,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Normalize invite code to lowercase (codes are stored as lowercase hex)
+    const normalizedCode = inviteCode.trim().toLowerCase();
+    console.log(`Looking up invite code: raw="${inviteCode}", normalized="${normalizedCode}"`);
+
     // Validate invite code exists and get associated family
     // Use admin client to bypass RLS (invite lookup by code requires bypassing RLS)
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from('invite_codes')
       .select('id, family_id, code, created_by, role, used_at')
-      .eq('code', inviteCode.toUpperCase())
+      .eq('code', normalizedCode)
       .maybeSingle();
 
     if (inviteError) {
@@ -210,7 +214,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!invite) {
-      console.error("Invalid invite code: not found");
+      console.error(`Invalid invite code: "${normalizedCode}" not found in database`);
       return new Response(
         JSON.stringify({ success: false, error: "Invalid invite code" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -292,14 +296,16 @@ const handler = async (req: Request): Promise<Response> => {
     const familyName = family?.name || 'Care Team';
     const inviteRole = role || invite.role || 'carer';
 
-    console.log(`Sending invite email to ${email} for family ${familyName} with code ${inviteCode}`);
+    // Display code as uppercase for readability, but keep canonical lowercase for URL
+    const displayCode = normalizedCode.toUpperCase();
+    console.log(`Sending invite email to ${email} for family ${familyName} with code ${displayCode}`);
 
     const appUrl = req.headers.get("origin") || "https://lovable.dev";
-    const signupUrl = `${appUrl}/auth?invite=${encodeURIComponent(inviteCode.toUpperCase())}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(inviteRole)}`;
+    const signupUrl = `${appUrl}/auth?invite=${encodeURIComponent(normalizedCode)}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(inviteRole)}`;
     const html = generateInviteHtml(
       inviterName,
       familyName,
-      inviteCode.toUpperCase(),
+      displayCode,
       inviteRole,
       signupUrl,
       expiresIn,
