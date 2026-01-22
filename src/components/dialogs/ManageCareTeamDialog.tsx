@@ -238,7 +238,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           email: emailAddress,
           inviteCode: code,
           role: roleLabels[role] || role,
-          expiresIn: '7 days'
+          expiresIn: '7 days',
+          appUrl: window.location.origin,
         }
       });
 
@@ -281,7 +282,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           email,
           inviteCode: code,
           role: roleLabels[role] || role,
-          expiresIn: '7 days'
+          expiresIn: '7 days',
+          appUrl: window.location.origin,
         }
       });
 
@@ -323,7 +325,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           email: placeholder.email,
           inviteCode: code,
           role: 'Carer',
-          expiresIn: '7 days'
+          expiresIn: '7 days',
+          appUrl: window.location.origin,
         }
       });
 

@@ -205,7 +205,8 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
           email: emailAddress,
           inviteCode: code,
           role: roleLabels[role] || role,
-          expiresIn: '7 days'
+          expiresIn: '7 days',
+          appUrl: window.location.origin,
         }
       });
 
@@ -246,7 +247,8 @@ export const InviteMembersButton = ({ familyId, variant = 'default', className }
           email: placeholder.email,
           inviteCode: code,
           role: 'Carer',
-          expiresIn: '7 days'
+          expiresIn: '7 days',
+          appUrl: window.location.origin,
         }
       });
 
