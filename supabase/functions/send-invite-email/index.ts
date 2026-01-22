@@ -142,9 +142,16 @@ const handler = async (req: Request): Promise<Response> => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   
+  // User-authenticated client for permission checks
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } }
+  });
+
+  // Service role client for bypassing RLS on invite_codes lookup
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
   });
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -187,14 +194,23 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Validate invite code exists and get associated family
-    const { data: invite, error: inviteError } = await supabase
+    // Use admin client to bypass RLS (invite lookup by code requires bypassing RLS)
+    const { data: invite, error: inviteError } = await supabaseAdmin
       .from('invite_codes')
       .select('id, family_id, code, created_by, role, used_at')
       .eq('code', inviteCode.toUpperCase())
-      .single();
+      .maybeSingle();
 
-    if (inviteError || !invite) {
-      console.error("Invalid invite code:", inviteError);
+    if (inviteError) {
+      console.error("Error fetching invite code:", inviteError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to validate invite code" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!invite) {
+      console.error("Invalid invite code: not found");
       return new Response(
         JSON.stringify({ success: false, error: "Invalid invite code" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
