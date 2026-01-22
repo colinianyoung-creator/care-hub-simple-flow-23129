@@ -793,7 +793,7 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Export Monthly Timesheet</DialogTitle>
         </DialogHeader>
@@ -953,40 +953,42 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
                   <p><strong>Period Ending:</strong> {timesheetData.periodEnding}</p>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="border border-gray-300">Date</TableHead>
-                        <TableHead className="border border-gray-300 text-center">Basic Shifts</TableHead>
-                        <TableHead className="border border-gray-300 text-center">Cover</TableHead>
-                        <TableHead className="border border-gray-300 text-center">Annual Leave</TableHead>
-                        <TableHead className="border border-gray-300 text-center">Public Holiday</TableHead>
-                        <TableHead className="border border-gray-300 text-center">Sickness</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {timesheetData.weeks.map((week, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="border border-gray-300">{week.weekEnding}</TableCell>
-                          <TableCell className="border border-gray-300 text-center">{week.basic.toFixed(1)}</TableCell>
-                          <TableCell className="border border-gray-300 text-center">{week.cover.toFixed(1)}</TableCell>
-                          <TableCell className="border border-gray-300 text-center">{week.annual_leave.toFixed(1)}</TableCell>
-                          <TableCell className="border border-gray-300 text-center">{week.public_holiday.toFixed(1)}</TableCell>
-                          <TableCell className="border border-gray-300 text-center">{week.sickness.toFixed(1)}</TableCell>
+              <CardContent className="p-0 sm:p-6">
+                <div className="overflow-x-auto max-w-full">
+                  <div className="min-w-[600px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="border border-gray-300">Date</TableHead>
+                          <TableHead className="border border-gray-300 text-center">Basic Shifts</TableHead>
+                          <TableHead className="border border-gray-300 text-center">Cover</TableHead>
+                          <TableHead className="border border-gray-300 text-center">Annual Leave</TableHead>
+                          <TableHead className="border border-gray-300 text-center">Public Holiday</TableHead>
+                          <TableHead className="border border-gray-300 text-center">Sickness</TableHead>
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-gray-50 font-semibold">
-                        <TableCell className="border border-gray-300">Total</TableCell>
-                        <TableCell className="border border-gray-300 text-center">{timesheetData.totals.basic.toFixed(1)}</TableCell>
-                        <TableCell className="border border-gray-300 text-center">{timesheetData.totals.cover.toFixed(1)}</TableCell>
-                        <TableCell className="border border-gray-300 text-center">{timesheetData.totals.annual_leave.toFixed(1)}</TableCell>
-                        <TableCell className="border border-gray-300 text-center">{timesheetData.totals.public_holiday.toFixed(1)}</TableCell>
-                        <TableCell className="border border-gray-300 text-center">{timesheetData.totals.sickness.toFixed(1)}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {timesheetData.weeks.map((week, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="border border-gray-300">{week.weekEnding}</TableCell>
+                            <TableCell className="border border-gray-300 text-center">{week.basic.toFixed(1)}</TableCell>
+                            <TableCell className="border border-gray-300 text-center">{week.cover.toFixed(1)}</TableCell>
+                            <TableCell className="border border-gray-300 text-center">{week.annual_leave.toFixed(1)}</TableCell>
+                            <TableCell className="border border-gray-300 text-center">{week.public_holiday.toFixed(1)}</TableCell>
+                            <TableCell className="border border-gray-300 text-center">{week.sickness.toFixed(1)}</TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-gray-50 font-semibold">
+                          <TableCell className="border border-gray-300">Total</TableCell>
+                          <TableCell className="border border-gray-300 text-center">{timesheetData.totals.basic.toFixed(1)}</TableCell>
+                          <TableCell className="border border-gray-300 text-center">{timesheetData.totals.cover.toFixed(1)}</TableCell>
+                          <TableCell className="border border-gray-300 text-center">{timesheetData.totals.annual_leave.toFixed(1)}</TableCell>
+                          <TableCell className="border border-gray-300 text-center">{timesheetData.totals.public_holiday.toFixed(1)}</TableCell>
+                          <TableCell className="border border-gray-300 text-center">{timesheetData.totals.sickness.toFixed(1)}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
                 {/* Signature Section Preview */}

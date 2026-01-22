@@ -169,6 +169,33 @@ html.font-extra-large {
     @apply border-border;
   }
 
+  /* iOS PWA viewport containment */
+  html, body {
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* Prevent iOS elastic/rubber-band scrolling in PWA */
+  @supports (-webkit-touch-callout: none) {
+    html, body {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    #root {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
