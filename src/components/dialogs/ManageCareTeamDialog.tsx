@@ -554,16 +554,16 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
             </div>
           ) : (
             <Tabs defaultValue="members" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="members">Members ({members.length + unlinkedPlaceholders.length})</TabsTrigger>
-                <TabsTrigger value="pending">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+                <TabsTrigger value="members" className="text-xs sm:text-sm px-2">Members ({members.length + unlinkedPlaceholders.length})</TabsTrigger>
+                <TabsTrigger value="pending" className="text-xs sm:text-sm px-2">
                   Pending ({unlinkedPlaceholders.length})
                 </TabsTrigger>
-                <TabsTrigger value="invites">Invites ({invites.length})</TabsTrigger>
-                <TabsTrigger value="requests">
+                <TabsTrigger value="invites" className="text-xs sm:text-sm px-2">Invites ({invites.length})</TabsTrigger>
+                <TabsTrigger value="requests" className="text-xs sm:text-sm px-2">
                   Requests
                   {roleChangeRequests.length > 0 && (
-                    <Badge variant="destructive" className="ml-1">{roleChangeRequests.length}</Badge>
+                    <Badge variant="destructive" className="ml-1 text-xs">{roleChangeRequests.length}</Badge>
                   )}
                 </TabsTrigger>
               </TabsList>

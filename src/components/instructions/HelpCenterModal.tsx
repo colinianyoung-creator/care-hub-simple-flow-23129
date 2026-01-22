@@ -268,7 +268,7 @@ export const HelpCenterModal = ({ open, onOpenChange }: HelpCenterModalProps) =>
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg h-[85vh] max-h-[700px] overflow-hidden flex flex-col">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg h-[85vh] max-h-[700px] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-primary" />

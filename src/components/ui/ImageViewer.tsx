@@ -20,7 +20,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-4xl p-0 bg-transparent border-none">
         <div className="relative">
           <Button
             variant="ghost"

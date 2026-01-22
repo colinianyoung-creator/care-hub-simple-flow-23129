@@ -292,7 +292,7 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[425px] overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>{isAdminEdit ? (editShiftData ? 'Edit Shift' : 'Create Shift') : 'New Shift Request'}</DialogTitle>
           <DialogDescription>

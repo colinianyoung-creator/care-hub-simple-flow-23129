@@ -78,7 +78,7 @@ export const ChatDialog = ({ isOpen, onClose, familyId }: ChatDialogProps) => {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-2xl h-[90vh] sm:h-[80vh] flex flex-col p-0" showClose={false}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-2xl h-[90vh] sm:h-[80vh] flex flex-col p-0" showClose={false}>
           <DialogHeader className="p-3 sm:p-4 pb-2 border-b shrink-0">
             <div className="grid grid-cols-[auto,1fr,auto] items-center gap-2">
               <div className="flex items-center">
