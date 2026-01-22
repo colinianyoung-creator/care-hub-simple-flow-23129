@@ -953,8 +953,8 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
                   <p><strong>Period Ending:</strong> {timesheetData.periodEnding}</p>
                 </div>
               </CardHeader>
-              <CardContent className="p-0 sm:p-6">
-                <div className="overflow-x-auto max-w-full">
+              <CardContent className="p-0 sm:p-6 overflow-hidden">
+                <div className="overflow-x-auto w-full" style={{ maxWidth: 'calc(100vw - 4rem)' }}>
                   <div className="min-w-[600px]">
                     <Table>
                       <TableHeader>
