@@ -578,24 +578,15 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                     <div className="space-y-3">
                       {/* Registered Members */}
                       {members.map((member) => (
-                        <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {member.profiles?.full_name || 'Unnamed User'}
-                            </div>
-                            {member.profiles?.contact_email && (
-                              <div className="text-sm text-muted-foreground">
-                                {member.profiles.contact_email}
-                              </div>
-                            )}
-                            <div className="text-xs text-muted-foreground opacity-75">
-                              Contact info may be masked for privacy
-                            </div>
+                        <div key={member.id} className="relative p-3 border rounded-lg">
+                          <div className="font-medium pr-6">
+                            {member.profiles?.full_name || 'Unnamed User'}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 mt-2">
                             <Badge variant={getRoleBadgeVariant(member.role)}>
                               {member.role ? (member.role as string).replace('_', ' ') : 'Unknown Role'}
                             </Badge>
+                            <div className="flex-1" />
                             <Button
                               size="sm"
                               variant="outline"
@@ -621,29 +612,19 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                       
                       {/* Placeholder Carers (Awaiting Signup) */}
                       {unlinkedPlaceholders.map((placeholder) => (
-                        <div key={placeholder.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                          <div className="flex-1">
-                            <div className="font-medium flex items-center gap-2">
-                              {placeholder.full_name}
-                              <span title="Awaiting signup"><Clock className="h-3 w-3 text-muted-foreground" /></span>
+                        <div key={placeholder.id} className="relative p-3 border rounded-lg bg-muted/30">
+                          <span title="Awaiting signup" className="absolute top-2 right-2">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                          </span>
+                          <div className="font-medium pr-6">{placeholder.full_name}</div>
+                          {(placeholder.email || placeholder.phone) && (
+                            <div className="text-xs text-muted-foreground truncate mt-0.5">
+                              {placeholder.email || placeholder.phone}
                             </div>
-                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
-                              {placeholder.email && (
-                                <span className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {placeholder.email}
-                                </span>
-                              )}
-                              {placeholder.phone && (
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {placeholder.phone}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
                             <Badge variant="secondary">carer</Badge>
+                            <div className="flex-1" />
                             <Button
                               size="sm"
                               variant="outline"
