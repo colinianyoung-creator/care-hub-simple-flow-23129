@@ -12,6 +12,7 @@ interface InviteEmailRequest {
   inviteCode: string;
   role?: string;
   expiresIn?: string;
+  appUrl?: string;
 }
 
 const roleLabels: Record<string, string> = {
@@ -173,6 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
       inviteCode,
       role,
       expiresIn = "7 days",
+      appUrl: providedAppUrl,
     }: InviteEmailRequest = await req.json();
 
     // Validate email format
@@ -300,7 +302,7 @@ const handler = async (req: Request): Promise<Response> => {
     const displayCode = normalizedCode.toUpperCase();
     console.log(`Sending invite email to ${email} for family ${familyName} with code ${displayCode}`);
 
-    const appUrl = req.headers.get("origin") || "https://lovable.dev";
+    const appUrl = providedAppUrl || req.headers.get("origin") || "https://care-hub-simple-flow-23129.lovable.app";
     const signupUrl = `${appUrl}/auth?invite=${encodeURIComponent(normalizedCode)}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(inviteRole)}`;
     const html = generateInviteHtml(
       inviterName,
