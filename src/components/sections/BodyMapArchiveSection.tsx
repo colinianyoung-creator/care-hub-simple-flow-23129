@@ -96,7 +96,7 @@ export const BodyMapArchiveSection: React.FC<BodyMapArchiveSectionProps> = ({
 
       // Fetch profiles for all authors
       const { data: profilesData } = await supabase
-        .from('profiles_secure')
+        .from('profiles_limited')
         .select('id, full_name')
         .in('id', authorIds);
 

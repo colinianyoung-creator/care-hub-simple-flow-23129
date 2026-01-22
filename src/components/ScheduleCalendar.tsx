@@ -97,7 +97,7 @@ useEffect(() => {
           
           if (carerIds.length > 0) {
             const { data: carerProfiles } = await supabase
-              .from('profiles_secure')
+              .from('profiles_limited')
               .select('id, full_name')
               .in('id', carerIds);
 
@@ -154,7 +154,7 @@ useEffect(() => {
           const leaveCarerIds = leaveData?.map(leave => leave.user_id).filter(Boolean) || [];
           if (leaveCarerIds.length > 0) {
             const { data: leaveCarerProfiles } = await supabase
-              .from('profiles_secure')
+              .from('profiles_limited')
               .select('id, full_name')
               .in('id', leaveCarerIds);
 
