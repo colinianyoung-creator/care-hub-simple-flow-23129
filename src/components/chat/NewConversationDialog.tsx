@@ -64,7 +64,7 @@ export const NewConversationDialog = ({
           if (membership.user_id === user.user.id) continue;
           
           const { data: profile } = await supabase
-            .from('profiles_secure')
+            .from('profiles_limited')
             .select('id, full_name, profile_picture_url')
             .eq('id', membership.user_id)
             .single();

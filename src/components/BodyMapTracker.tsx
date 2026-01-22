@@ -62,7 +62,7 @@ export const BodyMapTracker = ({ familyId, userRole }: BodyMapTrackerProps) => {
 
       // Fetch profiles for all authors
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles_secure')
+        .from('profiles_limited')
         .select('id, full_name')
         .in('id', authorIds);
 

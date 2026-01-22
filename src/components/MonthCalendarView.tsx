@@ -152,7 +152,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const newCarers: Record<string, string> = {};
       if (carerIds.length > 0) {
         const { data: carerProfiles } = await supabase
-          .from('profiles_secure')
+          .from('profiles_limited')
           .select('id, full_name')
           .in('id', carerIds);
 
@@ -242,7 +242,7 @@ export const MonthCalendarView = ({ isOpen, onClose, familyId, userRole, onShift
       const leaveCarerIds = leaveRequests?.map(leave => leave.user_id).filter(Boolean) || [];
       if (leaveCarerIds.length > 0) {
         const { data: leaveCarerProfiles } = await supabase
-          .from('profiles_secure')
+          .from('profiles_limited')
           .select('id, full_name')
           .in('id', leaveCarerIds);
 

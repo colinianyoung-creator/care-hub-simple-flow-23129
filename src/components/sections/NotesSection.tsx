@@ -97,7 +97,7 @@ export const NotesSection = ({ familyId, userRole }: NotesSectionProps) => {
 
       // Fetch profiles for all authors
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles_secure')
+        .from('profiles_limited')
         .select('id, full_name')
         .in('id', authorIds);
 
