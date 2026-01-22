@@ -538,8 +538,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
               <Users className="h-5 w-5" />
               Manage Care Team
             </DialogTitle>
-            <DialogDescription>
-              Add new team members and manage existing ones
+            <DialogDescription className="text-sm">
+              Add new team members and manage<br className="sm:hidden" /> existing ones
             </DialogDescription>
           </DialogHeader>
 
@@ -625,10 +625,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                           <div className="flex-1">
                             <div className="font-medium flex items-center gap-2">
                               {placeholder.full_name}
-                              <Badge variant="outline" className="text-xs">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Awaiting signup
-                              </Badge>
+                              <span title="Awaiting signup"><Clock className="h-3 w-3 text-muted-foreground" /></span>
                             </div>
                             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
                               {placeholder.email && (
@@ -703,10 +700,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                             <div className="flex-1">
                               <div className="font-medium flex items-center gap-2">
                                 {placeholder.full_name}
-                                <Badge variant="outline" className="text-xs">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  Awaiting signup
-                                </Badge>
+                                <span title="Awaiting signup"><Clock className="h-3 w-3 text-muted-foreground" /></span>
                               </div>
                               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-1">
                                 {placeholder.email && (
