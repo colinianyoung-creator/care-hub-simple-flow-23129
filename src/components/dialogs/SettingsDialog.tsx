@@ -100,7 +100,7 @@ export const SettingsDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] flex flex-col p-4 sm:p-6">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[550px] max-h-[85vh] flex flex-col p-4 sm:p-6 overflow-x-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t('settings.title')}</DialogTitle>
         </DialogHeader>

@@ -73,7 +73,7 @@ export default function IncidentReportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl h-[85vh] max-h-[800px] overflow-hidden flex flex-col">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl h-[85vh] max-h-[800px] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />

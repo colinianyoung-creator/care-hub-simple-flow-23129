@@ -76,7 +76,7 @@ export const DoseActionModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Mark Dose</DialogTitle>
           <div className="pt-2 space-y-1">

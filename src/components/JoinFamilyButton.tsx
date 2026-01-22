@@ -170,7 +170,7 @@ export const JoinFamilyButton = ({ variant = 'default', className, onSuccess }: 
       </Button>
 
       <Dialog open={showDialog} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>Join a Family</DialogTitle>
             <DialogDescription>

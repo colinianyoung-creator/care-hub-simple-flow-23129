@@ -26,7 +26,7 @@ export const ConfirmationDialog = ({
 }: ConfirmationDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[425px] overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />

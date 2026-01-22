@@ -133,7 +133,7 @@ export const NewConversationDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>New Conversation</DialogTitle>
         </DialogHeader>

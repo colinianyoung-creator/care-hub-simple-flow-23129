@@ -95,7 +95,7 @@ export const AddPlaceholderCarerDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[425px] overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
