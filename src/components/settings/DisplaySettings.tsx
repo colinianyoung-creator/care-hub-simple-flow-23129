@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/adaptive';
 import { TimeFormat, DateFormat } from '@/hooks/useUserPreferences';
 
 interface DisplaySettingsProps {
@@ -75,25 +75,17 @@ export const DisplaySettings = ({
       {/* Date Format */}
       <div className="space-y-2 sm:space-y-3">
         <Label className="text-sm sm:text-base font-medium">{t('display.dateFormat')}</Label>
-        <Select
+        <AdaptiveSelect
           value={dateFormat}
           onValueChange={(value) => onDateFormatChange(value as DateFormat)}
           disabled={disabled}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select date format" />
-          </SelectTrigger>
-          <SelectContent>
-            {DATE_FORMAT_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                <div className="flex flex-col">
-                  <span>{t(option.labelKey)}</span>
-                  <span className="text-xs text-muted-foreground">{t(option.exampleKey)}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Select date format"
+          title={t('display.dateFormat')}
+          options={DATE_FORMAT_OPTIONS.map((option) => ({
+            value: option.value,
+            label: `${t(option.labelKey)} (${t(option.exampleKey)})`
+          }))}
+        />
       </div>
     </div>
   );

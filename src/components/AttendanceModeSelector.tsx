@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Clock, ClipboardCheck, Calculator, Info } from 'lucide-react';
@@ -76,37 +76,21 @@ export const AttendanceModeSelector = ({
         </div>
       )}
       
-      <Select value={value} onValueChange={(v) => onChange(v as AttendanceMode)} disabled={disabled}>
-        <SelectTrigger className={compact ? "w-[180px]" : "w-full"}>
-          <SelectValue placeholder="Select attendance mode">
-            <div className="flex items-center gap-2">
-              {config.icon}
-              <span>{config.label}</span>
-            </div>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {(Object.keys(ATTENDANCE_MODE_CONFIG) as AttendanceMode[]).map((mode) => {
-            const modeConfig = ATTENDANCE_MODE_CONFIG[mode];
-            return (
-              <SelectItem key={mode} value={mode}>
-                <div className="flex flex-col gap-1 py-1">
-                  <div className="flex items-center gap-2">
-                    {modeConfig.icon}
-                    <span className="font-medium">{modeConfig.label}</span>
-                    <Badge variant={modeConfig.badgeVariant} className="text-xs">
-                      Pay: {modeConfig.paySource}
-                    </Badge>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {modeConfig.description}
-                  </span>
-                </div>
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
+      <AdaptiveSelect 
+        value={value} 
+        onValueChange={(v) => onChange(v as AttendanceMode)} 
+        disabled={disabled}
+        placeholder="Select attendance mode"
+        title="Attendance Mode"
+        className={compact ? "w-[180px]" : "w-full"}
+        options={(Object.keys(ATTENDANCE_MODE_CONFIG) as AttendanceMode[]).map((mode) => {
+          const modeConfig = ATTENDANCE_MODE_CONFIG[mode];
+          return {
+            value: mode,
+            label: `${modeConfig.label} (Pay: ${modeConfig.paySource})`
+          };
+        })}
+      />
 
       {!compact && (
         <p className="text-xs text-muted-foreground">

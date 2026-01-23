@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect, AdaptiveDatePicker } from "@/components/adaptive";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -802,34 +802,32 @@ export const ExportTimesheetDialog = ({ open, onOpenChange, familyId, userRole }
           {/* Carer Selection */}
           <div>
             <label className="text-sm font-medium">Select Carer</label>
-            <Select value={selectedCarerId} onValueChange={setSelectedCarerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a carer" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCarers.map((carer) => (
-                  <SelectItem key={carer.user_id} value={carer.user_id}>
-                    {carer.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AdaptiveSelect 
+              value={selectedCarerId} 
+              onValueChange={setSelectedCarerId}
+              placeholder="Choose a carer"
+              title="Select Carer"
+              options={availableCarers.map((carer) => ({
+                value: carer.user_id,
+                label: carer.full_name
+              }))}
+            />
           </div>
 
           {/* Date Range Selection */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium">Timeframe</label>
-              <Select value={timeframe} onValueChange={handleTimeframeChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="this_month">This Month</SelectItem>
-                  <SelectItem value="last_month">Last Month</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
+              <AdaptiveSelect 
+                value={timeframe} 
+                onValueChange={handleTimeframeChange}
+                title="Timeframe"
+                options={[
+                  { value: 'this_month', label: 'This Month' },
+                  { value: 'last_month', label: 'Last Month' },
+                  { value: 'custom', label: 'Custom Range' }
+                ]}
+              />
             </div>
 
             <div>

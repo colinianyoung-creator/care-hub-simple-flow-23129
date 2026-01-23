@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/adaptive';
 import { Globe, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -39,27 +39,19 @@ export const LanguageSettings = ({
           {t('language.subtitle')}
         </p>
 
-        <Select
+        <AdaptiveSelect
           value={language}
           onValueChange={(value) => onLanguageChange(value as Language)}
           disabled={disabled}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t('language.selectLanguage')} />
-          </SelectTrigger>
-          <SelectContent>
-            {LANGUAGE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                <span className="flex items-center gap-2">
-                  <span>{t(option.labelKey)}</span>
-                  {option.nativeLabelKey && (
-                    <span className="text-muted-foreground">({t(option.nativeLabelKey)})</span>
-                  )}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder={t('language.selectLanguage')}
+          title={t('language.title')}
+          options={LANGUAGE_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.nativeLabelKey 
+              ? `${t(option.labelKey)} (${t(option.nativeLabelKey)})`
+              : t(option.labelKey)
+          }))}
+        />
       </div>
 
       <Alert className="py-2.5 sm:py-3">

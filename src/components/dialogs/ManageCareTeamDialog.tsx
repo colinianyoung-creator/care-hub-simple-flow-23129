@@ -5,7 +5,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/adaptive';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -819,17 +819,17 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as UserRole)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="carer">Carer</SelectItem>
-                          <SelectItem value="family_admin">Family Admin</SelectItem>
-                          <SelectItem value="family_viewer">Family Viewer</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <AdaptiveSelect 
+                        value={inviteRole} 
+                        onValueChange={(value) => setInviteRole(value as UserRole)}
+                        title="Select Role"
+                        options={[
+                          { value: 'carer', label: 'Carer' },
+                          { value: 'family_admin', label: 'Family Admin' },
+                          { value: 'family_viewer', label: 'Family Viewer' },
+                          { value: 'manager', label: 'Manager' }
+                        ]}
+                      />
                     </div>
 
                     {!newInviteCode && (

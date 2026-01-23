@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, CalendarIcon } from 'lucide-react';
@@ -1085,41 +1085,31 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
                 <Label htmlFor="carer_id">
                   {editShiftData ? 'Change carer (optional)' : 'Assign to carer'} {!editShiftData && <span className="text-destructive">*</span>}
                 </Label>
-                <Select 
+                <AdaptiveSelect 
                   value={formData.carer_id} 
                   onValueChange={(value) => setFormData(prev => ({ ...prev, carer_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={editShiftData ? 'Keep current assignment' : 'Select carer'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {carers.map((carer) => (
-                      <SelectItem key={carer.user_id} value={carer.user_id}>
-                        {carer.profiles.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder={editShiftData ? 'Keep current assignment' : 'Select carer'}
+                  title="Assign to Carer"
+                  options={carers.map((carer) => ({
+                    value: carer.user_id,
+                    label: carer.profiles.full_name
+                  }))}
+                />
               </div>
             )}
 
             <div>
               <Label htmlFor="request_type">{isCarer ? 'Request Type' : 'Shift Type'}</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={formData.request_type} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, request_type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isCarer ? 'Select request type' : 'Select shift type'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {requestTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={isCarer ? 'Select request type' : 'Select shift type'}
+                title={isCarer ? 'Request Type' : 'Shift Type'}
+                options={requestTypes.map((type) => ({
+                  value: type.value,
+                  label: type.label
+                }))}
+              />
             </div>
 
             <div>
