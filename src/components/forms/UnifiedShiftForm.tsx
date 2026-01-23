@@ -570,31 +570,72 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
         } else {
           // Admin creating/editing a basic or cover shift
           
-          // CASE 1: Editing a RECURRING shift (from shift_assignments)
+          // CASE 1: Editing a RECURRING shift instance - create/update time_entry for this instance only
           if (editShiftData?.shift_assignment_id && !isEditingLeaveRequest) {
-            // Determine carer type (real user or placeholder)
+            // FIX: Instead of updating shift_assignment (which affects all instances),
+            // create/update a time_entry for THIS specific instance to "materialize" the override
+            
+            const startHour = 9;
+            const hours = parseInt(formData.hours) || 8;
+            const endHour = startHour + hours;
+            const clockIn = `${formData.start_date}T${String(startHour).padStart(2, '0')}:00:00`;
+            const clockOut = `${formData.start_date}T${String(endHour).padStart(2, '0')}:00:00`;
+            
+            // Check if a time_entry already exists for this shift_instance
+            const shiftInstanceId = editShiftData.shift_instance_id || editShiftData.id;
+            
+            const { data: existingTimeEntry, error: checkError } = await supabase
+              .from('time_entries')
+              .select('id')
+              .eq('shift_instance_id', shiftInstanceId)
+              .maybeSingle();
+            
+            if (checkError) throw checkError;
+            
+            // Determine carer info
             const selectedCarer = carers.find(c => c.user_id === formData.carer_id);
-            const isPlaceholder = selectedCarer?.is_placeholder;
-            const actualCarerId = isPlaceholder ? null : (formData.carer_id || null);
-            const placeholderCarerId = isPlaceholder ? selectedCarer.placeholder_id : null;
-
-            const { error } = await supabase
-              .from('shift_assignments')
-              .update({
-                carer_id: actualCarerId,
-                placeholder_carer_id: placeholderCarerId,
-                shift_type: formData.request_type || 'basic',
-                notes: formData.reason || null
-              })
-              .eq('id', editShiftData.shift_assignment_id);
-
-            if (error) throw error;
+            const actualCarerId = formData.carer_id && !selectedCarer?.is_placeholder 
+              ? formData.carer_id 
+              : editShiftData.carer_id;
+            
+            if (existingTimeEntry) {
+              // Update existing time_entry
+              const { error: updateError } = await supabase
+                .from('time_entries')
+                .update({
+                  shift_type: formData.request_type || 'basic',
+                  notes: formData.reason || null,
+                  user_id: actualCarerId,
+                  clock_in: clockIn,
+                  clock_out: clockOut
+                })
+                .eq('id', existingTimeEntry.id);
+              
+              if (updateError) throw updateError;
+            } else {
+              // Create new time_entry to override this instance
+              const { error: insertError } = await supabase
+                .from('time_entries')
+                .insert({
+                  family_id: familyId,
+                  user_id: actualCarerId,
+                  shift_instance_id: shiftInstanceId,
+                  clock_in: clockIn,
+                  clock_out: clockOut,
+                  shift_type: formData.request_type || 'basic',
+                  notes: formData.reason || null,
+                  is_unscheduled: false,
+                  approval_status: 'approved'
+                });
+              
+              if (insertError) throw insertError;
+            }
 
             toast({
               title: "Success",
-              description: "Recurring shift updated successfully"
+              description: "Shift updated successfully"
             });
-          } 
+          }
           // CASE 2: Editing a one-time shift (from time_entries)
           else if (editShiftData?.id && !editShiftData?.shift_assignment_id && !isEditingLeaveRequest) {
             // Update existing time entry
@@ -658,33 +699,101 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             const hours = parseInt(formData.hours) || 8;
             const endHour = startHour + hours;
 
-            // If end_date is set, create shifts for all dates in range
+            // If end_date is set, UPDATE existing shifts + create new ones for gaps
             if (formData.end_date && ['annual_leave', 'sickness', 'public_holiday'].includes(formData.request_type)) {
               const start = new Date(formData.start_date);
               const end = new Date(formData.end_date);
-              const shifts = [];
-
+              
+              // Step 1: Update existing time_entries in the date range
+              const { data: existingTimeEntries, error: teError } = await supabase
+                .from('time_entries')
+                .select('id, clock_in')
+                .eq('family_id', familyId)
+                .eq('user_id', formData.carer_id)
+                .gte('clock_in', `${formData.start_date}T00:00:00`)
+                .lte('clock_in', `${formData.end_date}T23:59:59`);
+              
+              if (teError) throw teError;
+              
+              // Update existing time_entries with new shift_type
+              if (existingTimeEntries && existingTimeEntries.length > 0) {
+                const { error: updateError } = await supabase
+                  .from('time_entries')
+                  .update({ 
+                    shift_type: formData.request_type,
+                    notes: formData.reason || `${formData.request_type} shift`
+                  })
+                  .in('id', existingTimeEntries.map(te => te.id));
+                
+                if (updateError) throw updateError;
+              }
+              
+              // Step 2: Get shift_instances in the date range that don't have time_entries
+              const { data: instancesInRange, error: instError } = await supabase
+                .from('shift_instances')
+                .select(`
+                  id,
+                  scheduled_date,
+                  shift_assignments!inner (
+                    id, carer_id, family_id, start_time, end_time
+                  )
+                `)
+                .eq('shift_assignments.family_id', familyId)
+                .eq('shift_assignments.carer_id', formData.carer_id)
+                .gte('scheduled_date', formData.start_date)
+                .lte('scheduled_date', formData.end_date);
+              
+              if (instError) throw instError;
+              
+              // Create time_entries for shift_instances that don't have them yet
+              const existingDates = new Set((existingTimeEntries || []).map(te => te.clock_in.split('T')[0]));
+              const newTimeEntries = [];
+              
+              for (const instance of (instancesInRange || [])) {
+                if (!existingDates.has(instance.scheduled_date)) {
+                  const assignment = instance.shift_assignments as any;
+                  newTimeEntries.push({
+                    family_id: familyId,
+                    user_id: formData.carer_id,
+                    shift_instance_id: instance.id,
+                    clock_in: `${instance.scheduled_date}T${assignment.start_time || '09:00:00'}`,
+                    clock_out: `${instance.scheduled_date}T${assignment.end_time || '17:00:00'}`,
+                    shift_type: formData.request_type,
+                    notes: formData.reason || `${formData.request_type} shift`,
+                    is_unscheduled: false,
+                    approval_status: 'approved'
+                  });
+                  existingDates.add(instance.scheduled_date);
+                }
+              }
+              
+              // Step 3: Create time_entries for any remaining dates without shifts
               for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
                 const dateStr = formatDate(date, 'yyyy-MM-dd');
-                shifts.push({
-                  family_id: familyId,
-                  user_id: formData.carer_id,
-                  clock_in: `${dateStr}T${String(startHour).padStart(2, '0')}:00:00`,
-                  clock_out: `${dateStr}T${String(endHour).padStart(2, '0')}:00:00`,
-                  notes: formData.reason || `${formData.request_type} shift`,
-                  shift_type: formData.request_type
-                });
+                if (!existingDates.has(dateStr)) {
+                  newTimeEntries.push({
+                    family_id: familyId,
+                    user_id: formData.carer_id,
+                    clock_in: `${dateStr}T${String(startHour).padStart(2, '0')}:00:00`,
+                    clock_out: `${dateStr}T${String(endHour).padStart(2, '0')}:00:00`,
+                    notes: formData.reason || `${formData.request_type} shift`,
+                    shift_type: formData.request_type
+                  });
+                }
               }
+              
+              if (newTimeEntries.length > 0) {
+                const { error } = await supabase
+                  .from('time_entries')
+                  .insert(newTimeEntries);
 
-              const { error } = await supabase
-                .from('time_entries')
-                .insert(shifts);
-
-              if (error) throw error;
-
+                if (error) throw error;
+              }
+              
+              const totalUpdated = (existingTimeEntries?.length || 0) + newTimeEntries.length;
               toast({
                 title: "Success",
-                description: `${shifts.length} shifts created from ${formData.start_date} to ${formData.end_date}`,
+                description: `${totalUpdated} shifts updated from ${formData.start_date} to ${formData.end_date}`,
               });
             } else {
               // Create single new time entry
@@ -795,38 +904,67 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             description: "Entire shift series deleted successfully"
           });
         } else if (isRecurringShift && deleteOption === 'future') {
-          // Delete future instances
-          console.log('🗑️ Deleting future instances from:', editShiftData.start_date);
+          // FIX: Delete ALL future shifts for this carer across ALL their assignments
+          console.log('🗑️ Deleting ALL future shifts for carer from:', editShiftData.start_date);
           
-          // Step 1: Get future shift_instance IDs
-          // @ts-ignore - Supabase type instantiation depth issue
-          const { data: futureInstanceIds } = await supabase
-            .from('shift_instances')
-            .select('id')
-            .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('scheduled_date', editShiftData.start_date);
-
-          // Step 2: Delete time_entries for these instances
-          if (futureInstanceIds && futureInstanceIds.length > 0) {
-            const ids = futureInstanceIds.map(i => i.id);
-            // @ts-ignore - Supabase type instantiation depth issue
-            await supabase
-              .from('time_entries')
-              .delete()
-              .in('shift_instance_id', ids);
+          // Get the carer ID from the current shift
+          const carerId = editShiftData.carer_id;
+          if (!carerId) {
+            throw new Error('Cannot determine carer for this shift');
           }
           
-          // Step 3: Delete the shift_instances
+          // Step 1: Get ALL shift_assignments for this carer in this family
+          // @ts-ignore - Supabase type instantiation depth issue
+          const { data: allAssignments, error: assignError } = await supabase
+            .from('shift_assignments')
+            .select('id')
+            .eq('family_id', familyId)
+            .eq('carer_id', carerId);
+          
+          if (assignError) throw assignError;
+          
+          if (allAssignments && allAssignments.length > 0) {
+            const assignmentIds = allAssignments.map(a => a.id);
+            
+            // Step 2: Get all future shift_instance IDs across all assignments
+            // @ts-ignore - Supabase type instantiation depth issue
+            const { data: futureInstanceIds } = await supabase
+              .from('shift_instances')
+              .select('id')
+              .in('shift_assignment_id', assignmentIds)
+              .gte('scheduled_date', editShiftData.start_date);
+
+            // Step 3: Delete time_entries for these instances
+            if (futureInstanceIds && futureInstanceIds.length > 0) {
+              const ids = futureInstanceIds.map(i => i.id);
+              // @ts-ignore - Supabase type instantiation depth issue
+              await supabase
+                .from('time_entries')
+                .delete()
+                .in('shift_instance_id', ids);
+            }
+            
+            // Step 4: Delete the shift_instances
+            // @ts-ignore - Supabase type instantiation depth issue
+            await supabase
+              .from('shift_instances')
+              .delete()
+              .in('shift_assignment_id', assignmentIds)
+              .gte('scheduled_date', editShiftData.start_date);
+          }
+          
+          // Step 5: Also delete any standalone time_entries for this carer from start_date
           // @ts-ignore - Supabase type instantiation depth issue
           await supabase
-            .from('shift_instances')
+            .from('time_entries')
             .delete()
-            .eq('shift_assignment_id', editShiftData.shift_assignment_id)
-            .gte('scheduled_date', editShiftData.start_date);
+            .eq('family_id', familyId)
+            .eq('user_id', carerId)
+            .gte('clock_in', `${editShiftData.start_date}T00:00:00`);
 
           toast({
             title: "Success",
-            description: "This shift and all future shifts deleted"
+            description: "This shift and all future shifts for this carer deleted"
           });
         } else {
           // Single shift deletion
