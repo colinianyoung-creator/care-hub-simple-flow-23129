@@ -1731,8 +1731,54 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                   return false;
                 });
                 
+                // Group bundled requests together
+                const bundledGroups: Record<string, typeof visibleRequests> = {};
+                const unbundledRequests: typeof visibleRequests = [];
+                
+                visibleRequests.forEach(r => {
+                  if (r.bundle_id) {
+                    if (!bundledGroups[r.bundle_id]) {
+                      bundledGroups[r.bundle_id] = [];
+                    }
+                    bundledGroups[r.bundle_id].push(r);
+                  } else {
+                    unbundledRequests.push(r);
+                  }
+                });
+                
+                // Create representative requests for bundles (showing date range)
+                const bundleRepresentatives = Object.entries(bundledGroups).map(([bundleId, bundledReqs]) => {
+                  // Sort by date to get range
+                  const sorted = [...bundledReqs].sort((a, b) => {
+                    const dateA = a.new_start_time ? new Date(a.new_start_time) : new Date(0);
+                    const dateB = b.new_start_time ? new Date(b.new_start_time) : new Date(0);
+                    return dateA.getTime() - dateB.getTime();
+                  });
+                  
+                  const firstReq = sorted[0];
+                  const lastReq = sorted[sorted.length - 1];
+                  const startDate = firstReq.new_start_time ? format(new Date(firstReq.new_start_time), 'yyyy-MM-dd') : '';
+                  const endDate = lastReq.new_start_time ? format(new Date(lastReq.new_start_time), 'yyyy-MM-dd') : '';
+                  
+                  return {
+                    ...firstReq,
+                    _isBundleRep: true,
+                    _bundleCount: bundledReqs.length,
+                    _bundleIds: bundledReqs.map(r => r.id),
+                    start_date: startDate,
+                    end_date: startDate !== endDate ? endDate : undefined,
+                    request_type: firstReq.new_shift_type || 'leave'
+                  };
+                });
+                
+                const displayRequests = [...unbundledRequests, ...bundleRepresentatives].sort((a, b) => {
+                  const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+                  const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+                  return dateB.getTime() - dateA.getTime(); // Most recent first
+                });
+                
                 const hasPendingCancellations = cancellationRequests.length > 0;
-                const hasAnyRequests = visibleRequests.length > 0 || hasPendingCancellations;
+                const hasAnyRequests = displayRequests.length > 0 || hasPendingCancellations;
                 
                 return !hasAnyRequests ? (
                   <div className="text-center py-8 text-muted-foreground">
@@ -1753,15 +1799,42 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                     ))}
                     
                     {/* Shift Change and Leave Requests */}
-                    {visibleRequests.map((request) => (
+                    {displayRequests.map((request: any) => (
                       <ChangeRequestCard
-                        key={request.id}
+                        key={request._isBundleRep ? `bundle-${request.bundle_id}` : request.id}
                         request={request}
                         isAdmin={isAdmin}
                         isCarer={isCarer}
-                        onApprove={() => handleApproveRequest(request.id, true, request.request_source || 'leave')}
-                        onDeny={() => handleApproveRequest(request.id, false, request.request_source || 'leave')}
-                        onDelete={() => handleDeleteRequest(request.id, request.request_source || 'leave')}
+                        onApprove={async () => {
+                          // For bundled requests, approve all in the bundle
+                          if (request._bundleIds) {
+                            for (const id of request._bundleIds) {
+                              await handleApproveRequest(id, true, 'shift_change');
+                            }
+                          } else {
+                            await handleApproveRequest(request.id, true, request.request_source || 'leave');
+                          }
+                        }}
+                        onDeny={async () => {
+                          // For bundled requests, deny all in the bundle
+                          if (request._bundleIds) {
+                            for (const id of request._bundleIds) {
+                              await handleApproveRequest(id, false, 'shift_change');
+                            }
+                          } else {
+                            await handleApproveRequest(request.id, false, request.request_source || 'leave');
+                          }
+                        }}
+                        onDelete={async () => {
+                          // For bundled requests, delete all in the bundle
+                          if (request._bundleIds) {
+                            for (const id of request._bundleIds) {
+                              await handleDeleteRequest(id, 'shift_change');
+                            }
+                          } else {
+                            await handleDeleteRequest(request.id, request.request_source || 'leave');
+                          }
+                        }}
                       />
                     ))}
                   </div>
