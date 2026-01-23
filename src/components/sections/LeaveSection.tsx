@@ -5,8 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AdaptiveSelect, AdaptiveMenu, type MenuGroup } from "@/components/adaptive";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CalendarDays, Clock, Download, Loader2, Pencil, Trash2, Check } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -426,41 +425,33 @@ export const LeaveSection = ({ familyId, userRole, currentUserId, onScheduleRefr
             {isAdmin && carers.length > 0 && (
               <div>
                 <Label htmlFor="carer-filter">Filter by Carer</Label>
-                <Select 
+                <AdaptiveSelect 
                   value={filters.carer} 
                   onValueChange={(value) => setFilters(prev => ({ ...prev, carer: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All carers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-carers">All carers</SelectItem>
-                    {carers.map(carer => (
-                      <SelectItem key={carer.id} value={carer.id}>
-                        {carer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="All carers"
+                  title="Filter by Carer"
+                  options={[
+                    { value: 'all-carers', label: 'All carers' },
+                    ...carers.map(carer => ({ value: carer.id, label: carer.name }))
+                  ]}
+                />
               </div>
             )}
 
             <div>
               <Label htmlFor="type-filter">Filter by Type</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={filters.type} 
                 onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-types">All types</SelectItem>
-                  <SelectItem value="annual_leave">Annual Leave</SelectItem>
-                  <SelectItem value="sickness">Sickness</SelectItem>
-                  <SelectItem value="public_holiday">Public Holiday</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="All types"
+                title="Filter by Type"
+                options={[
+                  { value: 'all-types', label: 'All types' },
+                  { value: 'annual_leave', label: 'Annual Leave' },
+                  { value: 'sickness', label: 'Sickness' },
+                  { value: 'public_holiday', label: 'Public Holiday' }
+                ]}
+              />
             </div>
           </div>
 
@@ -598,8 +589,8 @@ const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: L
               {canEdit && (
                 <div className="flex flex-col gap-1 shrink-0">
                   {entry.type === 'time_entry' && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                    <AdaptiveMenu
+                      trigger={
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -607,22 +598,17 @@ const LeaveCardList = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: L
                         >
                           <Pencil className="h-3 w-3" />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {leaveTypeOptions.map((type) => (
-                          <DropdownMenuItem
-                            key={type.value}
-                            onClick={() => onEdit(entry.id, entry.type, type.value)}
-                            className="flex items-center justify-between"
-                          >
-                            {type.label}
-                            {entry.shift_type === type.value && (
-                              <Check className="h-4 w-4 ml-2" />
-                            )}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      }
+                      title="Edit Leave Type"
+                      groups={[{
+                        items: leaveTypeOptions.map((type) => ({
+                          id: type.value,
+                          label: type.label,
+                          onClick: () => onEdit(entry.id, entry.type, type.value),
+                          icon: entry.shift_type === type.value ? <Check className="h-4 w-4" /> : undefined
+                        }))
+                      }]}
+                    />
                   )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -701,27 +687,22 @@ const LeaveTable = ({ entries, showCarer, onEdit, onDelete, canEditEntry }: Leav
                   {canEdit && (
                     <div className="flex items-center gap-1">
                       {entry.type === 'time_entry' && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                        <AdaptiveMenu
+                          trigger={
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <Pencil className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {leaveTypeOptions.map((type) => (
-                              <DropdownMenuItem
-                                key={type.value}
-                                onClick={() => onEdit(entry.id, entry.type, type.value)}
-                                className="flex items-center justify-between"
-                              >
-                                {type.label}
-                                {entry.shift_type === type.value && (
-                                  <Check className="h-4 w-4 ml-2" />
-                                )}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          }
+                          title="Edit Leave Type"
+                          groups={[{
+                            items: leaveTypeOptions.map((type) => ({
+                              id: type.value,
+                              label: type.label,
+                              onClick: () => onEdit(entry.id, entry.type, type.value),
+                              icon: entry.shift_type === type.value ? <Check className="h-4 w-4" /> : undefined
+                            }))
+                          }]}
+                        />
                       )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

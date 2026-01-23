@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { CheckCircle, Clock, RotateCcw, Trash2, Plus, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -509,21 +509,16 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Assign To (optional)</label>
-                <Select
+                <AdaptiveSelect
                   value={newTask.assigned_to}
                   onValueChange={(value) => setNewTask(prev => ({ ...prev, assigned_to: value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select team member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member.user_id} value={member.user_id}>
-                        {member.profiles.full_name || 'Unnamed User'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select team member"
+                  title="Assign To"
+                  options={teamMembers.map((member) => ({
+                    value: member.user_id,
+                    label: member.profiles.full_name || 'Unnamed User'
+                  }))}
+                />
               </div>
             </div>
             
@@ -547,19 +542,17 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
               {newTask.is_recurring && (
                 <div>
                   <label className="text-sm font-medium mb-1 block">Repeat</label>
-                  <Select
+                  <AdaptiveSelect
                     value={newTask.recurrence_type}
                     onValueChange={(value) => setNewTask(prev => ({ ...prev, recurrence_type: value as 'daily' | 'weekly' | 'monthly' }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select frequency"
+                    title="Repeat Frequency"
+                    options={[
+                      { value: 'daily', label: 'Daily' },
+                      { value: 'weekly', label: 'Weekly' },
+                      { value: 'monthly', label: 'Monthly' }
+                    ]}
+                  />
                   <p className="text-xs text-muted-foreground mt-1">
                     When completed, a new task will be created for the next {newTask.recurrence_type === 'daily' ? 'day' : newTask.recurrence_type === 'weekly' ? 'week' : 'month'}
                   </p>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -367,41 +367,37 @@ export default function UnifiedNoteForm({
 
             <div>
               <Label htmlFor="mood">Mood</Label>
-              <Select
+              <AdaptiveSelect
                 value={dailyNoteData.mood}
                 onValueChange={(value) => setDailyNoteData({ ...dailyNoteData, mood: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mood" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="happy">😊 Happy</SelectItem>
-                  <SelectItem value="content">😌 Content</SelectItem>
-                  <SelectItem value="neutral">😐 Neutral</SelectItem>
-                  <SelectItem value="anxious">😟 Anxious</SelectItem>
-                  <SelectItem value="sad">😢 Sad</SelectItem>
-                  <SelectItem value="angry">😠 Angry</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select mood"
+                title="Mood"
+                options={[
+                  { value: 'happy', label: '😊 Happy' },
+                  { value: 'content', label: '😌 Content' },
+                  { value: 'neutral', label: '😐 Neutral' },
+                  { value: 'anxious', label: '😟 Anxious' },
+                  { value: 'sad', label: '😢 Sad' },
+                  { value: 'angry', label: '😠 Angry' }
+                ]}
+              />
             </div>
 
             <div>
               <Label htmlFor="eating_drinking">Eating & Drinking</Label>
-              <Select
+              <AdaptiveSelect
                 value={dailyNoteData.eating_drinking}
                 onValueChange={(value) => setDailyNoteData({ ...dailyNoteData, eating_drinking: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select eating status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All consumed</SelectItem>
-                  <SelectItem value="most">Most consumed</SelectItem>
-                  <SelectItem value="some">Some consumed</SelectItem>
-                  <SelectItem value="little">Little consumed</SelectItem>
-                  <SelectItem value="none">None consumed</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select eating status"
+                title="Eating & Drinking"
+                options={[
+                  { value: 'all', label: 'All consumed' },
+                  { value: 'most', label: 'Most consumed' },
+                  { value: 'some', label: 'Some consumed' },
+                  { value: 'little', label: 'Little consumed' },
+                  { value: 'none', label: 'None consumed' }
+                ]}
+              />
             </div>
 
             {dailyNoteData.eating_drinking && (
@@ -460,21 +456,13 @@ export default function UnifiedNoteForm({
 
             <div>
               <Label htmlFor="incident_type">Incident Type *</Label>
-              <Select
+              <AdaptiveSelect
                 value={incidentData.incident_type}
                 onValueChange={(value) => setIncidentData({ ...incidentData, incident_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select incident type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {INCIDENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select incident type"
+                title="Incident Type"
+                options={INCIDENT_TYPES.map((type) => ({ value: type.value, label: type.label }))}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

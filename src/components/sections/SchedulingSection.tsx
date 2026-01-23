@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Users, AlertCircle, Plus, Download, Loader2, Filter, Trash2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BulkDeleteShiftsDialog } from "../dialogs/BulkDeleteShiftsDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -1634,21 +1634,20 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-base sm:text-lg font-semibold">Weekly Schedule</h3>
                   {isAdmin && Object.keys(carers).length > 0 && (
-                    <Select 
+                    <AdaptiveSelect 
                       value={selectedCarerId || 'all'} 
                       onValueChange={(val) => setSelectedCarerId(val === 'all' ? null : val)}
-                    >
-                      <SelectTrigger className="w-[140px] sm:w-[180px] h-9 text-sm">
-                        <Filter className="h-4 w-4 mr-1 sm:mr-2 flex-shrink-0" />
-                        <SelectValue placeholder="All Carers" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border z-50">
-                        <SelectItem value="all">All Carers</SelectItem>
-                        {Object.entries(carers).map(([id, name]) => (
-                          <SelectItem key={id} value={id}>{name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="All Carers"
+                      title="Filter by Carer"
+                      triggerClassName="w-[140px] sm:w-[180px] h-9 text-sm"
+                      options={[
+                        { value: 'all', label: 'All Carers' },
+                        ...Object.entries(carers).map(([id, name]) => ({
+                          value: id,
+                          label: name as string
+                        }))
+                      ]}
+                    />
                   )}
                 </div>
                 <div className="flex gap-2 flex-wrap">
