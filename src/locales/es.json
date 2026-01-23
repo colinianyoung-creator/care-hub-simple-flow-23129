@@ -257,6 +257,15 @@
     "refreshing": "Actualizando...",
     "refreshButton": "Actualizar datos"
   },
+  "datePicker": {
+    "selectDate": "Seleccionar fecha",
+    "selectDateRange": "Seleccionar rango de fechas",
+    "pickDate": "Elegir una fecha",
+    "pickDateRange": "Elegir un rango de fechas",
+    "today": "Hoy",
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mes"
+  },
   "notifications": {
     "preferenceSaved": "Preferencia guardada",
     "preferenceUpdated": "Tu preferencia ha sido actualizada.",

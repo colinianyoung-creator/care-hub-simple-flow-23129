@@ -3,14 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-
-// Detect iOS PWA to handle focus trap issues
-const isIOSPWA = () => {
-  if (typeof window === 'undefined') return false;
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isStandalone = (window.navigator as any).standalone === true;
-  return isIOS && isStandalone;
-};
+import { isIOSPWA } from "@/lib/platformUtils"
 
 const Dialog = DialogPrimitive.Root
 

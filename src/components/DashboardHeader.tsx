@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings, Download, HelpCircle, RefreshCw } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAppRefresh } from '@/hooks/useAppRefresh';
@@ -18,6 +17,7 @@ import { HelpCenterModal } from './instructions/HelpCenterModal';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from '@/lib/utils';
+import { AdaptiveMenu, type MenuGroup } from '@/components/adaptive/AdaptiveMenu';
 
 interface DashboardHeaderProps {
   familyName: string;
@@ -65,41 +65,7 @@ export const DashboardHeader = ({
   const { isIOS, isInstalled, isInstallable, promptInstall, canShowInstall } = usePWAInstall();
   const { triggerRefresh, isRefreshing } = useAppRefresh();
 
-  // Refs for iOS PWA outside-touch dismissal
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  const closeMenu = () => setMenuOpen(false);
-
-  // iOS PWA: Manual outside-touch listener for reliable menu dismissal
-  useEffect(() => {
-    // Only apply this fix for iOS PWA (standalone mode)
-    const isIOSPWA = isIOS && isInstalled;
-    if (!isIOSPWA || !menuOpen) return;
-
-    const handleTouchOutside = (e: TouchEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-
-      // Check if touch is inside the trigger or content
-      const isInsideTrigger = triggerRef.current?.contains(target);
-      const isInsideContent = contentRef.current?.contains(target);
-
-      if (!isInsideTrigger && !isInsideContent) {
-        setMenuOpen(false);
-      }
-    };
-
-    // Use capture phase for more reliable interception on iOS
-    document.addEventListener('touchstart', handleTouchOutside, { capture: true, passive: true });
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchOutside, { capture: true });
-    };
-  }, [menuOpen, isIOS, isInstalled]);
-
   const handleInstallClick = () => {
-    closeMenu();
     if (isIOS) {
       setShowIOSInstallDialog(true);
     } else {
@@ -139,6 +105,138 @@ export const DashboardHeader = ({
         return t('roles.member');
     }
   };
+
+  // Build menu groups using useMemo for stability
+  const menuGroups = useMemo<MenuGroup[]>(() => {
+    const mainGroup: MenuGroup = { items: [] };
+    const accountGroup: MenuGroup = { items: [] };
+    const signOutGroup: MenuGroup = { items: [] };
+
+    // Invite/Join/Create buttons for mobile
+    if (showInviteButton && familyId) {
+      mainGroup.items.push({
+        id: 'invite',
+        label: t('menu.inviteMembers'),
+        icon: <Users className="h-4 w-4" />,
+        onClick: () => document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click(),
+      });
+    }
+
+    if (showJoinButton) {
+      mainGroup.items.push({
+        id: 'join',
+        label: t('menu.joinFamily'),
+        icon: <Users className="h-4 w-4" />,
+        onClick: () => document.querySelector<HTMLButtonElement>('[data-join-button]')?.click(),
+      });
+    }
+
+    if (showCreateButton) {
+      mainGroup.items.push({
+        id: 'create',
+        label: t('menu.createFamily'),
+        icon: <Users className="h-4 w-4" />,
+        onClick: () => document.querySelector<HTMLButtonElement>('[data-create-button]')?.click(),
+      });
+    }
+
+    // Messages
+    if (familyId) {
+      mainGroup.items.push({
+        id: 'messages',
+        label: t('menu.messages'),
+        icon: <MessageCircle className="h-4 w-4" />,
+        onClick: () => setShowChatDialog(true),
+        badge: unreadCount > 0 ? (
+          <span className="h-5 w-5 rounded-full bg-destructive text-[10px] text-destructive-foreground flex items-center justify-center font-medium">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        ) : undefined,
+      });
+    }
+
+    // Account items
+    accountGroup.items.push({
+      id: 'profile',
+      label: t('menu.profile'),
+      icon: <User className="h-4 w-4" />,
+      onClick: () => setShowProfileDialog(true),
+    });
+
+    accountGroup.items.push({
+      id: 'settings',
+      label: t('menu.settings'),
+      icon: <Settings className="h-4 w-4" />,
+      onClick: () => setShowSettingsDialog(true),
+    });
+
+    // Manage Care Team
+    if (familyId && (userRole === 'family_admin' || userRole === 'disabled_person')) {
+      accountGroup.items.push({
+        id: 'care-team',
+        label: t('menu.manageCareTeam'),
+        icon: <Users className="h-4 w-4" />,
+        onClick: () => setShowCareTeamDialog(true),
+      });
+    }
+
+    // Switch Family
+    if (userRole === 'carer' && onSwitchFamily) {
+      accountGroup.items.push({
+        id: 'switch-family',
+        label: t('menu.switchFamily'),
+        icon: <ArrowLeftRight className="h-4 w-4" />,
+        onClick: onSwitchFamily,
+      });
+    }
+
+    // Install app
+    if (canShowInstall) {
+      accountGroup.items.push({
+        id: 'install',
+        label: t('menu.installApp'),
+        icon: <Download className="h-4 w-4" />,
+        onClick: handleInstallClick,
+      });
+    }
+
+    // Help
+    accountGroup.items.push({
+      id: 'help',
+      label: t('menu.help'),
+      icon: <HelpCircle className="h-4 w-4" />,
+      onClick: () => setShowHelpCenter(true),
+    });
+
+    // Sign out
+    signOutGroup.items.push({
+      id: 'sign-out',
+      label: t('menu.signOut'),
+      icon: <LogOut className="h-4 w-4" />,
+      onClick: onSignOut,
+      destructive: true,
+    });
+
+    // Filter out empty groups
+    const groups: MenuGroup[] = [];
+    if (mainGroup.items.length > 0) groups.push(mainGroup);
+    if (accountGroup.items.length > 0) groups.push(accountGroup);
+    if (signOutGroup.items.length > 0) groups.push(signOutGroup);
+
+    return groups;
+  }, [
+    t,
+    familyId,
+    userRole,
+    showInviteButton,
+    showJoinButton,
+    showCreateButton,
+    unreadCount,
+    canShowInstall,
+    onSwitchFamily,
+    onSignOut,
+    isIOS,
+  ]);
 
   return (
     <header className="flex items-center justify-between p-4 md:p-6 bg-card border-b">
@@ -199,85 +297,23 @@ export const DashboardHeader = ({
           <CreateFamilyButton variant="outline" className="hidden sm:flex" />
         )}
         
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={!(isIOS && isInstalled)}>
-          <DropdownMenuTrigger asChild>
-            <Button ref={triggerRef} variant="outline" size="sm" className="shrink-0 relative touch-manipulation">
+        <AdaptiveMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          title={t('menu.menu')}
+          groups={menuGroups}
+          trigger={
+            <Button variant="outline" size="sm" className="shrink-0 relative touch-manipulation">
               <Menu className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('menu.menu')}</span>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium">
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] text-destructive-foreground flex items-center justify-center font-medium">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent ref={contentRef} align="end" className="min-w-[200px]">
-            {showInviteButton && familyId && (
-              <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-invite-button]')?.click(); }}>
-                <Users className="mr-2 h-4 w-4" />
-                {t('menu.inviteMembers')}
-              </DropdownMenuItem>
-            )}
-            {showJoinButton && (
-              <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-join-button]')?.click(); }}>
-                <Users className="mr-2 h-4 w-4" />
-                {t('menu.joinFamily')}
-              </DropdownMenuItem>
-            )}
-            {showCreateButton && (
-              <DropdownMenuItem onSelect={() => { closeMenu(); document.querySelector<HTMLButtonElement>('[data-create-button]')?.click(); }}>
-                <Users className="mr-2 h-4 w-4" />
-                {t('menu.createFamily')}
-              </DropdownMenuItem>
-            )}
-            {familyId && (
-              <DropdownMenuItem onSelect={() => { closeMenu(); setShowChatDialog(true); }}>
-                <MessageCircle className="mr-2 h-4 w-4" />
-                {t('menu.messages')}
-                {unreadCount > 0 && (
-                  <span className="ml-auto h-5 w-5 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-medium">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onSelect={() => { closeMenu(); setShowProfileDialog(true); }}>
-              <User className="mr-2 h-4 w-4" />
-              {t('menu.profile')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => { closeMenu(); setShowSettingsDialog(true); }}>
-              <Settings className="mr-2 h-4 w-4" />
-              {t('menu.settings')}
-            </DropdownMenuItem>
-            {familyId && (userRole === 'family_admin' || userRole === 'disabled_person') && (
-              <DropdownMenuItem onSelect={() => { closeMenu(); setShowCareTeamDialog(true); }}>
-                <Users className="mr-2 h-4 w-4" />
-                {t('menu.manageCareTeam')}
-              </DropdownMenuItem>
-            )}
-            {userRole === 'carer' && onSwitchFamily && (
-              <DropdownMenuItem onSelect={() => { closeMenu(); onSwitchFamily(); }}>
-                <ArrowLeftRight className="mr-2 h-4 w-4" />
-                {t('menu.switchFamily')}
-              </DropdownMenuItem>
-            )}
-            {canShowInstall && (
-              <DropdownMenuItem onSelect={handleInstallClick}>
-                <Download className="mr-2 h-4 w-4" />
-                {t('menu.installApp')}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onSelect={() => { closeMenu(); setShowHelpCenter(true); }}>
-              <HelpCircle className="mr-2 h-4 w-4" />
-              {t('menu.help')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => { closeMenu(); onSignOut(); }}>
-              <LogOut className="mr-2 h-4 w-4" />
-              {t('menu.signOut')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          }
+        />
       </div>
       
       <ProfileDialog 
