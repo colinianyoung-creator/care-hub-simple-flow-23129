@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileDialog } from './dialogs/ProfileDialog';
 import { logUserContext } from '@/lib/logContext';
+import { APP_REFRESH_EVENT } from '@/hooks/useAppRefresh';
 // ActionMenu removed - using accordion sections instead
 
 interface DisabledPersonDashboardProps {
@@ -68,22 +69,34 @@ export const DisabledPersonDashboard = ({
   const isMobile = useIsMobile();
   const { t } = useTranslation();
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (familyId) {
-        await loadDashboardData();
-      }
-      await loadUserName();
-      
-      // Log context after data loads
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        logUserContext(user, familyId, userRole);
-      }
-    };
+  const loadData = useCallback(async () => {
+    if (familyId) {
+      await loadDashboardData();
+    }
+    await loadUserName();
     
-    loadData();
+    // Log context after data loads
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      logUserContext(user, familyId, userRole);
+    }
   }, [familyId, userRole]);
+
+  useEffect(() => {
+    loadData();
+
+    // Listen for app-wide refresh events
+    const handleAppRefresh = () => {
+      console.log('[DisabledPersonDashboard] App refresh event received');
+      loadData();
+    };
+
+    window.addEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+
+    return () => {
+      window.removeEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+    };
+  }, [loadData]);
 
   const loadUserName = async () => {
     try {

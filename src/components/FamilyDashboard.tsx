@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from './DashboardHeader';
 import { HeroBanner } from './HeroBanner';
@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { logUserContext } from '@/lib/logContext';
 import { useFamilySettings } from '@/hooks/useFamilySettings';
+import { APP_REFRESH_EVENT } from '@/hooks/useAppRefresh';
 
 interface FamilyDashboardProps {
   onBack?: () => void;
@@ -57,40 +58,52 @@ export const FamilyDashboard = ({
   const isMobile = useIsMobile();
   const { isSectionEnabled } = useFamilySettings(familyId);
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (familyId) {
-        const { data: careRecipient, error: careError } = await supabase
-          .from('care_recipients')
-          .select('name')
-          .eq('family_id', familyId)
-          .limit(1)
-          .single();
-        
-        if (!careError && careRecipient) {
-          setCareRecipientName(careRecipient.name);
-        }
+  const loadData = useCallback(async () => {
+    if (familyId) {
+      const { data: careRecipient, error: careError } = await supabase
+        .from('care_recipients')
+        .select('name')
+        .eq('family_id', familyId)
+        .limit(1)
+        .single();
+      
+      if (!careError && careRecipient) {
+        setCareRecipientName(careRecipient.name);
       }
+    }
 
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profileData } = await supabase.rpc('get_profile_safe');
-          
-          if (profileData && profileData.length > 0) {
-            setUserName(profileData[0].full_name || '');
-          }
-          
-          // Log context after data loads
-          logUserContext(user, familyId, userRole);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase.rpc('get_profile_safe');
+        
+        if (profileData && profileData.length > 0) {
+          setUserName(profileData[0].full_name || '');
         }
-      } catch (error) {
-        console.error('Error loading user profile:', error);
+        
+        // Log context after data loads
+        logUserContext(user, familyId, userRole);
       }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  }, [familyId, userRole]);
+
+  useEffect(() => {
+    loadData();
+
+    // Listen for app-wide refresh events
+    const handleAppRefresh = () => {
+      console.log('[FamilyDashboard] App refresh event received');
+      loadData();
     };
 
-    loadData();
-  }, [familyId, userRole]);
+    window.addEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+
+    return () => {
+      window.removeEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+    };
+  }, [loadData]);
 
   const showJoinMessage = !familyId && userRole === 'family_viewer';
 

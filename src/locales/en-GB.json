@@ -262,6 +262,12 @@
     "iosStep2": "Select 'Add to Home Screen'",
     "dismiss": "Not now"
   },
+  "refresh": {
+    "pullToRefresh": "Pull to refresh",
+    "releaseToRefresh": "Release to refresh",
+    "refreshing": "Refreshing...",
+    "refreshButton": "Refresh data"
+  },
   "notifications": {
     "preferenceSaved": "Preference saved",
     "preferenceUpdated": "Your preference has been updated.",

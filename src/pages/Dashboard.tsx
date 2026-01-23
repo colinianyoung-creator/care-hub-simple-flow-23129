@@ -5,6 +5,8 @@ import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
 import { useToast } from "@/hooks/use-toast";
 import Footer from "@/components/Footer";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
+import { useIOSPullToRefresh } from "@/hooks/useIOSPullToRefresh";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -22,6 +24,9 @@ const Dashboard = () => {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { toast } = useToast();
   const isLoadingDataRef = useRef(false);
+  
+  // Initialize iOS pull-to-refresh (hook handles detection internally)
+  useIOSPullToRefresh('root');
 
   // Add timeout for loading state
   useEffect(() => {
@@ -446,6 +451,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* iOS Pull-to-Refresh Indicator */}
+      <PullToRefreshIndicator />
+      
       <div className="flex-1">
         <RoleBasedDashboard
           user={user}

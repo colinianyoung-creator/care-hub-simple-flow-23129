@@ -251,6 +251,12 @@
     "switchFamily": "Newid Teulu",
     "signOut": "Allgofnodi"
   },
+  "refresh": {
+    "pullToRefresh": "Tynnwch i adnewyddu",
+    "releaseToRefresh": "Gollyngwch i adnewyddu",
+    "refreshing": "Yn adnewyddu...",
+    "refreshButton": "Adnewyddu data"
+  },
   "notifications": {
     "preferenceSaved": "Dewis wedi'i gadw",
     "preferenceUpdated": "Mae eich dewis wedi'i ddiweddaru.",

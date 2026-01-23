@@ -26,6 +26,7 @@ import { CancellationRequestCard } from "../CancellationRequestCard";
 import { SnapshotViewerModal } from "../dialogs/SnapshotViewerModal";
 import { ConflictResolutionModal } from "../dialogs/ConflictResolutionModal";
 import { PendingTimeEntries } from "../PendingTimeEntries";
+import { APP_REFRESH_EVENT } from "@/hooks/useAppRefresh";
 
 interface SchedulingSectionProps {
   familyId: string | undefined;
@@ -638,7 +639,16 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       }
     };
 
+    // Listen for app-wide refresh events
+    const handleAppRefresh = () => {
+      if (!cancelled && familyId) {
+        console.log('[SchedulingSection] App refresh event received');
+        loadSchedulingData(0, undefined, true);
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener(APP_REFRESH_EVENT, handleAppRefresh);
 
     return () => {
       cancelled = true;
@@ -646,6 +656,7 @@ export const SchedulingSection = ({ familyId, userRole, careRecipientNameHint, d
       clearTimeout(timeout);
       setLoading(false);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener(APP_REFRESH_EVENT, handleAppRefresh);
     };
   }, [familyId]);
 
