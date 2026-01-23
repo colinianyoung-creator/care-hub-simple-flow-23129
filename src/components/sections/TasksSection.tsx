@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeError } from "@/lib/errorHandler";
 import { addDays, addWeeks, addMonths, format, nextMonday, startOfMonth, addMonths as addMonthsFns, subDays } from 'date-fns';
+import { APP_REFRESH_EVENT } from "@/hooks/useAppRefresh";
 
 // Helper function to calculate next due date for recurring tasks
 const calculateNextDueDate = (currentDueDate: string | null, recurrenceType: string): string => {
@@ -157,9 +158,20 @@ export const TasksSection = ({ familyId, userRole }: TasksSectionProps) => {
 
     loadData();
 
+    // Listen for app-wide refresh events
+    const handleAppRefresh = () => {
+      if (!cancelled && familyId) {
+        console.log('[TasksSection] App refresh event received');
+        loadTasks();
+      }
+    };
+
+    window.addEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+
     return () => {
       cancelled = true;
       abortController.abort();
+      window.removeEventListener(APP_REFRESH_EVENT, handleAppRefresh);
     };
   }, [familyId]);
 

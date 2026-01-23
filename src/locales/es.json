@@ -251,6 +251,12 @@
     "switchFamily": "Cambiar Familia",
     "signOut": "Cerrar Sesión"
   },
+  "refresh": {
+    "pullToRefresh": "Tira para actualizar",
+    "releaseToRefresh": "Suelta para actualizar",
+    "refreshing": "Actualizando...",
+    "refreshButton": "Actualizar datos"
+  },
   "notifications": {
     "preferenceSaved": "Preferencia guardada",
     "preferenceUpdated": "Tu preferencia ha sido actualizada.",

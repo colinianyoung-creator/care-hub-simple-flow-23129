@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings, Download, HelpCircle } from 'lucide-react';
+import { Menu, LogOut, User, Users, ArrowLeftRight, MessageCircle, Settings, Download, HelpCircle, RefreshCw } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useAppRefresh } from '@/hooks/useAppRefresh';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Share, Plus } from 'lucide-react';
 import { ProfileDialog } from './dialogs/ProfileDialog';
@@ -16,6 +17,7 @@ import { ChatDialog } from './chat/ChatDialog';
 import { HelpCenterModal } from './instructions/HelpCenterModal';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from '@/lib/utils';
 
 interface DashboardHeaderProps {
   familyName: string;
@@ -61,6 +63,7 @@ export const DashboardHeader = ({
   const [showIOSInstallDialog, setShowIOSInstallDialog] = useState(false);
   const { unreadCount } = useUnreadMessages(familyId);
   const { isIOS, isInstalled, isInstallable, promptInstall, canShowInstall } = usePWAInstall();
+  const { triggerRefresh, isRefreshing } = useAppRefresh();
 
   // Refs for iOS PWA outside-touch dismissal
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -161,6 +164,23 @@ export const DashboardHeader = ({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {/* Refresh Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={triggerRefresh}
+          disabled={isRefreshing}
+          aria-label={t('refresh.refreshButton')}
+          className="shrink-0 touch-manipulation"
+        >
+          <RefreshCw 
+            className={cn(
+              "h-4 w-4",
+              isRefreshing && "animate-spin"
+            )} 
+          />
+        </Button>
+
         {showInviteButton && familyId && (
           <InviteMembersButton familyId={familyId} variant="outline" className="hidden sm:flex" />
         )}

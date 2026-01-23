@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { logUserContext } from '@/lib/logContext';
 import { useFamilySettings } from '@/hooks/useFamilySettings';
+import { APP_REFRESH_EVENT } from '@/hooks/useAppRefresh';
 
 type AppRole = 'disabled_person' | 'family_admin' | 'family_viewer' | 'manager' | 'carer';
 
@@ -88,6 +89,20 @@ export const CarerDashboard = ({ onSignOut, familyId, familyName, userRole, care
       setLoading(false);
     }
     loadUserName();
+
+    // Listen for app-wide refresh events
+    const handleAppRefresh = () => {
+      console.log('[CarerDashboard] App refresh event received');
+      if (familyId) {
+        loadWeeklyHours();
+      }
+    };
+
+    window.addEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+
+    return () => {
+      window.removeEventListener(APP_REFRESH_EVENT, handleAppRefresh);
+    };
   }, [familyId, userRole]);
 
   const loadUserName = async () => {

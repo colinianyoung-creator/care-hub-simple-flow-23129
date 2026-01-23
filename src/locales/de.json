@@ -251,6 +251,12 @@
     "switchFamily": "Familie wechseln",
     "signOut": "Abmelden"
   },
+  "refresh": {
+    "pullToRefresh": "Zum Aktualisieren ziehen",
+    "releaseToRefresh": "Loslassen zum Aktualisieren",
+    "refreshing": "Wird aktualisiert...",
+    "refreshButton": "Daten aktualisieren"
+  },
   "notifications": {
     "preferenceSaved": "Einstellung gespeichert",
     "preferenceUpdated": "Ihre Einstellung wurde aktualisiert.",
