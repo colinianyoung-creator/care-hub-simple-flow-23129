@@ -406,6 +406,9 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               return;
             }
 
+            // Generate a bundle_id to group all these requests together
+            const bundleId = crypto.randomUUID();
+            
             // Create change requests for ALL shifts (including converted instances)
             const changeRequests = timeEntryShifts.map(shift => ({
               family_id: familyId,
@@ -415,7 +418,8 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
               new_end_time: shift.clock_out,
               new_shift_type: formData.request_type,
               reason: formData.reason || null,
-              status: 'pending'
+              status: 'pending',
+              bundle_id: bundleId
             }));
 
             const { error: bulkError } = await supabase
@@ -425,8 +429,8 @@ export const UnifiedShiftForm = ({ familyId, userRole, editShiftData, careRecipi
             if (bulkError) throw bulkError;
 
             toast({
-              title: "Change Requests Submitted",
-              description: `${timeEntryShifts.length} shift change request(s) submitted for approval`,
+              title: "Leave Request Submitted",
+              description: `Leave request for ${formData.start_date} to ${formData.end_date} submitted for approval`,
             });
           } else {
             // Single shift change request

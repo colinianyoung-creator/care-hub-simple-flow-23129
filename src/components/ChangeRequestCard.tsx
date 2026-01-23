@@ -44,6 +44,9 @@ interface ChangeRequestCardProps {
     end_date?: string;
     request_type?: string;
     type?: string;
+    // Bundle fields
+    _isBundleRep?: boolean;
+    _bundleCount?: number;
   };
   isAdmin: boolean;
   isCarer: boolean;
@@ -108,7 +111,8 @@ export const ChangeRequestCard = ({
     }
   };
 
-  const isShiftChange = request.request_source === 'shift_change';
+  const isShiftChange = request.request_source === 'shift_change' && !request._isBundleRep;
+  const isBundledRequest = !!request._isBundleRep;
   const isPending = request.status === 'pending';
   const isApplied = request.status === 'applied' || request.status === 'approved';
   const isReverted = request.status === 'reverted';
@@ -117,6 +121,9 @@ export const ChangeRequestCard = ({
 
   // Get the shift type for color coding
   const getRequestShiftType = () => {
+    if (isBundledRequest) {
+      return request.new_shift_type || request.request_type || 'annual_leave';
+    }
     if (isShiftChange) {
       return request.new_shift_type || 'basic';
     }
@@ -144,18 +151,21 @@ export const ChangeRequestCard = ({
         <div className="flex flex-col gap-0.5 min-w-0 pr-16">
           <span className="font-medium text-xs truncate">
             {request.requester_name || 'Unknown'}
+            {request._bundleCount && request._bundleCount > 1 && (
+              <span className="ml-1 opacity-80">({request._bundleCount} days)</span>
+            )}
           </span>
           <span className="text-[10px] font-medium">
             {getShiftTypeLabel(shiftType)}
           </span>
           <span className="text-[10px] opacity-90">
-            {isShiftChange ? (
-              request.new_start_time ? formatDateTime(request.new_start_time) : 'N/A'
-            ) : (
+            {isBundledRequest || !isShiftChange ? (
               <>
                 {formatDate(request.start_date)}
                 {request.end_date && request.end_date !== request.start_date && ` – ${formatDate(request.end_date)}`}
               </>
+            ) : (
+              request.new_start_time ? formatDateTime(request.new_start_time) : 'N/A'
             )}
           </span>
         </div>
@@ -261,7 +271,24 @@ export const ChangeRequestCard = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        {isShiftChange ? (
+        {isBundledRequest ? (
+          <>
+            <div className="font-medium capitalize text-sm md:text-base">
+              {(request.new_shift_type || request.request_type)?.replace('_', ' ') || 'Leave Request'}
+              {request._bundleCount && request._bundleCount > 1 && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {request._bundleCount} days
+                </Badge>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground mt-1">
+              {request.requester_name || 'Unknown'}
+            </div>
+            <div className="text-sm text-muted-foreground mt-1">
+              {formatDate(request.start_date)} {request.end_date && request.end_date !== request.start_date && `– ${formatDate(request.end_date)}`}
+            </div>
+          </>
+        ) : isShiftChange ? (
           <>
             <div className="font-medium text-sm md:text-base">
               {request.requester_name || 'Unknown'}

@@ -2051,6 +2051,7 @@ export type Database = {
           applied_at: string | null
           applied_by: string | null
           archived_at: string | null
+          bundle_id: string | null
           created_at: string | null
           edit_history: Json | null
           family_id: string
@@ -2074,6 +2075,7 @@ export type Database = {
           applied_at?: string | null
           applied_by?: string | null
           archived_at?: string | null
+          bundle_id?: string | null
           created_at?: string | null
           edit_history?: Json | null
           family_id: string
@@ -2097,6 +2099,7 @@ export type Database = {
           applied_at?: string | null
           applied_by?: string | null
           archived_at?: string | null
+          bundle_id?: string | null
           created_at?: string | null
           edit_history?: Json | null
           family_id?: string
