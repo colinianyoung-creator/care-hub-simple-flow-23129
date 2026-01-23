@@ -257,6 +257,15 @@
     "refreshing": "Yn adnewyddu...",
     "refreshButton": "Adnewyddu data"
   },
+  "datePicker": {
+    "selectDate": "Dewis dyddiad",
+    "selectDateRange": "Dewis ystod dyddiad",
+    "pickDate": "Dewis dyddiad",
+    "pickDateRange": "Dewis ystod dyddiad",
+    "today": "Heddiw",
+    "thisWeek": "Yr Wythnos Hon",
+    "thisMonth": "Y Mis Hwn"
+  },
   "notifications": {
     "preferenceSaved": "Dewis wedi'i gadw",
     "preferenceUpdated": "Mae eich dewis wedi'i ddiweddaru.",
