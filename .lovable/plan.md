@@ -1,295 +1,286 @@
 
 
-# Cross-Platform Refresh Strategy for CareHub PWA
+# iOS PWA Stability Overhaul Plan
 
-## Overview
-Implement a robust refresh mechanism that provides iOS PWA users with custom pull-to-refresh (since native PTR is unsupported), while preserving Android's native behavior. All platforms will also have a header refresh button and automatic refresh on app focus.
+## Problem Summary
 
----
+iOS PWAs have well-documented platform limitations that cause unreliable behavior with tap-outside-to-close overlays, dropdowns, popovers, and nested interactive layers. The current implementation uses Radix UI primitives (DropdownMenu, Select, Popover) that rely on these problematic interaction patterns, causing UI freezes and glitches on iOS PWA.
 
-## Architecture
+## Architecture Overview
 
-The solution uses a centralized approach with three refresh triggers:
+The solution replaces problematic overlay interactions with stable alternatives for iOS PWA users while preserving the current experience for other platforms.
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                     REFRESH TRIGGERS                            │
-├──────────────────┬──────────────────┬──────────────────────────┤
-│  Pull-to-Refresh │  Header Button   │  Visibility/Focus        │
-│  (iOS PWA only)  │  (All platforms) │  (All platforms)         │
-└────────┬─────────┴────────┬─────────┴────────────┬─────────────┘
-         │                  │                      │
-         └──────────────────┴──────────────────────┘
-                            │
-                            ▼
-              ┌─────────────────────────────┐
-              │   useAppRefresh Hook        │
-              │   - Single refresh function │
-              │   - Debouncing (2s window)  │
-              │   - Loading state           │
-              │   - Cross-view event        │
-              └─────────────────────────────┘
-                            │
-                            ▼
-              ┌─────────────────────────────┐
-              │   window.dispatchEvent()    │
-              │   'app-refresh-requested'   │
-              └─────────────────────────────┘
-                            │
-                            ▼
-         ┌──────────────────┴───────────────────┐
-         │  Each section listens and refetches  │
-         │  (SchedulingSection, TasksSection,   │
-         │   NotesSection, etc.)                │
-         └──────────────────────────────────────┘
+Platform Detection
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│                  iOS PWA Detected?                  │
+├──────────────────────┬──────────────────────────────┤
+│         YES          │              NO              │
+│                      │                              │
+│  Use Alternative UI  │   Use Current Radix UI      │
+│  - Full-screen       │   - DropdownMenu            │
+│    selection screens │   - Select                  │
+│  - Bottom sheets     │   - Popover                 │
+│  - Explicit actions  │                             │
+└──────────────────────┴──────────────────────────────┘
 ```
 
 ---
 
-## New Files to Create
+## Implementation Strategy
 
-### 1. `src/hooks/useAppRefresh.ts`
-Central refresh hook providing:
-- `triggerRefresh()` - debounced function to trigger refresh
-- `isRefreshing` - loading state for UI feedback
-- `lastRefreshTime` - for preventing excessive refetches
-- Dispatches a custom `app-refresh-requested` event
+### Phase 1: Create iOS PWA Utility and Alternative Components
 
-### 2. `src/hooks/useIOSPullToRefresh.ts`
-iOS-specific pull-to-refresh gesture handler:
-- Detects iOS PWA standalone mode using existing `usePWAInstall` hook
-- Tracks touch gestures only when scroll position is at top
-- Shows pull indicator (spinner with "Release to refresh" text)
-- 60px pull threshold before activating
-- Uses CSS transforms for smooth animation without blocking scroll
-- Calls `triggerRefresh()` from `useAppRefresh`
+**New Files to Create:**
 
-### 3. `src/components/PullToRefreshIndicator.tsx`
-Visual indicator component for iOS pull-to-refresh:
-- Positioned fixed at top of viewport
-- Shows spinner animation during refresh
-- Displays pull distance indicator before release
-- Animates smoothly with CSS transitions
+1. **`src/lib/platformUtils.ts`** - Centralized platform detection utility
+   - Export `isIOSPWA()` function (consolidate from current duplicates in ui/dialog.tsx, ui/sheet.tsx, ui/alert-dialog.tsx)
+   - Export `isIOS()` function
+   - Export `isMobilePWA()` function
 
----
+2. **`src/components/ios/IOSSelectSheet.tsx`** - Bottom sheet alternative to Select
+   - Full-screen sheet sliding from bottom
+   - Explicit close button (Done)
+   - List of selectable options
+   - Lock background scrolling when open
+   - Single scroll container (the sheet content itself)
 
-## Files to Modify
+3. **`src/components/ios/IOSDatePickerSheet.tsx`** - Bottom sheet alternative to Calendar Popover
+   - Full-screen sheet with calendar embedded
+   - Explicit Done/Cancel buttons
+   - Replaces all date picker popovers on iOS PWA
 
-### 1. `src/components/DashboardHeader.tsx`
-Add refresh button to header:
-- Import `RefreshCw` icon from lucide-react
-- Add refresh button next to menu button
-- Button spins during refresh (using CSS animation)
-- Accessible with `aria-label` and keyboard focus
-- Calls `triggerRefresh()` from `useAppRefresh`
+4. **`src/components/ios/IOSMenuSheet.tsx`** - Bottom sheet alternative to DropdownMenu
+   - Full-screen sheet for menu items
+   - Explicit close button
+   - Replaces header menu on iOS PWA
 
-### 2. `src/pages/Dashboard.tsx`
-Integrate the pull-to-refresh for iOS:
-- Wrap content with pull-to-refresh gesture handler
-- Add visibility/focus listeners for automatic refresh
-- Ensure the main scroll container has proper ID for gesture detection
+### Phase 2: Create Wrapper Components for Conditional Rendering
 
-### 3. `src/components/CarerDashboard.tsx`
-- Add event listener for `app-refresh-requested`
-- Call existing data load functions when event fires
+**New Files to Create:**
 
-### 4. `src/components/FamilyDashboard.tsx`
-- Add event listener for `app-refresh-requested`
-- Reload care recipient data and trigger section refreshes
+5. **`src/components/adaptive/AdaptiveSelect.tsx`** - Wrapper that renders:
+   - Standard Radix `Select` on non-iOS platforms
+   - `IOSSelectSheet` on iOS PWA
+   - Same API as current Select
 
-### 5. `src/components/DisabledPersonDashboard.tsx`
-- Add event listener for `app-refresh-requested`
-- Call `loadDashboardData()` when event fires
+6. **`src/components/adaptive/AdaptiveDatePicker.tsx`** - Wrapper that renders:
+   - Standard Popover/Calendar on non-iOS platforms
+   - `IOSDatePickerSheet` on iOS PWA
+   - Same API as current date picker pattern
 
-### 6. `src/components/sections/SchedulingSection.tsx`
-- Already has visibility change handling (lines 635-648)
-- Add listener for `app-refresh-requested` event
-- Use existing `loadSchedulingData()` with `isBackgroundRefresh=true` flag
+7. **`src/components/adaptive/AdaptiveMenu.tsx`** - Wrapper that renders:
+   - Standard DropdownMenu on non-iOS platforms
+   - `IOSMenuSheet` on iOS PWA
 
-### 7. `src/components/sections/TasksSection.tsx`
-- Add listener for `app-refresh-requested` event
-- Call `loadTasks()` on refresh
+### Phase 3: Update Existing Components
 
-### 8. `src/index.css`
-Add CSS for iOS pull-to-refresh indicator:
-- Pull indicator positioning
-- Spinner animation styles
-- Smooth transform transitions
+**Files to Modify:**
 
-### 9. `src/locales/*.json` (all locale files)
-Add translation keys:
-- `refresh.pullToRefresh`: "Pull to refresh"
-- `refresh.releaseToRefresh`: "Release to refresh"
-- `refresh.refreshing`: "Refreshing..."
-- `refresh.refreshButton`: "Refresh data"
-- `refresh.lastUpdated`: "Last updated: {{time}}"
+#### Core UI Components
+| File | Changes |
+|------|---------|
+| `src/lib/platformUtils.ts` (new) | Centralize `isIOSPWA()` detection |
+| `src/components/ui/dialog.tsx` | Import `isIOSPWA` from platformUtils |
+| `src/components/ui/sheet.tsx` | Import `isIOSPWA` from platformUtils, add background scroll lock |
+| `src/components/ui/alert-dialog.tsx` | Import `isIOSPWA` from platformUtils |
+| `src/components/ui/popover.tsx` | Add iOS PWA handling to prevent use on iOS PWA |
+| `src/components/ui/select.tsx` | Add iOS PWA detection warning (usage should be replaced) |
+| `src/components/ui/dropdown-menu.tsx` | Add iOS PWA handling |
+
+#### Header Menu
+| File | Changes |
+|------|---------|
+| `src/components/DashboardHeader.tsx` | Replace DropdownMenu with AdaptiveMenu, use IOSMenuSheet on iOS PWA |
+
+#### Date Pickers (High Priority - Used Extensively)
+| File | Changes |
+|------|---------|
+| `src/components/ui/DateRangePicker.tsx` | Replace Popover with AdaptiveDatePicker |
+| `src/components/forms/UnifiedShiftForm.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/sections/AIReportsSection.tsx` | Replace Popover calendars with AdaptiveDatePicker |
+| `src/components/sections/MARDashboard.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/sections/DietArchiveSection.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/sections/NotesArchiveSection.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/sections/MoneyArchiveSection.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/sections/BodyMapArchiveSection.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/AdminMARDashboard.tsx` | Replace Popover calendar with AdaptiveDatePicker |
+| `src/components/sections/TimePayrollSection.tsx` | Replace Popover calendars with AdaptiveDatePicker |
+
+#### Select Components (High Priority - Used in Forms)
+| File | Changes |
+|------|---------|
+| `src/components/forms/UnifiedShiftForm.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/forms/UnifiedNoteForm.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/forms/IncidentReportForm.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/forms/CareNoteForm.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/forms/MAREntryForm.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/sections/DietSection.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/sections/TasksSection.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/settings/DisplaySettings.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/settings/LanguageSettings.tsx` | Replace Select with AdaptiveSelect |
+| `src/components/dialogs/ManageCareTeamDialog.tsx` | Replace Select with AdaptiveSelect |
+
+#### Other Dropdowns
+| File | Changes |
+|------|---------|
+| `src/components/chat/ConversationList.tsx` | Replace DropdownMenu with explicit delete button on iOS PWA |
+| `src/components/instructions/HelpButton.tsx` | Replace DropdownMenu with AdaptiveMenu |
 
 ---
 
 ## Technical Implementation Details
 
-### Pull-to-Refresh Gesture Logic (iOS Only)
+### Platform Detection Utility
+
 ```text
-1. Detect iOS PWA: Check (navigator.standalone === true) OR 
-   matchMedia('(display-mode: standalone)')
-   
-2. On touchstart:
-   - If scroll position > 0, do nothing
-   - Record start Y position
-   - Set tracking = true
+src/lib/platformUtils.ts:
 
-3. On touchmove:
-   - If not tracking, return
-   - Calculate pull distance (currentY - startY)
-   - If pulling down and distance > 0:
-     - Apply CSS transform to indicator (translateY)
-     - Update pull state for visual feedback
-   - If distance > 60px: show "Release to refresh"
+export const isIOS = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+};
 
-4. On touchend:
-   - If distance > 60px: trigger refresh
-   - Animate indicator back to hidden
-   - Reset tracking state
+export const isIOSPWA = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const isIOSDevice = isIOS();
+  const isStandalone = (window.navigator as any).standalone === true;
+  return isIOSDevice && isStandalone;
+};
 ```
 
-### Debouncing Strategy
-```text
-const REFRESH_COOLDOWN = 2000; // 2 seconds
+### IOSSelectSheet Component Structure
 
-function triggerRefresh() {
-  const now = Date.now();
-  if (now - lastRefreshTime < REFRESH_COOLDOWN) {
-    return; // Skip if within cooldown
-  }
-  lastRefreshTime = now;
-  setIsRefreshing(true);
-  window.dispatchEvent(new CustomEvent('app-refresh-requested'));
-  // Sections handle their own loading states
-  setTimeout(() => setIsRefreshing(false), 1000);
+```text
+- Sheet component (from vaul, bottom position)
+- SheetContent with max-h-[85vh]
+- Fixed header with title and Done button
+- ScrollArea for options list
+- Each option as large touchable button (min-h-[48px])
+- Selected state indicated with checkmark
+- onSelect callback closes sheet automatically
+- Background scroll locked via Sheet overlay
+```
+
+### IOSDatePickerSheet Component Structure
+
+```text
+- Sheet component (from vaul, bottom position)
+- Fixed header with Cancel/Done buttons
+- Calendar component embedded in content
+- Quick actions (Today, This Week, This Month) as buttons
+- Optional range mode toggle
+- onDateSelect closes sheet after selection
+```
+
+### IOSMenuSheet Component Structure
+
+```text
+- Sheet component (from vaul, bottom position)
+- Fixed header with close X button
+- Menu items as large touchable buttons
+- Each item has icon + label
+- Separators between groups
+- Red destructive styling for sign out
+```
+
+### AdaptiveSelect Wrapper Pattern
+
+```text
+interface AdaptiveSelectProps {
+  value: string;
+  onValueChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
 }
-```
 
-### Visibility Change Handling
-```text
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    // Check if enough time has passed since last refresh
-    if (Date.now() - lastRefreshTime > 30000) { // 30 seconds
-      triggerRefresh();
-    }
+const AdaptiveSelect = (props: AdaptiveSelectProps) => {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  
+  if (isIOSPWA()) {
+    return (
+      <>
+        <Button onClick={() => setSheetOpen(true)}>
+          {selectedLabel || placeholder}
+        </Button>
+        <IOSSelectSheet 
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          {...props}
+        />
+      </>
+    );
   }
-});
-```
-
-### Header Refresh Button Styling
-```text
-<Button
-  variant="ghost"
-  size="sm"
-  onClick={triggerRefresh}
-  disabled={isRefreshing}
-  aria-label={t('refresh.refreshButton')}
->
-  <RefreshCw 
-    className={cn(
-      "h-4 w-4",
-      isRefreshing && "animate-spin"
-    )} 
-  />
-</Button>
+  
+  return <RadixSelect {...props} />;
+};
 ```
 
 ---
 
-## Platform-Specific Behavior
+## Sheet Component Enhancement
 
-| Feature | iOS PWA | iOS Browser | Android | Desktop |
-|---------|---------|-------------|---------|---------|
-| Custom pull-to-refresh | Yes | No | No | No |
-| Native pull-to-refresh | No | No | Yes | N/A |
-| Header refresh button | Yes | Yes | Yes | Yes |
-| Auto-refresh on focus | Yes | Yes | Yes | Yes |
+The existing `src/components/ui/sheet.tsx` needs these enhancements for iOS PWA:
 
----
-
-## Accessibility Considerations
-
-1. **Header refresh button**
-   - Has `aria-label="Refresh data"`
-   - Focusable with keyboard (Tab)
-   - Shows loading state visually (spinning icon)
-   - Disabled during refresh to prevent double-tap
-
-2. **Pull-to-refresh indicator**
-   - Uses `aria-live="polite"` to announce state changes
-   - Text labels describe current state
-   - Does not interfere with VoiceOver navigation
-
-3. **Reduced motion**
-   - Respects `prefers-reduced-motion` media query
-   - Animations are minimal or disabled for users who prefer it
+1. **Lock Background Scroll** - Prevent body scrolling when sheet is open
+2. **Disable Modal Focus Trap Issues** - Already partially implemented
+3. **Ensure Single Scroll Container** - Content scrolls, background does not
 
 ---
 
-## Scroll Container Strategy
+## Testing Requirements
 
-The app already handles iOS viewport containment in `src/index.css` (lines 183-196):
-
-```css
-@supports (-webkit-touch-callout: none) {
-  html, body {
-    position: fixed;
-    overflow: hidden;
-  }
-  #root {
-    height: 100%;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-```
-
-The pull-to-refresh handler will:
-- Target `#root` as the scroll container
-- Check `scrollTop === 0` before enabling gesture
-- Not interfere with normal scrolling behavior
-
----
-
-## Testing Checklist
-
-1. **iOS Safari PWA (Add to Home Screen)**
-   - Pull gesture activates only at scroll top
-   - Visual feedback appears during pull
-   - Release triggers refresh
-   - Normal scrolling unaffected
-
-2. **Android Chrome PWA**
-   - Native pull-to-refresh works
-   - Header button works
-   - No double-refresh from custom handler
-
-3. **Desktop browsers**
-   - Header button refreshes data
-   - Tab focus refreshes data (with debounce)
-
-4. **Edge cases**
-   - Rapid refresh attempts debounced
-   - Network errors handled gracefully
-   - No memory leaks from event listeners
+| Scenario | Expected Behavior |
+|----------|------------------|
+| iOS Safari PWA - Open header menu | IOSMenuSheet slides up, background locked |
+| iOS Safari PWA - Tap Done | Sheet closes, no freeze |
+| iOS Safari PWA - Select carer dropdown | IOSSelectSheet opens instead of dropdown |
+| iOS Safari PWA - Pick date | IOSDatePickerSheet opens with full calendar |
+| iOS Safari PWA - Rapid open/close | No glitches, responsive |
+| Android Chrome | Standard Radix components used |
+| Desktop | Standard Radix components used |
+| iOS Safari (browser, not PWA) | Can use either - currently will use standard |
 
 ---
 
 ## Implementation Order
 
-1. Create `useAppRefresh` hook (central refresh logic)
-2. Create `useIOSPullToRefresh` hook (gesture handling)
-3. Create `PullToRefreshIndicator` component
-4. Add header refresh button to `DashboardHeader`
-5. Integrate pull-to-refresh in `Dashboard.tsx`
-6. Add refresh event listeners to all dashboard components
-7. Add refresh event listeners to section components
-8. Add CSS styles for indicator
-9. Add translation keys
-10. Test on all platforms
+1. Create `src/lib/platformUtils.ts` (centralize detection)
+2. Create `src/components/ios/IOSSelectSheet.tsx`
+3. Create `src/components/ios/IOSDatePickerSheet.tsx`
+4. Create `src/components/ios/IOSMenuSheet.tsx`
+5. Create `src/components/adaptive/AdaptiveSelect.tsx`
+6. Create `src/components/adaptive/AdaptiveDatePicker.tsx`
+7. Create `src/components/adaptive/AdaptiveMenu.tsx`
+8. Update `src/components/DashboardHeader.tsx` (highest visibility)
+9. Update all date picker usages (archive sections, forms)
+10. Update all select usages (forms, settings)
+11. Update remaining dropdown usages
+12. Clean up duplicate `isIOSPWA` functions in UI components
+
+---
+
+## Success Criteria
+
+After implementation:
+- No UI freezes when tapping outside elements on iOS PWA
+- No glitching when opening/closing menus on iOS PWA
+- No lost taps or delayed responses on iOS PWA
+- All interactive surfaces have visible close/confirm buttons on iOS PWA
+- Android and desktop users retain current behavior
+- Only one interactive layer exists at a time on iOS PWA
+- No background scrolling while sheets are open
+
+---
+
+## Risk Mitigation
+
+- **Fallback behavior**: If iOS PWA detection fails, standard components still work
+- **Progressive enhancement**: Non-iOS users unaffected
+- **Component API compatibility**: Adaptive components match original APIs for easy migration
+- **No breaking changes**: All changes are additive, existing functionality preserved for other platforms
 
