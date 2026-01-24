@@ -47,21 +47,23 @@ export const IOSSelectSheet: React.FC<IOSSelectSheetProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className="h-[85vh] max-h-[600px] rounded-t-xl p-0 flex flex-col"
+        className="h-[85vh] max-h-[600px] rounded-t-xl p-0 flex flex-col [&>button]:hidden"
       >
-        {/* Fixed header with explicit Done button */}
-        <SheetHeader className="flex-shrink-0 px-4 py-3 border-b flex flex-row items-center justify-between">
-          <SheetTitle className="text-base font-semibold">
-            {title || placeholder || t('common.select')}
-          </SheetTitle>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="text-primary font-medium touch-manipulation min-h-[44px]"
-          >
-            {t('common.done')}
-          </Button>
+        {/* Fixed header with explicit Done button - hide default close */}
+        <SheetHeader className="flex-shrink-0 px-4 py-3 border-b">
+          <div className="flex items-center justify-between w-full">
+            <SheetTitle className="text-base font-semibold flex-1 pr-4">
+              {title || placeholder || t('common.select')}
+            </SheetTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="text-primary font-medium touch-manipulation min-h-[44px] min-w-[60px]"
+            >
+              {t('common.done')}
+            </Button>
+          </div>
         </SheetHeader>
 
         {/* Scrollable options list */}

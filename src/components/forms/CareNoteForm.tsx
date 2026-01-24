@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
@@ -207,42 +207,38 @@ export default function CareNoteForm({
         {/* Mood */}
         <div>
           <Label htmlFor="mood">Mood</Label>
-          <Select
+          <AdaptiveSelect
             value={formData.mood}
             onValueChange={(value) => setFormData({ ...formData, mood: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select mood" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="happy">😊 Happy</SelectItem>
-              <SelectItem value="content">😌 Content</SelectItem>
-              <SelectItem value="neutral">😐 Neutral</SelectItem>
-              <SelectItem value="anxious">😟 Anxious</SelectItem>
-              <SelectItem value="sad">😢 Sad</SelectItem>
-              <SelectItem value="angry">😠 Angry</SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select mood"
+            title="Mood"
+            options={[
+              { value: 'happy', label: '😊 Happy' },
+              { value: 'content', label: '😌 Content' },
+              { value: 'neutral', label: '😐 Neutral' },
+              { value: 'anxious', label: '😟 Anxious' },
+              { value: 'sad', label: '😢 Sad' },
+              { value: 'angry', label: '😠 Angry' },
+            ]}
+          />
         </div>
 
         {/* Eating & Drinking */}
         <div>
           <Label htmlFor="eating_drinking">Eating & Drinking</Label>
-          <Select
+          <AdaptiveSelect
             value={formData.eating_drinking}
             onValueChange={(value) => setFormData({ ...formData, eating_drinking: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select eating status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All consumed</SelectItem>
-              <SelectItem value="most">Most consumed</SelectItem>
-              <SelectItem value="some">Some consumed</SelectItem>
-              <SelectItem value="little">Little consumed</SelectItem>
-              <SelectItem value="none">None consumed</SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Select eating status"
+            title="Eating & Drinking"
+            options={[
+              { value: 'all', label: 'All consumed' },
+              { value: 'most', label: 'Most consumed' },
+              { value: 'some', label: 'Some consumed' },
+              { value: 'little', label: 'Little consumed' },
+              { value: 'none', label: 'None consumed' },
+            ]}
+          />
         </div>
 
         {/* Eating & Drinking Notes */}

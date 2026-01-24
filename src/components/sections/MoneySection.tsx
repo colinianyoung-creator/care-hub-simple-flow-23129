@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/adaptive';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { ImageViewer } from '@/components/ui/ImageViewer';
@@ -457,21 +457,16 @@ export const MoneySection: React.FC<MoneySectionProps> = ({ familyId, userRole }
 
               <div>
                 <label className="text-sm font-medium">Paid By</label>
-                <Select
+                <AdaptiveSelect
                   value={formData.paid_by}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, paid_by: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select who paid" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {familyMembers.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select who paid"
+                  title="Paid By"
+                  options={familyMembers.map(member => ({
+                    value: member.id,
+                    label: member.full_name
+                  }))}
+                />
               </div>
 
               <div>
