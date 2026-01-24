@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/adaptive';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ImageUpload } from '@/components/ui/ImageUpload';
@@ -266,18 +266,18 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
         <TabsContent value="today" className="space-y-4 mt-4">
           <Tabs value={selectedMealType} onValueChange={setSelectedMealType}>
             {isMobile ? (
-              <Select value={selectedMealType} onValueChange={setSelectedMealType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="breakfast">Breakfast</SelectItem>
-                  <SelectItem value="lunch">Lunch</SelectItem>
-                  <SelectItem value="dinner">Dinner</SelectItem>
-                  <SelectItem value="snacks">Snacks</SelectItem>
-                  <SelectItem value="drinks">Drinks</SelectItem>
-                </SelectContent>
-              </Select>
+              <AdaptiveSelect
+                value={selectedMealType}
+                onValueChange={setSelectedMealType}
+                title="Select Meal"
+                options={[
+                  { value: 'breakfast', label: 'Breakfast' },
+                  { value: 'lunch', label: 'Lunch' },
+                  { value: 'dinner', label: 'Dinner' },
+                  { value: 'snacks', label: 'Snacks' },
+                  { value: 'drinks', label: 'Drinks' },
+                ]}
+              />
             ) : (
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="breakfast">Breakfast</TabsTrigger>
@@ -313,20 +313,17 @@ export const DietSection: React.FC<DietSectionProps> = ({ familyId, userRole }) 
 
                     <div>
                       <label className="text-sm font-medium">Portion left uneaten</label>
-                      <Select
+                      <AdaptiveSelect
                         value={formData.portion_left}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, portion_left: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None - All eaten</SelectItem>
-                          <SelectItem value="some">Some left</SelectItem>
-                          <SelectItem value="most">Most left</SelectItem>
-                          <SelectItem value="all">All left - Nothing eaten</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        title="Portion Left"
+                        options={[
+                          { value: 'none', label: 'None - All eaten' },
+                          { value: 'some', label: 'Some left' },
+                          { value: 'most', label: 'Most left' },
+                          { value: 'all', label: 'All left - Nothing eaten' },
+                        ]}
+                      />
                     </div>
 
                     <div>

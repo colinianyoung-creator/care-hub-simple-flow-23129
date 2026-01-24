@@ -48,6 +48,8 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = ({
           role="combobox"
           disabled={disabled}
           onClick={() => setSheetOpen(true)}
+          // Prevent keyboard from appearing when tapping the button
+          inputMode="none"
           className={cn(
             "w-full justify-between font-normal touch-manipulation",
             !value && "text-muted-foreground",
