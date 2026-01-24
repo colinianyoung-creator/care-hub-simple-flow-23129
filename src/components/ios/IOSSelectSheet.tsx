@@ -72,8 +72,10 @@ export const IOSSelectSheet: React.FC<IOSSelectSheetProps> = ({
             {options.map((option) => (
               <button
                 key={option.value}
+                type="button"
                 onClick={() => !option.disabled && handleSelect(option.value)}
                 disabled={option.disabled}
+                inputMode="none"
                 className={cn(
                   "w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors touch-manipulation min-h-[48px]",
                   value === option.value 

@@ -81,8 +81,10 @@ export const IOSMenuSheet: React.FC<IOSMenuSheetProps> = ({
                 {group.items.map((item) => (
                   <button
                     key={item.id}
+                    type="button"
                     onClick={() => handleItemClick(item)}
                     disabled={item.disabled}
+                    inputMode="none"
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors touch-manipulation min-h-[48px]",
                       "hover:bg-muted active:bg-muted",
