@@ -80,6 +80,7 @@ export const AdaptiveDatePicker: React.FC<AdaptiveDatePickerProps> = ({
           variant="outline"
           disabled={disabled}
           onClick={() => setSheetOpen(true)}
+          inputMode="none"
           className={cn(
             "w-full justify-start text-left font-normal touch-manipulation",
             !hasValue && "text-muted-foreground",

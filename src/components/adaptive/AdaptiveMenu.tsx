@@ -49,7 +49,7 @@ export const AdaptiveMenu: React.FC<AdaptiveMenuProps> = ({
   if (isIOSPWA()) {
     return (
       <div className={className}>
-        <div onClick={() => setIsOpen(true)}>
+        <div onClick={() => setIsOpen(true)} role="button" tabIndex={0} inputMode="none">
           {trigger}
         </div>
         <IOSMenuSheet
