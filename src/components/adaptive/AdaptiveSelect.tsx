@@ -44,11 +44,12 @@ export const AdaptiveSelect: React.FC<AdaptiveSelectProps> = ({
     return (
       <div className={className}>
         <Button
+          type="button"
           variant="outline"
-          role="combobox"
+          aria-haspopup="listbox"
+          aria-expanded={sheetOpen}
           disabled={disabled}
           onClick={() => setSheetOpen(true)}
-          // Prevent keyboard from appearing when tapping the button
           inputMode="none"
           className={cn(
             "w-full justify-between font-normal touch-manipulation",

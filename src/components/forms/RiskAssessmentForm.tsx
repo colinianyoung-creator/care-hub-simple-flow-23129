@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Loader2, Sparkles } from "lucide-react";
 
 interface RiskAssessmentFormProps {
@@ -49,22 +49,24 @@ export const RiskAssessmentForm = ({
         
         <div className="space-y-2">
           <Label htmlFor="setting">Setting/Environment *</Label>
-          <Select value={setting} onValueChange={onSettingChange} disabled={isGenerating}>
-            <SelectTrigger id="setting">
-              <SelectValue placeholder="Select setting" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Home - Indoor">Home - Indoor</SelectItem>
-              <SelectItem value="Home - Garden/Outdoor">Home - Garden/Outdoor</SelectItem>
-              <SelectItem value="Community - Indoor">Community - Indoor</SelectItem>
-              <SelectItem value="Community - Outdoor">Community - Outdoor</SelectItem>
-              <SelectItem value="Transport - Car">Transport - Car</SelectItem>
-              <SelectItem value="Transport - Public">Transport - Public</SelectItem>
-              <SelectItem value="Healthcare Setting">Healthcare Setting</SelectItem>
-              <SelectItem value="Workplace">Workplace</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          <AdaptiveSelect
+            value={setting}
+            onValueChange={onSettingChange}
+            disabled={isGenerating}
+            placeholder="Select setting"
+            title="Setting/Environment"
+            options={[
+              { value: "Home - Indoor", label: "Home - Indoor" },
+              { value: "Home - Garden/Outdoor", label: "Home - Garden/Outdoor" },
+              { value: "Community - Indoor", label: "Community - Indoor" },
+              { value: "Community - Outdoor", label: "Community - Outdoor" },
+              { value: "Transport - Car", label: "Transport - Car" },
+              { value: "Transport - Public", label: "Transport - Public" },
+              { value: "Healthcare Setting", label: "Healthcare Setting" },
+              { value: "Workplace", label: "Workplace" },
+              { value: "Other", label: "Other" },
+            ]}
+          />
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -330,41 +330,28 @@ export const ShiftRequestForm = ({ familyId, onSuccess, onCancel, editShiftData,
           {isAdminEdit && (
             <div>
               <Label htmlFor="carer_id">Change carer (optional)</Label>
-              <Select 
+              <AdaptiveSelect 
                 value={formData.carer_id} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, carer_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Keep current assignment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {carers.map((carer) => (
-                    <SelectItem key={carer.user_id} value={carer.user_id}>
-                      {carer.profiles.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Keep current assignment"
+                title="Carer"
+                options={carers.map((carer) => ({
+                  value: carer.user_id,
+                  label: carer.profiles.full_name
+                }))}
+              />
             </div>
           )}
 
           <div>
             <Label htmlFor="request_type">{isAdminEdit ? 'Shift Type' : 'Request Type'}</Label>
-            <Select 
+            <AdaptiveSelect 
               value={formData.request_type} 
               onValueChange={(value) => setFormData(prev => ({ ...prev, request_type: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={isAdminEdit ? 'Select shift type' : 'Select request type'} />
-              </SelectTrigger>
-              <SelectContent>
-                {requestTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={isAdminEdit ? 'Select shift type' : 'Select request type'}
+              title={isAdminEdit ? 'Shift Type' : 'Request Type'}
+              options={requestTypes}
+            />
           </div>
 
           <div>

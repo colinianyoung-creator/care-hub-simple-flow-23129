@@ -49,9 +49,15 @@ export const AdaptiveMenu: React.FC<AdaptiveMenuProps> = ({
   if (isIOSPWA()) {
     return (
       <div className={className}>
-        <div onClick={() => setIsOpen(true)} role="button" tabIndex={0} inputMode="none">
+        <span 
+          onClick={() => setIsOpen(true)} 
+          onKeyDown={(e) => e.key === 'Enter' && setIsOpen(true)}
+          role="button"
+          tabIndex={0}
+          style={{ display: 'contents' }}
+        >
           {trigger}
-        </div>
+        </span>
         <IOSMenuSheet
           open={isOpen}
           onOpenChange={setIsOpen}

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MARDashboard } from "../sections/MARDashboard";
 import { AdminMARDashboard } from "../AdminMARDashboard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -390,23 +390,21 @@ export const MedicationsSection = ({ familyId, userRole }: MedicationsSectionPro
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Frequency per day</label>
-              <Select
+              <AdaptiveSelect
                 value={newMedication.frequency}
                 onValueChange={(value) => {
                   setNewMedication(prev => ({ ...prev, frequency: value }));
                   setTimeSlots(getTimeSlotsForFrequency(value));
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select frequency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Once daily (09:00)</SelectItem>
-                  <SelectItem value="2">Twice daily (09:00, 18:00)</SelectItem>
-                  <SelectItem value="3">3 times daily (09:00, 13:00, 18:00)</SelectItem>
-                  <SelectItem value="4">4 times daily (09:00, 13:00, 18:00, 21:00)</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select frequency"
+                title="Frequency per day"
+                options={[
+                  { value: "1", label: "Once daily (09:00)" },
+                  { value: "2", label: "Twice daily (09:00, 18:00)" },
+                  { value: "3", label: "3 times daily (09:00, 13:00, 18:00)" },
+                  { value: "4", label: "4 times daily (09:00, 13:00, 18:00, 21:00)" },
+                ]}
+              />
             </div>
 
             {/* Time slots preview */}

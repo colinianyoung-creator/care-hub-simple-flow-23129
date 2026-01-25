@@ -8,13 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { AdaptiveSelect } from '@/components/adaptive';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Tables } from "@/integrations/supabase/types";
@@ -174,21 +168,16 @@ export const BodyLogForm = ({
 
       <div className="space-y-2">
         <Label htmlFor="type_severity">Type / Severity</Label>
-        <Select
+        <AdaptiveSelect
           value={selectedSeverity}
           onValueChange={(value) => setValue('type_severity', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select injury type or severity" />
-          </SelectTrigger>
-          <SelectContent>
-            {SEVERITY_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Select injury type or severity"
+          title="Type / Severity"
+          options={SEVERITY_OPTIONS.map((option) => ({
+            value: option,
+            label: option
+          }))}
+        />
         {errors.type_severity && (
           <p className="text-sm text-destructive">{errors.type_severity.message}</p>
         )}

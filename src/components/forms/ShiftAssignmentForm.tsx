@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -419,22 +419,20 @@ export const ShiftAssignmentForm = ({ familyId, onSuccess, onCancel, editingAssi
 
           <div>
             <Label htmlFor="shift_type">Shift Type</Label>
-            <Select
+            <AdaptiveSelect
               value={formData.shift_type}
               onValueChange={(value) => setFormData(prev => ({ ...prev, shift_type: value }))}
-            >
-              <SelectTrigger id="shift_type">
-                <SelectValue placeholder="Select shift type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="basic">Basic Shift</SelectItem>
-                <SelectItem value="annual_leave">Holiday/Annual Leave</SelectItem>
-                <SelectItem value="sickness">Sickness</SelectItem>
-                <SelectItem value="public_holiday">Public Holiday</SelectItem>
-                <SelectItem value="cover">Cover</SelectItem>
-                <SelectItem value="shift_swap">Shift Swap</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Select shift type"
+              title="Shift Type"
+              options={[
+                { value: "basic", label: "Basic Shift" },
+                { value: "annual_leave", label: "Holiday/Annual Leave" },
+                { value: "sickness", label: "Sickness" },
+                { value: "public_holiday", label: "Public Holiday" },
+                { value: "cover", label: "Cover" },
+                { value: "shift_swap", label: "Shift Swap" },
+              ]}
+            />
           </div>
 
           <div className="flex items-center space-x-2">
