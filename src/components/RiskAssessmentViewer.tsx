@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
+import { AdaptiveSelect } from "@/components/adaptive";
+import {
   ArrowLeft, 
   Edit, 
   Save, 
@@ -253,16 +253,17 @@ export const RiskAssessmentViewer = ({
           <>
             <div className="flex items-center gap-2">
               <Label htmlFor="riskLevel" className="text-sm">Risk Level:</Label>
-              <Select value={editRiskLevel} onValueChange={setEditRiskLevel}>
-                <SelectTrigger id="riskLevel" className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
+              <AdaptiveSelect
+                value={editRiskLevel}
+                onValueChange={setEditRiskLevel}
+                title="Risk Level"
+                triggerClassName="w-32"
+                options={[
+                  { value: "low", label: "Low" },
+                  { value: "medium", label: "Medium" },
+                  { value: "high", label: "High" },
+                ]}
+              />
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="reviewDate" className="text-sm">Review by:</Label>

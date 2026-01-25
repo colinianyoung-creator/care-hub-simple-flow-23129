@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
@@ -207,22 +207,14 @@ export default function IncidentReportForm({
         {/* Incident Type */}
         <div>
           <Label htmlFor="incident_type">Incident Type *</Label>
-          <Select
+          <AdaptiveSelect
             value={formData.incident_type}
             onValueChange={(value) => setFormData({ ...formData, incident_type: value })}
             disabled={!canEdit}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select incident type" />
-            </SelectTrigger>
-            <SelectContent>
-              {INCIDENT_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Select incident type"
+            title="Incident Type"
+            options={INCIDENT_TYPES}
+          />
         </div>
 
         {/* Date and Time */}

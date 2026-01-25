@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdaptiveSelect } from "@/components/adaptive";
 import { format } from "date-fns";
 
 interface MAREntryFormProps {
@@ -45,22 +45,16 @@ export const MAREntryForm = ({ medications, entry, onSubmit, onCancel }: MAREntr
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="medication_id">Medication</Label>
-        <Select
+        <AdaptiveSelect
           value={formData.medication_id}
           onValueChange={(value) => setFormData({ ...formData, medication_id: value })}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select medication" />
-          </SelectTrigger>
-          <SelectContent>
-            {medications.map((med) => (
-              <SelectItem key={med.id} value={med.id}>
-                {med.name} - {med.dosage}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Select medication"
+          title="Medication"
+          options={medications.map((med) => ({
+            value: med.id,
+            label: `${med.name} - ${med.dosage}`
+          }))}
+        />
       </div>
 
       <div className="space-y-2">
@@ -76,21 +70,17 @@ export const MAREntryForm = ({ medications, entry, onSubmit, onCancel }: MAREntr
 
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
-        <Select
+        <AdaptiveSelect
           value={formData.status}
           onValueChange={(value) => setFormData({ ...formData, status: value })}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="administered">Administered</SelectItem>
-            <SelectItem value="missed">Missed</SelectItem>
-            <SelectItem value="refused">Refused</SelectItem>
-          </SelectContent>
-        </Select>
+          title="Status"
+          options={[
+            { value: "pending", label: "Pending" },
+            { value: "administered", label: "Administered" },
+            { value: "missed", label: "Missed" },
+            { value: "refused", label: "Refused" },
+          ]}
+        />
       </div>
 
       {formData.status === 'administered' && (

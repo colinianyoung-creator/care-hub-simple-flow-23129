@@ -77,6 +77,7 @@ export const AdaptiveDatePicker: React.FC<AdaptiveDatePickerProps> = ({
     return (
       <div className={className}>
         <Button
+          type="button"
           variant="outline"
           disabled={disabled}
           onClick={() => setSheetOpen(true)}
