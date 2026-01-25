@@ -1,186 +1,196 @@
 
-# Fix iOS PWA Components Not Using Adaptive Wrappers
+# Complete iOS PWA Adaptive Component Migration
 
-## Problem Analysis
+## Problem Summary
 
-The screenshot shows the **Leave Section** filter dropdown displaying as a standard Radix UI floating overlay (showing "All types", "Annual Leave", "Sickness", "Public Holiday") instead of the new iOS bottom sheet system.
+1. **Medications frequency dropdown** in `MedicationsSection.tsx` still uses old Radix `Select`
+2. **Keyboards appearing on selectors** - The `role="combobox"` attribute on `AdaptiveSelect` trigger button is causing iOS to show a keyboard, and `inputMode="none"` on a `<div>` wrapper in `AdaptiveMenu` is invalid HTML
+3. **Multiple forms and components** still import and use old Radix UI `Select` directly instead of `AdaptiveSelect`
 
-**Root Cause**: While the adaptive wrapper components (`AdaptiveSelect`, `AdaptiveMenu`, `AdaptiveDatePicker`) were created correctly, **the existing components throughout the app are still importing and using the old Radix UI primitives directly** instead of the new adaptive wrappers.
+## Root Causes
 
-The core infrastructure (platform detection + iOS sheet components + adaptive wrappers) is complete and working, but **Phase 3 of the implementation** (updating existing components to use the wrappers) was not completed.
+### Keyboard Issue
+- In `AdaptiveSelect.tsx`, the trigger button has `role="combobox"` which signals to iOS that it should show a keyboard for text input
+- In `AdaptiveMenu.tsx`, `inputMode="none"` is applied to a `<div>` element, but `inputMode` is only valid on form input elements
+- The trigger buttons need to explicitly set `type="button"` and remove `role="combobox"`
 
----
+### Remaining Old-Style Dropdowns
+Files still using legacy `Select` from `@/components/ui/select`:
 
-## Current State
-
-Files **correctly updated**:
-- `DashboardHeader.tsx` - Uses `AdaptiveMenu` (line 300)
-
-Files **still using old Select** (18 files found):
-1. `src/components/sections/LeaveSection.tsx` (the one in screenshot)
-2. `src/components/sections/TasksSection.tsx`
-3. `src/components/sections/SchedulingSection.tsx`
-4. `src/components/forms/UnifiedShiftForm.tsx`
-5. `src/components/forms/UnifiedNoteForm.tsx`
-6. `src/components/forms/MAREntryForm.tsx`
-7. `src/components/forms/ShiftAssignmentForm.tsx`
-8. `src/components/forms/ShiftRequestForm.tsx`
-9. `src/components/forms/RiskAssessmentForm.tsx`
-10. `src/components/settings/DisplaySettings.tsx`
-11. `src/components/settings/LanguageSettings.tsx`
-12. `src/components/dialogs/ManageCareTeamDialog.tsx`
-13. `src/components/dialogs/ExportTimesheetDialog.tsx`
-14. `src/components/AttendanceModeSelector.tsx`
-15. `src/components/RiskAssessmentViewer.tsx`
-16. And more...
-
-Files **still using old DropdownMenu**:
-- `src/components/sections/LeaveSection.tsx` (also has DropdownMenu for row actions)
+| File | Dropdowns |
+|------|-----------|
+| `MedicationsSection.tsx` | Frequency per day |
+| `MAREntryForm.tsx` | Medication, Status |
+| `ShiftRequestForm.tsx` | Carer, Request/Shift Type |
+| `ShiftAssignmentForm.tsx` | Shift Type |
+| `RiskAssessmentForm.tsx` | Setting/Environment |
+| `RiskAssessmentViewer.tsx` | Risk Level |
+| `IncidentReportForm.tsx` | Incident Type |
+| `BodyLogForm.tsx` | Type/Severity |
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: High-Priority Components (User-Facing)
+### Phase 1: Fix Keyboard Appearing on Selectors
 
-**1. LeaveSection.tsx** (shown in screenshot)
-- Replace `Select` import with `AdaptiveSelect` import
-- Convert carer filter dropdown to use `AdaptiveSelect`
-- Convert type filter dropdown to use `AdaptiveSelect`  
-- Replace row action `DropdownMenu` with explicit buttons for iOS PWA
+**1. Update `AdaptiveSelect.tsx`**
+- Remove `role="combobox"` from the iOS PWA trigger button
+- Add `type="button"` explicitly to prevent form submission behavior
+- Keep `inputMode="none"` (valid on button elements)
 
-**2. SchedulingSection.tsx**
-- Replace carer filter Select with `AdaptiveSelect`
-- Replace shift type filter Select with `AdaptiveSelect`
+**2. Update `AdaptiveMenu.tsx`**
+- Replace the wrapper `<div>` with a proper `<button>` element that has:
+  - `type="button"`
+  - `inputMode="none"`
+  - Proper accessibility attributes
+- Alternatively, clone the trigger element and inject the click handler
 
-**3. TasksSection.tsx**
-- Replace any Select components with `AdaptiveSelect`
+**3. Update `AdaptiveDatePicker.tsx`**
+- Ensure `type="button"` is set on the iOS PWA trigger
+- Verify `inputMode="none"` is present
 
-### Phase 2: Form Components
+### Phase 2: Migrate Medications Section
 
-**4. UnifiedShiftForm.tsx**
-- Replace all Select dropdowns with `AdaptiveSelect`
-- Replace date picker popovers with `AdaptiveDatePicker`
+**4. Update `MedicationsSection.tsx`**
+- Replace `Select` import with `AdaptiveSelect` import from `@/components/adaptive`
+- Convert frequency dropdown to `AdaptiveSelect` with options array:
+  - `{ value: "1", label: "Once daily (09:00)" }`
+  - `{ value: "2", label: "Twice daily (09:00, 18:00)" }`
+  - `{ value: "3", label: "3 times daily (09:00, 13:00, 18:00)" }`
+  - `{ value: "4", label: "4 times daily (09:00, 13:00, 18:00, 21:00)" }`
 
-**5. UnifiedNoteForm.tsx**
-- Replace Select components with `AdaptiveSelect`
+### Phase 3: Migrate Form Components
 
-**6. MAREntryForm.tsx**
-- Replace Select components with `AdaptiveSelect`
+**5. Update `MAREntryForm.tsx`**
+- Replace `Select` with `AdaptiveSelect`
+- Convert medication dropdown (dynamic options from props)
+- Convert status dropdown with options: Pending, Administered, Missed, Refused
 
-**7. ShiftAssignmentForm.tsx**
-- Replace Select components with `AdaptiveSelect`
+**6. Update `ShiftRequestForm.tsx`**
+- Replace carer dropdown with `AdaptiveSelect`
+- Replace request/shift type dropdown with `AdaptiveSelect`
 
-**8. ShiftRequestForm.tsx**
-- Replace Select components with `AdaptiveSelect`
+**7. Update `ShiftAssignmentForm.tsx`**
+- Replace shift type dropdown with `AdaptiveSelect`
 
-**9. RiskAssessmentForm.tsx**
-- Replace Select components with `AdaptiveSelect`
+**8. Update `RiskAssessmentForm.tsx`**
+- Replace setting/environment dropdown with `AdaptiveSelect`
+- Options: Home - Indoor, Home - Garden/Outdoor, Community - Indoor, etc.
 
-### Phase 3: Settings and Dialogs
+**9. Update `RiskAssessmentViewer.tsx`**
+- Replace risk level dropdown with `AdaptiveSelect`
+- Options: Low, Medium, High
 
-**10. LanguageSettings.tsx**
-- Replace language selector with `AdaptiveSelect`
+**10. Update `IncidentReportForm.tsx`**
+- Replace incident type dropdown with `AdaptiveSelect`
+- Options: Fall, Injury, Medication Error, Behavioural, Safeguarding, Other
 
-**11. DisplaySettings.tsx**
-- Replace any Select components with `AdaptiveSelect`
-
-**12. ManageCareTeamDialog.tsx**
-- Replace role selector with `AdaptiveSelect`
-
-**13. ExportTimesheetDialog.tsx**
-- Replace carer selector with `AdaptiveSelect`
-- Replace date pickers with `AdaptiveDatePicker`
-
-### Phase 4: Other Components
-
-**14. AttendanceModeSelector.tsx**
-- Replace mode selector with `AdaptiveSelect`
-
-**15. RiskAssessmentViewer.tsx**
-- Replace any Select components with `AdaptiveSelect`
+**11. Update `BodyLogForm.tsx`**
+- Replace type/severity dropdown with `AdaptiveSelect`
+- Convert SEVERITY_OPTIONS array to options format
 
 ---
 
 ## Technical Details
 
-### Pattern for Converting Select to AdaptiveSelect
+### Fixing Keyboard in AdaptiveSelect
 
-**Before (old pattern):**
-```tsx
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+```text
+Current (problematic):
+<Button
+  role="combobox"        // ← Triggers keyboard
+  inputMode="none"
+  ...
+>
 
-<Select value={filters.type} onValueChange={(value) => setFilters({...})}>
-  <SelectTrigger>
-    <SelectValue placeholder="All types" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="all-types">All types</SelectItem>
-    <SelectItem value="annual_leave">Annual Leave</SelectItem>
-  </SelectContent>
-</Select>
+Fixed:
+<Button
+  type="button"          // ← Explicit button type
+  inputMode="none"       // ← Prevent keyboard
+  aria-haspopup="listbox"  // ← Proper accessibility
+  aria-expanded={sheetOpen}
+  ...
+>
 ```
 
-**After (new pattern):**
-```tsx
+### Fixing Keyboard in AdaptiveMenu
+
+```text
+Current (invalid HTML):
+<div onClick={...} role="button" tabIndex={0} inputMode="none">
+  {trigger}
+</div>
+
+Fixed approach - wrap trigger with proper handler:
+<span 
+  onClick={() => setIsOpen(true)} 
+  onKeyDown={(e) => e.key === 'Enter' && setIsOpen(true)}
+  role="button"
+  tabIndex={0}
+  style={{ display: 'contents' }}
+>
+  {trigger}
+</span>
+```
+
+### Migration Pattern for Select → AdaptiveSelect
+
+```text
+// Before
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+<Select value={value} onValueChange={onChange}>
+  <SelectTrigger>
+    <SelectValue placeholder="Select..." />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="option1">Option 1</SelectItem>
+    <SelectItem value="option2">Option 2</SelectItem>
+  </SelectContent>
+</Select>
+
+// After
 import { AdaptiveSelect } from "@/components/adaptive";
 
 <AdaptiveSelect
-  value={filters.type}
-  onValueChange={(value) => setFilters({...})}
-  placeholder="All types"
-  title="Filter by Type"
+  value={value}
+  onValueChange={onChange}
+  placeholder="Select..."
+  title="Field Name"
   options={[
-    { value: "all-types", label: "All types" },
-    { value: "annual_leave", label: "Annual Leave" },
-    { value: "sickness", label: "Sickness" },
-    { value: "public_holiday", label: "Public Holiday" },
+    { value: "option1", label: "Option 1" },
+    { value: "option2", label: "Option 2" },
   ]}
 />
 ```
 
-### Handling Dynamic Options
+---
 
-For components with dynamically populated options (like carer lists), the options array must be built from the data:
+## Files to Modify
 
-```tsx
-const carerOptions = [
-  { value: "all-carers", label: "All carers" },
-  ...carers.map(carer => ({ 
-    value: carer.id, 
-    label: carer.name 
-  }))
-];
-
-<AdaptiveSelect
-  value={filters.carer}
-  onValueChange={...}
-  options={carerOptions}
-  title="Filter by Carer"
-/>
-```
+| File | Changes |
+|------|---------|
+| `src/components/adaptive/AdaptiveSelect.tsx` | Remove `role="combobox"`, add `type="button"` |
+| `src/components/adaptive/AdaptiveMenu.tsx` | Fix wrapper to use valid keyboard prevention |
+| `src/components/adaptive/AdaptiveDatePicker.tsx` | Ensure `type="button"` is set |
+| `src/components/sections/MedicationsSection.tsx` | Migrate frequency Select |
+| `src/components/forms/MAREntryForm.tsx` | Migrate medication & status Selects |
+| `src/components/forms/ShiftRequestForm.tsx` | Migrate carer & type Selects |
+| `src/components/forms/ShiftAssignmentForm.tsx` | Migrate shift type Select |
+| `src/components/forms/RiskAssessmentForm.tsx` | Migrate setting Select |
+| `src/components/RiskAssessmentViewer.tsx` | Migrate risk level Select |
+| `src/components/forms/IncidentReportForm.tsx` | Migrate incident type Select |
+| `src/components/forms/BodyLogForm.tsx` | Migrate severity Select |
 
 ---
 
 ## Expected Outcome
 
 After implementation:
-- All Select dropdowns on iOS PWA will open as bottom sheets instead of floating overlays
-- Each sheet will have an explicit "Done" close button
-- Background will be locked when sheets are open
-- No tap-outside-to-close behavior that could freeze the UI
-- Android and desktop users will continue to see standard dropdowns
-- All filter functionality remains identical
-
----
-
-## Implementation Order (Priority)
-
-1. **LeaveSection.tsx** - Immediate fix for the issue shown in screenshot
-2. **SchedulingSection.tsx** - High visibility section
-3. **TasksSection.tsx** - High visibility section
-4. **UnifiedShiftForm.tsx** - Most complex form, used frequently
-5. **Settings dialogs** - User account settings
-6. **Remaining forms** - Complete coverage
-
-This approach ensures the most visible user-facing issues are fixed first, then progressively covers all remaining Select usages.
+- No keyboards will appear when tapping any selector/dropdown on iOS PWA
+- All dropdowns will use the bottom sheet pattern on iOS PWA
+- Each sheet has an explicit "Done" button for closing
+- Background is locked when sheets are open
+- Android and desktop users continue to see standard dropdowns
+- All form functionality remains identical
