@@ -359,10 +359,19 @@ const Dashboard = () => {
   const handleFamilySelected = async (familyId: string) => {
     console.log('🔄 Switching to family:', familyId);
     setSelectedFamilyId(familyId);
-    
+
+    // If this family isn't in our current memberships (e.g. just joined via an
+    // invite code), refetch memberships so the dashboard sections render with a
+    // valid familyId instead of staying on the loading/holding state.
+    const isKnownFamily = families.some((f) => f.family_id === familyId);
+    if (!isKnownFamily && user) {
+      await loadUserData(user.id);
+    }
+
     // Load care recipient picture for the newly selected family
     await loadCareRecipientPicture(familyId);
   };
+
 
   const handleFirstTimeUser = async (userId: string, profileData: any) => {
     // Check for pending invite code from user metadata
