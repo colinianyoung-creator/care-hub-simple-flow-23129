@@ -62,11 +62,40 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
+    let redeeming = false;
+
+    // Redeem an invite code from the URL (for already-authenticated users),
+    // then navigate to the dashboard. Always navigates, even on failure.
+    const redeemInviteFromUrlThenGo = async () => {
+      if (redeeming) return;
+      redeeming = true;
+
+      const params = new URLSearchParams(window.location.search);
+      const inviteParam = params.get('invite');
+
+      if (inviteParam) {
+        try {
+          await supabase.rpc('redeem_invite', {
+            _code: inviteParam.trim().toLowerCase(),
+          });
+          toast({
+            title: 'Welcome!',
+            description: "You've joined the family.",
+          });
+        } catch (error: any) {
+          console.error('Error redeeming invite from URL:', error);
+          // Non-fatal (e.g. already a member / expired) — still continue.
+        }
+      }
+
+      navigate('/dashboard');
+    };
+
     // Check if user is already logged in
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        redeemInviteFromUrlThenGo();
       }
     };
     
@@ -75,14 +104,15 @@ const Auth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        navigate('/dashboard');
+        redeemInviteFromUrlThenGo();
       } else if (event === 'PASSWORD_RECOVERY') {
         setShowResetForm(true);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
+
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
