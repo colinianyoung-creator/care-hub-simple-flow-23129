@@ -82,13 +82,13 @@ Deno.serve(async (req) => {
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
 
     if (deleteError) {
-      console.error('❌ Delete user error:', JSON.stringify(deleteError, null, 2));
+      // Log full details server-side only; never expose internals to the client
+      console.error('❌ Delete user error:', JSON.stringify(deleteError, null, 2), (deleteError as any).cause, (deleteError as any).stack);
       return new Response(
         JSON.stringify({ 
-          error: deleteError.message || 'Failed to delete user',
-          code: (deleteError as any).code || 'DELETE_FAILED',
-          status: 500,
-          details: (deleteError as any).cause || (deleteError as any).stack
+          error: 'Failed to delete user account. Please try again later.',
+          code: 'DELETE_FAILED',
+          status: 500
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
