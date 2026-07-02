@@ -110,7 +110,7 @@ export const useUserPreferences = () => {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ [key]: value })
+        .update({ [key]: value } as never)
         .eq('id', user.id);
 
       if (error) throw error;
