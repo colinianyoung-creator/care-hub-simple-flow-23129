@@ -454,7 +454,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
     });
   };
 
-  const handleApproveRoleChange = async (requestId: string, requesterId: string, newRole: UserRole) => {
+  // Runs the approval RPC. Returns true on success.
+  const performApproval = async (requestId: string): Promise<boolean> => {
     setProcessingRequest(requestId);
     try {
       const { data, error } = await supabase.rpc('review_role_change_request', {
@@ -470,7 +471,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           description: result?.error || "Failed to approve role change",
           variant: "destructive",
         });
-        return;
+        return false;
       }
 
       toast({
@@ -479,6 +480,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
       });
 
       loadTeamData();
+      return true;
     } catch (error) {
       console.error('Error approving role change:', error);
       toast({
@@ -486,10 +488,64 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
         description: "Failed to approve role change",
         variant: "destructive",
       });
+      return false;
     } finally {
       setProcessingRequest(null);
     }
   };
+
+  const handleApproveRoleChange = async (
+    requestId: string,
+    requesterId: string,
+    newRole: UserRole,
+    fromRole?: string,
+  ) => {
+    // When a carer moves to a non-carer role, check for future shifts first.
+    if (fromRole === 'carer' && newRole !== 'carer') {
+      setProcessingRequest(requestId);
+      try {
+        const { data: assignments } = await supabase
+          .from('shift_assignments')
+          .select('id')
+          .eq('family_id', familyId)
+          .eq('carer_id', requesterId)
+          .eq('active', true);
+
+        const assignmentIds = (assignments || []).map((a) => a.id);
+        let futureShiftCount = 0;
+
+        if (assignmentIds.length > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const { count } = await supabase
+            .from('shift_instances')
+            .select('id', { count: 'exact', head: true })
+            .in('shift_assignment_id', assignmentIds)
+            .gte('scheduled_date', today);
+          futureShiftCount = count || 0;
+        }
+
+        if (futureShiftCount > 0) {
+          const request = roleChangeRequests.find((r) => r.id === requestId);
+          setRoleChangeShiftTarget({
+            requestId,
+            carerId: requesterId,
+            carerName: request?.profiles?.full_name || 'This carer',
+            futureShiftCount,
+            newRoleLabel: roleLabels[newRole] || newRole,
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking future shifts:', error);
+      } finally {
+        setProcessingRequest(null);
+      }
+    }
+
+    // No shifts to handle (or not a carer) – approve directly.
+    await performApproval(requestId);
+  };
+
 
   const handleDenyRoleChange = async (requestId: string) => {
     setProcessingRequest(requestId);
