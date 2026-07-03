@@ -657,6 +657,21 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
+                          {member.user_id !== currentUserId && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">Change role</span>
+                              <AdaptiveSelect
+                                value={member.role}
+                                onValueChange={(value) => handleDirectRoleChange(member.user_id, value)}
+                                options={roleChangeOptions}
+                                placeholder="Select role"
+                                title="Change member role"
+                                disabled={changingRoleFor === member.user_id}
+                                className="flex-1"
+                              />
+                            </div>
+                          )}
+
                         </div>
                       ))}
                       
