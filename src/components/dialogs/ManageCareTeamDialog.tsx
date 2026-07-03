@@ -34,6 +34,15 @@ const roleLabels: Record<string, string> = {
   disabled_person: 'Care Recipient',
 };
 
+const roleChangeOptions = [
+  { value: 'carer', label: 'Carer' },
+  { value: 'family_viewer', label: 'Family Viewer' },
+  { value: 'family_admin', label: 'Family Admin' },
+  { value: 'disabled_person', label: 'Care Recipient' },
+];
+
+
+
 interface PlaceholderCarer {
   id: string;
   full_name: string;
