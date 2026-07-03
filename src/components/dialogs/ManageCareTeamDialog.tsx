@@ -1175,7 +1175,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => handleApproveRoleChange(request.id, request.user_id, request.requested_role)}
+                              onClick={() => handleApproveRoleChange(request.id, request.user_id, request.requested_role, request.from_role)}
                               disabled={processingRequest === request.id}
                             >
                               {processingRequest === request.id ? 'Processing...' : 'Approve'}
