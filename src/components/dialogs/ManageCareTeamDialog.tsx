@@ -449,27 +449,21 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const handleApproveRoleChange = async (requestId: string, requesterId: string, newRole: UserRole) => {
     setProcessingRequest(requestId);
     try {
-      // Update user membership
-      const { error: updateError } = await supabase
-        .from('user_memberships')
-        .update({ role: newRole })
-        .eq('user_id', requesterId)
-        .eq('family_id', familyId);
+      const { data, error } = await supabase.rpc('review_role_change_request', {
+        _request_id: requestId,
+        _approve: true,
+      });
+      if (error) throw error;
 
-      if (updateError) throw updateError;
-
-      // Update request status
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: requestError } = await supabase
-        .from('role_change_requests')
-        .update({
-          status: 'approved',
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString()
-        })
-        .eq('id', requestId);
-
-      if (requestError) throw requestError;
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not approve",
+          description: result?.error || "Failed to approve role change",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Request Approved",
@@ -492,17 +486,21 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const handleDenyRoleChange = async (requestId: string) => {
     setProcessingRequest(requestId);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from('role_change_requests')
-        .update({
-          status: 'rejected',
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString()
-        })
-        .eq('id', requestId);
-
+      const { data, error } = await supabase.rpc('review_role_change_request', {
+        _request_id: requestId,
+        _approve: false,
+      });
       if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not deny",
+          description: result?.error || "Failed to deny role change",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Request Denied",
@@ -520,6 +518,45 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
     } finally {
       setProcessingRequest(null);
     }
+  };
+
+  const handleDirectRoleChange = async (targetUserId: string, newRole: string) => {
+    setChangingRoleFor(targetUserId);
+    try {
+      const { data, error } = await supabase.rpc('admin_change_member_role', {
+        _family_id: familyId,
+        _target_user_id: targetUserId,
+        _new_role: newRole as any,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not change role",
+          description: result?.error || "Failed to change role",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Role updated",
+        description: "The member's role has been changed.",
+      });
+
+      loadTeamData();
+    } catch (error) {
+      console.error('Error changing member role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to change role",
+        variant: "destructive",
+      });
+    } finally {
+      setChangingRoleFor(null);
+    }
+
   };
 
   const getRoleBadgeVariant = (role: string) => {
