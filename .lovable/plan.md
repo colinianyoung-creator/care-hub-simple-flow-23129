@@ -1,48 +1,47 @@
-# Enable Role Changes for Users
+# Handle a carer's shifts when their role change is approved
 
-Add the ability for members to change their care-team role, in two ways (as chosen):
+When a **carer** requests to change to a non-carer role (Family Viewer, Family Admin, or Care Recipient) and they still have **future shifts assigned**, approving the request should first ask the admin / care recipient what to do with those shifts — instead of silently leaving shifts attached to someone who is no longer a carer.
 
-1. **Members request a change** from their **Profile** dialog → a family admin / care recipient approves it (using the existing "Requests" tab that already exists in Manage Care Team).
-2. **Admins set roles directly** on any member from the **Manage Care Team** members list — no approval needed.
+## When this triggers
 
-All 4 roles are selectable — **Carer, Family Admin, Family Viewer, Care Recipient** — with the rule that **Family Admin** and **Care Recipient** stay limited to **one person each** per family, and a family can never be left without an admin.
+- Only when the request's current role is **carer** AND the requested role is **not** carer.
+- Only when the carer actually has **future shifts** (assignments with instances dated today or later). If they have none, approval proceeds immediately as it does today (no extra step).
 
-## What already exists (reused, not rebuilt)
+## What the admin is asked
 
-- The `role_change_requests` table and the admin **Requests** tab (approve/deny) in Manage Care Team.
-- Nothing lets a member *create* a request today — that is the main gap.
+A new dialog opens on **Approve**, showing the carer's name and future shift count, with these choices:
 
-## Access-control logic
+1. **Keep shifts assigned** — role changes but the person stays the carer on their existing shifts (useful if they'll still cover some care). No shift changes.
+2. **Reassign all future shifts** — pick another registered carer or a pending placeholder carer to take over; future instances move to them, past instances are preserved for timesheets (same logic as removing a carer today).
+3. **Reassign from a specific date** — same as above but only shifts on/after a chosen date move; earlier future shifts stay with the original carer.
+4. **Delete all future shifts** — remove all upcoming instances; assignments with past history are kept as pending-export for timesheets, future-only assignments are deleted.
+5. **Delete from a specific date** — remove only instances on/after a chosen date.
+6. *(Suggested extra)* **Generate a carer invite** — create an invite code so a replacement carer can pick up the shifts, mirroring the existing "Remove carer" flow.
 
-- **Requesting** a role: any member can request a different role for themselves. Blocked if they already have a pending request or pick their current role. If they request Family Admin / Care Recipient while that slot is already taken, they're warned it needs the current holder to change first.
-- **Approving / direct-setting**: allowed for family admins **and** care recipients (co-admins). On approval or direct change, the system enforces:
-  - Only one Family Admin and one Care Recipient per family.
-  - The last remaining admin cannot be demoted (prevents an orphaned family).
-- Authorization always uses the membership role in the database, never client state.
+After the chosen shift action succeeds, the approval RPC runs and the request is marked approved.
 
-## Backend changes (one migration)
+## Flow
 
-New SECURITY DEFINER functions (existing functions untouched):
+```text
+Admin clicks Approve on a role-change request
+        │
+        ├─ request is carer → non-carer AND has future shifts?
+        │        │
+        │        ├─ yes → open Role-Change Shift dialog
+        │        │          → admin picks option → apply shift action
+        │        │          → call review_role_change_request(approve)
+        │        │
+        │        └─ no  → call review_role_change_request(approve) directly
+```
 
-- `request_role_change(_family_id, _requested_role, _reason)` — verifies the caller is a member, rejects duplicates / same-role, inserts a `pending` row with `from_role` = current role.
-- `admin_change_member_role(_family_id, _target_user_id, _new_role)` — verifies caller via `can_manage_family`, enforces the single-admin / single-recipient rule and the "keep at least one admin" rule, then updates the membership. Used by both the direct dropdown and the approval action.
-- `review_role_change_request(_request_id, _approve, _reviewer_note)` — wraps `admin_change_member_role` for approvals and marks the request `approved`/`rejected`.
+## Technical details
 
-Update `role_change_requests` RLS so **care recipients** (not only family admins) can view and review requests — change the SELECT/UPDATE policies from `is_family_admin(...)` to `can_manage_family(...)`.
+- **New component** `src/components/dialogs/RoleChangeShiftDialog.tsx`, modeled on the existing `DeleteCarerDialog.tsx`. It reuses that file's proven shift-handling patterns: loading available carers/placeholders, counting future shifts, `handleReassignShifts`, `handleDeleteShifts`, and invite generation. New behavior: an optional **effective date** (AdaptiveDatePicker) so reassign/delete can be scoped to `scheduled_date >= chosenDate` instead of `>= today`, plus a "keep shifts" no-op option.
+- **`ManageCareTeamDialog.tsx`** — in `handleApproveRoleChange`, before calling the RPC, check the request's `from_role`/`requested_role` and query `shift_assignments` (+ `shift_instances`) for future shifts belonging to that carer. If found, open `RoleChangeShiftDialog` and defer the approval to its confirm handler; otherwise approve as today. Refresh the schedule via the existing `onScheduleChange` callback after shift changes.
+- **Approval itself is unchanged** — still uses `review_role_change_request`. No database migration or RPC change is needed; admins/care recipients already have RLS permission to modify `shift_assignments`/`shift_instances` (the same operations power `DeleteCarerDialog`).
+- **Ordering** — perform the shift action first, then approve, so a failure in shift handling leaves the request pending and recoverable.
+- Consider a shared helper later to de-duplicate shift logic between `DeleteCarerDialog` and the new dialog, but this plan keeps them parallel to avoid regressions.
 
-## Frontend changes
+## Out of scope
 
-**`src/components/dialogs/ProfileDialog.tsx`**
-- Load the user's current membership role for `currentFamilyId`.
-- Add a "My Role" section: shows current role, a role `AdaptiveSelect`, an optional reason field, and a "Request role change" button calling `request_role_change`.
-- If a pending request exists, show its status instead of the form. If the user is already an admin, show a hint that they can manage roles from the care team screen.
-
-**`src/components/dialogs/ManageCareTeamDialog.tsx`**
-- In the members list, add a role `AdaptiveSelect` per registered member (except the caller) that calls `admin_change_member_role` and refreshes.
-- Route the existing `handleApproveRoleChange` through `review_role_change_request` so the single-admin rules are enforced; surface a clear toast if a rule blocks it.
-
-## Technical notes
-
-- `app_role` enum also contains `manager`/`agency`, but per project convention only the 4 canonical roles are offered in the UI.
-- No changes to auto-generated files; types regenerate after the migration runs.
-- Verify with a typecheck and by exercising request → approve and direct-change flows in the preview.
+- Direct admin role changes (`handleDirectRoleChange`) are not covered here; can be added the same way if wanted. The request is specifically about the approval flow.
