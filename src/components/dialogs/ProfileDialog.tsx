@@ -60,12 +60,92 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   const navigate = useNavigate();
   const { remove: removeProfilePicture } = useFileUpload('profile_pictures');
 
+  // Role change state
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [requestedRole, setRequestedRole] = useState<string>('');
+  const [roleReason, setRoleReason] = useState('');
+  const [pendingRequest, setPendingRequest] = useState<any | null>(null);
+  const [submittingRole, setSubmittingRole] = useState(false);
+
+  const loadRoleInfo = async () => {
+    if (!currentFamilyId) {
+      setCurrentRole(null);
+      setPendingRequest(null);
+      return;
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: membership } = await supabase
+        .from('user_memberships')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('family_id', currentFamilyId)
+        .maybeSingle();
+      setCurrentRole(membership?.role ?? null);
+
+      const { data: request } = await supabase
+        .from('role_change_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('family_id', currentFamilyId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+      setPendingRequest(request ?? null);
+    } catch (error) {
+      console.error('Error loading role info:', error);
+    }
+  };
+
+  const handleRequestRoleChange = async () => {
+    if (!currentFamilyId || !requestedRole) return;
+    setSubmittingRole(true);
+    try {
+      const { data, error } = await supabase.rpc('request_role_change', {
+        _family_id: currentFamilyId,
+        _requested_role: requestedRole as any,
+        _reason: roleReason.trim() || null,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: 'Could not submit request',
+          description: result?.error || 'Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Request submitted',
+        description: 'A family admin will review your role change request.',
+      });
+      setRequestedRole('');
+      setRoleReason('');
+      await loadRoleInfo();
+    } catch (error: any) {
+      console.error('Error requesting role change:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit role change request',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingRole(false);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
     const loadData = async () => {
       if (isOpen && !cancelled) {
         await loadProfile(() => cancelled);
+        await loadRoleInfo();
       }
     };
 
@@ -74,7 +154,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, currentFamilyId]);
 
   // Reset form state when dialog closes
   useEffect(() => {
