@@ -506,6 +506,74 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   />
                 </div>
               </div>
+
+              {/* My Role Section */}
+              {currentFamilyId && currentRole && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    <h4 className="font-medium">My Role</h4>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Current role:</span>
+                    <Badge variant="secondary">{ROLE_LABELS[currentRole] || currentRole}</Badge>
+                  </div>
+
+                  {pendingRequest ? (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-muted text-sm">
+                      <Clock className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Request pending review</div>
+                        <div className="text-muted-foreground">
+                          {ROLE_LABELS[pendingRequest.from_role] || pendingRequest.from_role} →{' '}
+                          {ROLE_LABELS[pendingRequest.requested_role] || pendingRequest.requested_role}
+                        </div>
+                      </div>
+                    </div>
+                  ) : ADMIN_ROLES.includes(currentRole) ? (
+                    <p className="text-sm text-muted-foreground">
+                      As an admin you can change any member's role from the Manage Care Team screen.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Request a different role</Label>
+                        <AdaptiveSelect
+                          value={requestedRole}
+                          onValueChange={setRequestedRole}
+                          options={ROLE_OPTIONS.filter(o => o.value !== currentRole)}
+                          placeholder="Select a role"
+                          title="Request a role"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role_reason">Reason (optional)</Label>
+                        <Textarea
+                          id="role_reason"
+                          value={roleReason}
+                          onChange={(e) => setRoleReason(e.target.value)}
+                          placeholder="Why are you requesting this change?"
+                          rows={2}
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRequestRoleChange}
+                        disabled={!requestedRole || submittingRole}
+                      >
+                        {submittingRole ? 'Submitting...' : 'Request role change'}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Requests to become a Family Admin or Care Recipient need the current holder to change first.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+
               
               {/* Delete Profile Section */}
               <div className="space-y-4 pt-4 border-t">
