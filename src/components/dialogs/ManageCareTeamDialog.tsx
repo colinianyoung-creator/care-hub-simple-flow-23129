@@ -79,6 +79,8 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   } | null>(null);
   const [revokingAllInvites, setRevokingAllInvites] = useState(false);
   const [showRevokeAllConfirm, setShowRevokeAllConfirm] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Email functionality state
