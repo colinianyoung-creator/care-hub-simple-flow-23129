@@ -11,7 +11,26 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
-import { User, Camera } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { AdaptiveSelect } from '@/components/adaptive';
+import { User, Camera, ShieldCheck, Clock } from 'lucide-react';
+
+const ROLE_LABELS: Record<string, string> = {
+  carer: 'Carer',
+  family_viewer: 'Family Viewer',
+  family_admin: 'Family Admin',
+  disabled_person: 'Care Recipient',
+};
+
+const ROLE_OPTIONS = [
+  { value: 'carer', label: 'Carer' },
+  { value: 'family_viewer', label: 'Family Viewer' },
+  { value: 'family_admin', label: 'Family Admin' },
+  { value: 'disabled_person', label: 'Care Recipient' },
+];
+
+const ADMIN_ROLES = ['family_admin', 'disabled_person'];
 import { ImageCropDialog } from './ImageCropDialog';
 import { validateImageFile, resizeImage, compressImage } from '@/lib/imageUtils';
 import { uploadFile } from '@/lib/storage';
@@ -41,12 +60,92 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
   const navigate = useNavigate();
   const { remove: removeProfilePicture } = useFileUpload('profile_pictures');
 
+  // Role change state
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [requestedRole, setRequestedRole] = useState<string>('');
+  const [roleReason, setRoleReason] = useState('');
+  const [pendingRequest, setPendingRequest] = useState<any | null>(null);
+  const [submittingRole, setSubmittingRole] = useState(false);
+
+  const loadRoleInfo = async () => {
+    if (!currentFamilyId) {
+      setCurrentRole(null);
+      setPendingRequest(null);
+      return;
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: membership } = await supabase
+        .from('user_memberships')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('family_id', currentFamilyId)
+        .maybeSingle();
+      setCurrentRole(membership?.role ?? null);
+
+      const { data: request } = await supabase
+        .from('role_change_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('family_id', currentFamilyId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+      setPendingRequest(request ?? null);
+    } catch (error) {
+      console.error('Error loading role info:', error);
+    }
+  };
+
+  const handleRequestRoleChange = async () => {
+    if (!currentFamilyId || !requestedRole) return;
+    setSubmittingRole(true);
+    try {
+      const { data, error } = await supabase.rpc('request_role_change', {
+        _family_id: currentFamilyId,
+        _requested_role: requestedRole as any,
+        _reason: roleReason.trim() || null,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: 'Could not submit request',
+          description: result?.error || 'Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Request submitted',
+        description: 'A family admin will review your role change request.',
+      });
+      setRequestedRole('');
+      setRoleReason('');
+      await loadRoleInfo();
+    } catch (error: any) {
+      console.error('Error requesting role change:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit role change request',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingRole(false);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
     const loadData = async () => {
       if (isOpen && !cancelled) {
         await loadProfile(() => cancelled);
+        await loadRoleInfo();
       }
     };
 
@@ -55,7 +154,7 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, currentFamilyId]);
 
   // Reset form state when dialog closes
   useEffect(() => {
@@ -407,6 +506,74 @@ export const ProfileDialog = ({ isOpen, onClose, currentFamilyId, onProfileUpdat
                   />
                 </div>
               </div>
+
+              {/* My Role Section */}
+              {currentFamilyId && currentRole && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    <h4 className="font-medium">My Role</h4>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Current role:</span>
+                    <Badge variant="secondary">{ROLE_LABELS[currentRole] || currentRole}</Badge>
+                  </div>
+
+                  {pendingRequest ? (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-muted text-sm">
+                      <Clock className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Request pending review</div>
+                        <div className="text-muted-foreground">
+                          {ROLE_LABELS[pendingRequest.from_role] || pendingRequest.from_role} →{' '}
+                          {ROLE_LABELS[pendingRequest.requested_role] || pendingRequest.requested_role}
+                        </div>
+                      </div>
+                    </div>
+                  ) : ADMIN_ROLES.includes(currentRole) ? (
+                    <p className="text-sm text-muted-foreground">
+                      As an admin you can change any member's role from the Manage Care Team screen.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Request a different role</Label>
+                        <AdaptiveSelect
+                          value={requestedRole}
+                          onValueChange={setRequestedRole}
+                          options={ROLE_OPTIONS.filter(o => o.value !== currentRole)}
+                          placeholder="Select a role"
+                          title="Request a role"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role_reason">Reason (optional)</Label>
+                        <Textarea
+                          id="role_reason"
+                          value={roleReason}
+                          onChange={(e) => setRoleReason(e.target.value)}
+                          placeholder="Why are you requesting this change?"
+                          rows={2}
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRequestRoleChange}
+                        disabled={!requestedRole || submittingRole}
+                      >
+                        {submittingRole ? 'Submitting...' : 'Request role change'}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Requests to become a Family Admin or Care Recipient need the current holder to change first.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+
               
               {/* Delete Profile Section */}
               <div className="space-y-4 pt-4 border-t">

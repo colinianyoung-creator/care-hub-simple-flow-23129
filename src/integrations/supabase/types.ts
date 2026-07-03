@@ -2745,6 +2745,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_change_member_role: {
+        Args: {
+          _family_id: string
+          _new_role: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: Json
+      }
       apply_change_request: {
         Args: { p_applied_by: string; p_request_id: string }
         Returns: Json
@@ -2971,8 +2979,24 @@ export type Database = {
         Returns: undefined
       }
       redeem_invite: { Args: { _code: string }; Returns: string }
+      request_role_change: {
+        Args: {
+          _family_id: string
+          _reason?: string
+          _requested_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
       revert_change_request: {
         Args: { p_force?: boolean; p_request_id: string; p_reverted_by: string }
+        Returns: Json
+      }
+      review_role_change_request: {
+        Args: {
+          _approve: boolean
+          _request_id: string
+          _reviewer_note?: string
+        }
         Returns: Json
       }
       unarchive_change_request: {

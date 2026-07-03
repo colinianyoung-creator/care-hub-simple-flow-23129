@@ -1,30 +1,48 @@
-# Fix "Join Family" Invite Flow
+# Enable Role Changes for Users
 
-## Problems (root causes found in code)
+Add the ability for members to change their care-team role, in two ways (as chosen):
 
-**Issue 1 — Accept link only opens the dashboard, doesn't join.**
-The invite email links to `/auth?invite=CODE&email=…&role=…`. On `src/pages/Auth.tsx`, when the recipient is *already signed in*, the `checkAuth` effect (and the `onAuthStateChange` SIGNED_IN listener) immediately runs `navigate('/dashboard')` and never redeems the code. The URL's `invite` param is only used to pre-fill the sign-up form, so an existing logged-in user never joins the family. (New-signup users work because the code is stored as `pending_invite_code` metadata and redeemed later in `Dashboard.handleFirstTimeUser`.)
+1. **Members request a change** from their **Profile** dialog → a family admin / care recipient approves it (using the existing "Requests" tab that already exists in Manage Care Team).
+2. **Admins set roles directly** on any member from the **Manage Care Team** members list — no approval needed.
 
-**Issue 2 — Entering the code joins, but sections stay on "loading/holding" until manual refresh.**
-`JoinFamilyButton` → `DashboardHeader.onSuccess` → `Dashboard.handleFamilySelected(familyId)`. That handler only calls `setSelectedFamilyId` and reloads the care-recipient picture — it never re-queries `user_memberships`. So the freshly joined family isn't in the `families` array; `currentFamily` resolves to the old value (or undefined), and the sections have no valid `familyId` until a full page reload re-runs `loadUserData`.
+All 4 roles are selectable — **Carer, Family Admin, Family Viewer, Care Recipient** — with the rule that **Family Admin** and **Care Recipient** stay limited to **one person each** per family, and a family can never be left without an admin.
 
-## Changes
+## What already exists (reused, not rebuilt)
 
-### 1. Redeem invite from URL for already-authenticated users (`src/pages/Auth.tsx`)
-- In the auth-check flow, before redirecting a logged-in user to `/dashboard`, read the `invite` param from the URL. If present, call the existing `redeem_invite` RPC (code normalized to lowercase, matching current convention), show a success/failure toast, then navigate to `/dashboard`.
-- Apply the same redemption in the `onAuthStateChange` `SIGNED_IN` branch so it also covers a recipient who signs in (existing account) via the invite link rather than signing up.
-- Guard against double-redemption (redeem once), and always navigate even if redemption fails (e.g. already a member / expired), so the user isn't stuck on the auth screen.
+- The `role_change_requests` table and the admin **Requests** tab (approve/deny) in Manage Care Team.
+- Nothing lets a member *create* a request today — that is the main gap.
 
-### 2. Reload memberships after a successful join (`src/pages/Dashboard.tsx` + `src/components/DashboardHeader.tsx`)
-- Add a dedicated "family joined" handler in `Dashboard` that re-runs `loadUserData(user.id)` to refetch `user_memberships`, then sets `selectedFamilyId` to the newly joined family so the dashboard sections render immediately with a valid `familyId`.
-- Wire `JoinFamilyButton.onSuccess` (in `DashboardHeader`) to this new handler instead of the plain `handleFamilySelected`, passing the handler down via props (reuse the existing `onFamilySelected` prop chain or add a parallel `onFamilyJoined` prop).
-- Keep `handleFamilySelected` as-is for normal family switching between families already in the list.
+## Access-control logic
+
+- **Requesting** a role: any member can request a different role for themselves. Blocked if they already have a pending request or pick their current role. If they request Family Admin / Care Recipient while that slot is already taken, they're warned it needs the current holder to change first.
+- **Approving / direct-setting**: allowed for family admins **and** care recipients (co-admins). On approval or direct change, the system enforces:
+  - Only one Family Admin and one Care Recipient per family.
+  - The last remaining admin cannot be demoted (prevents an orphaned family).
+- Authorization always uses the membership role in the database, never client state.
+
+## Backend changes (one migration)
+
+New SECURITY DEFINER functions (existing functions untouched):
+
+- `request_role_change(_family_id, _requested_role, _reason)` — verifies the caller is a member, rejects duplicates / same-role, inserts a `pending` row with `from_role` = current role.
+- `admin_change_member_role(_family_id, _target_user_id, _new_role)` — verifies caller via `can_manage_family`, enforces the single-admin / single-recipient rule and the "keep at least one admin" rule, then updates the membership. Used by both the direct dropdown and the approval action.
+- `review_role_change_request(_request_id, _approve, _reviewer_note)` — wraps `admin_change_member_role` for approvals and marks the request `approved`/`rejected`.
+
+Update `role_change_requests` RLS so **care recipients** (not only family admins) can view and review requests — change the SELECT/UPDATE policies from `is_family_admin(...)` to `can_manage_family(...)`.
+
+## Frontend changes
+
+**`src/components/dialogs/ProfileDialog.tsx`**
+- Load the user's current membership role for `currentFamilyId`.
+- Add a "My Role" section: shows current role, a role `AdaptiveSelect`, an optional reason field, and a "Request role change" button calling `request_role_change`.
+- If a pending request exists, show its status instead of the form. If the user is already an admin, show a hint that they can manage roles from the care team screen.
+
+**`src/components/dialogs/ManageCareTeamDialog.tsx`**
+- In the members list, add a role `AdaptiveSelect` per registered member (except the caller) that calls `admin_change_member_role` and refreshes.
+- Route the existing `handleApproveRoleChange` through `review_role_change_request` so the single-admin rules are enforced; surface a clear toast if a rule blocks it.
 
 ## Technical notes
-- `redeem_invite(_code)` is an existing SECURITY DEFINER RPC that inserts the membership and is idempotent (`ON CONFLICT DO NOTHING`), so calling it for an already-joined user is safe.
-- No database or edge-function changes are required; the email function already builds a correct `/auth?invite=…` URL.
-- After redemption on the Auth page, the Dashboard's own `loadUserData` will pick up the new membership on mount, so sections render correctly for the email-link path too.
 
-## Expected outcome
-- Clicking "Accept Invitation" in the email joins the family (whether the user is already logged in, signs in, or signs up) and lands on the dashboard already a member.
-- Entering an invite code manually immediately shows the joined family's sections with no manual refresh.
+- `app_role` enum also contains `manager`/`agency`, but per project convention only the 4 canonical roles are offered in the UI.
+- No changes to auto-generated files; types regenerate after the migration runs.
+- Verify with a typecheck and by exercising request → approve and direct-change flows in the preview.
