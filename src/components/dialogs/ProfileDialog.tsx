@@ -11,7 +11,26 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
-import { User, Camera } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { AdaptiveSelect } from '@/components/adaptive';
+import { User, Camera, ShieldCheck, Clock } from 'lucide-react';
+
+const ROLE_LABELS: Record<string, string> = {
+  carer: 'Carer',
+  family_viewer: 'Family Viewer',
+  family_admin: 'Family Admin',
+  disabled_person: 'Care Recipient',
+};
+
+const ROLE_OPTIONS = [
+  { value: 'carer', label: 'Carer' },
+  { value: 'family_viewer', label: 'Family Viewer' },
+  { value: 'family_admin', label: 'Family Admin' },
+  { value: 'disabled_person', label: 'Care Recipient' },
+];
+
+const ADMIN_ROLES = ['family_admin', 'disabled_person'];
 import { ImageCropDialog } from './ImageCropDialog';
 import { validateImageFile, resizeImage, compressImage } from '@/lib/imageUtils';
 import { uploadFile } from '@/lib/storage';
