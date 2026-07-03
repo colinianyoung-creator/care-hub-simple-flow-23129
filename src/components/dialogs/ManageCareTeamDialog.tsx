@@ -92,6 +92,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
 
   useEffect(() => {
     if (isOpen) {
+      supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
       loadTeamData();
       // Reset email state when dialog opens
       setInviteRecipientEmail('');
@@ -99,6 +100,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
       setPlaceholderEmailSent({});
     }
   }, [isOpen, familyId]);
+
 
   const loadTeamData = async () => {
     setLoading(true);
