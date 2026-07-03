@@ -16,6 +16,7 @@ import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
 import { InviteMembersButton } from '@/components/InviteMembersButton';
 import { BulkDeleteShiftsDialog } from './BulkDeleteShiftsDialog';
 import { DeleteCarerDialog } from './DeleteCarerDialog';
+import { RoleChangeShiftDialog } from './RoleChangeShiftDialog';
 
 interface ManageCareTeamDialogProps {
   isOpen: boolean;
@@ -81,6 +82,13 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const [showRevokeAllConfirm, setShowRevokeAllConfirm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
+  const [roleChangeShiftTarget, setRoleChangeShiftTarget] = useState<{
+    requestId: string;
+    carerId: string;
+    carerName: string;
+    futureShiftCount: number;
+    newRoleLabel: string;
+  } | null>(null);
   const { toast } = useToast();
 
   // Email functionality state
