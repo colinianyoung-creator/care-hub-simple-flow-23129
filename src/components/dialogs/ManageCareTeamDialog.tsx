@@ -120,9 +120,7 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           *,
           profiles!user_memberships_user_id_fkey (
             id,
-            full_name,
-            email,
-            contact_email
+            full_name
           )
         `)
         .eq('family_id', familyId);
