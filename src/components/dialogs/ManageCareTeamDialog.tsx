@@ -1233,6 +1233,25 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
         />
       )}
 
+      {roleChangeShiftTarget && (
+        <RoleChangeShiftDialog
+          isOpen={!!roleChangeShiftTarget}
+          onClose={() => setRoleChangeShiftTarget(null)}
+          familyId={familyId}
+          carerId={roleChangeShiftTarget.carerId}
+          carerName={roleChangeShiftTarget.carerName}
+          futureShiftCount={roleChangeShiftTarget.futureShiftCount}
+          newRoleLabel={roleChangeShiftTarget.newRoleLabel}
+          onApprove={async () => {
+            const ok = await performApproval(roleChangeShiftTarget.requestId);
+            if (ok) setRoleChangeShiftTarget(null);
+            return ok;
+          }}
+          onScheduleChange={onScheduleChange}
+        />
+      )}
+
+
       <AlertDialog open={showRevokeAllConfirm} onOpenChange={setShowRevokeAllConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
