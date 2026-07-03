@@ -1,47 +1,35 @@
-# Handle a carer's shifts when their role change is approved
+## Goal
 
-When a **carer** requests to change to a non-carer role (Family Viewer, Family Admin, or Care Recipient) and they still have **future shifts assigned**, approving the request should first ask the admin / care recipient what to do with those shifts — instead of silently leaving shifts attached to someone who is no longer a carer.
+Make everything load again after the security hardening migration, without weakening the new security posture.
 
-## When this triggers
+## Full audit result
 
-- Only when the request's current role is **carer** AND the requested role is **not** carer.
-- Only when the carer actually has **future shifts** (assignments with instances dated today or later). If they have none, approval proceeds immediately as it does today (no extra step).
+I checked every path the migration could have broken:
 
-## What the admin is asked
+1. **All 17 database functions the app calls** (`get_profile_safe`, `generate_invite`, `review_role_change_request`, `mark_dose`, `redeem_invite`, `admin_change_member_role`, shift/MAR/change-request functions, etc.) — confirmed **all still executable by signed-in users**. The revoke of `PUBLIC`/`anon` execute did not strip `authenticated`, because these keep explicit `authenticated` grants. Nothing to fix here.
 
-A new dialog opens on **Approve**, showing the carer's name and future shift count, with these choices:
+2. **Every profile lookup in the app** — all already use the safe paths (`profiles_limited` view or `get_profile_safe`) except one. `profiles_limited` exposes only `id`, `full_name`, `profile_picture_url`, which are all still readable. Preference reads/writes only touch allowed columns. Confirmed working.
 
-1. **Keep shifts assigned** — role changes but the person stays the carer on their existing shifts (useful if they'll still cover some care). No shift changes.
-2. **Reassign all future shifts** — pick another registered carer or a pending placeholder carer to take over; future instances move to them, past instances are preserved for timesheets (same logic as removing a carer today).
-3. **Reassign from a specific date** — same as above but only shifts on/after a chosen date move; earlier future shifts stay with the original carer.
-4. **Delete all future shifts** — remove all upcoming instances; assignments with past history are kept as pending-export for timesheets, future-only assignments are deleted.
-5. **Delete from a specific date** — remove only instances on/after a chosen date.
-6. *(Suggested extra)* **Generate a carer invite** — create an invite code so a replacement carer can pick up the shifts, mirroring the existing "Remove carer" flow.
+3. **The one broken query** — `ManageCareTeamDialog.loadTeamData()` requests `email` and `contact_email` from the `profiles` table via the members join. The migration made those columns unreadable for signed-in users (verified directly: `email`, `phone`, `contact_email`, `contact_phone` all denied; `id`, `full_name`, `profile_picture_url` allowed). The rejected column read fails the whole query, so the dialog shows "Failed to load team data" and members, invites, placeholder carers, and pending role-change requests all vanish.
 
-After the chosen shift action succeeds, the approval RPC runs and the request is marked approved.
+The member list UI only ever displays `full_name` — the blocked columns were fetched but never shown.
 
-## Flow
+## Fix
+
+Frontend-only, one query change in `src/components/dialogs/ManageCareTeamDialog.tsx` (`loadTeamData`): drop the blocked contact columns from the members join, keeping the displayed/permitted fields.
 
 ```text
-Admin clicks Approve on a role-change request
-        │
-        ├─ request is carer → non-carer AND has future shifts?
-        │        │
-        │        ├─ yes → open Role-Change Shift dialog
-        │        │          → admin picks option → apply shift action
-        │        │          → call review_role_change_request(approve)
-        │        │
-        │        └─ no  → call review_role_change_request(approve) directly
+profiles!user_memberships_user_id_fkey ( id, full_name, email, contact_email )
+  ->
+profiles!user_memberships_user_id_fkey ( id, full_name )
 ```
 
-## Technical details
+## What this does NOT change
 
-- **New component** `src/components/dialogs/RoleChangeShiftDialog.tsx`, modeled on the existing `DeleteCarerDialog.tsx`. It reuses that file's proven shift-handling patterns: loading available carers/placeholders, counting future shifts, `handleReassignShifts`, `handleDeleteShifts`, and invite generation. New behavior: an optional **effective date** (AdaptiveDatePicker) so reassign/delete can be scoped to `scheduled_date >= chosenDate` instead of `>= today`, plus a "keep shifts" no-op option.
-- **`ManageCareTeamDialog.tsx`** — in `handleApproveRoleChange`, before calling the RPC, check the request's `from_role`/`requested_role` and query `shift_assignments` (+ `shift_instances`) for future shifts belonging to that carer. If found, open `RoleChangeShiftDialog` and defer the approval to its confirm handler; otherwise approve as today. Refresh the schedule via the existing `onScheduleChange` callback after shift changes.
-- **Approval itself is unchanged** — still uses `review_role_change_request`. No database migration or RPC change is needed; admins/care recipients already have RLS permission to modify `shift_assignments`/`shift_instances` (the same operations power `DeleteCarerDialog`).
-- **Ordering** — perform the shift action first, then approve, so a failure in shift handling leaves the request pending and recoverable.
-- Consider a shared helper later to de-duplicate shift logic between `DeleteCarerDialog` and the new dialog, but this plan keeps them parallel to avoid regressions.
+- No database migration, no RLS change, no grant change — the new column-level security stays exactly as hardened.
+- Placeholder-carer emails in the dialog come from the separate `placeholder_carers` table and are unaffected.
+- If admins should later see registered members' contact details, that is added through the existing authorized `get_profile_safe(profile_id)` function (owner/same-family gated) — out of scope now since the UI does not display it.
 
-## Out of scope
+## Verify after
 
-- Direct admin role changes (`handleDirectRoleChange`) are not covered here; can be added the same way if wanted. The request is specifically about the approval flow.
+Open Manage Care Team and confirm members, invites, placeholder carers, and pending role-change requests all load with no error toast. Spot-check the dashboard and scheduling still load normally.
