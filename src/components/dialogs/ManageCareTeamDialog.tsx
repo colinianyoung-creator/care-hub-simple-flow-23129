@@ -770,6 +770,16 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const unlinkedPlaceholders = placeholderCarers.filter(p => !p.is_linked);
   const linkedPlaceholders = placeholderCarers.filter(p => p.is_linked);
 
+  const isCurrentUserAdmin = members.some(
+    (m) => m.user_id === currentUserId && m.role === 'family_admin'
+  );
+  const incomingTransfer = transferRequests.find((t) => t.to_user_id === currentUserId);
+  const outgoingTransfer = transferRequests.find((t) => t.initiated_by === currentUserId);
+  const nameForUserId = (userId: string) =>
+    members.find((m) => m.user_id === userId)?.profiles?.full_name || 'a team member';
+
+
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
