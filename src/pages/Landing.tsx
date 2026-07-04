@@ -19,7 +19,7 @@ const Landing = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
         <nav className="container mx-auto px-2 sm:px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">CareHub</h1>
+          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight"><span className="italic">my</span>CareHub</h1>
           <div className="flex items-center gap-3">
             <Link to="/auth">
               <Button variant="ghost" size="sm">Sign In</Button>
@@ -190,7 +190,7 @@ const Landing = () => {
               Ready to simplify your care management?
             </h2>
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-              Join families and carers who trust CareHub for their care scheduling and documentation.
+              Join families and carers who trust <span className="italic">my</span>CareHub for their care scheduling and documentation.
             </p>
             <Link to="/auth">
               <Button size="lg" variant="secondary" className="text-lg px-8 py-6 rounded-2xl font-heading font-bold">

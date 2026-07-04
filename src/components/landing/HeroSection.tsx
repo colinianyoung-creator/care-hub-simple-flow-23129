@@ -11,23 +11,10 @@ const HeroSection = () => {
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="relative z-10 max-w-2xl">
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <span className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-primary-foreground">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-foreground" />
-              </span>
-              Live
-            </span>
-            <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground font-heading">
-              Manage your care, simple
-            </span>
-          </div>
-
           <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter leading-[0.9] text-foreground mb-8">
-            CareHub
+            <span className="italic">my</span>CareHub
             <br />
-            <span className="text-primary">Originals.</span>
+            <span className="text-primary">Managing your care, simply.</span>
           </h1>
 
           <p className="text-lg sm:text-xl text-muted-foreground max-w-lg leading-relaxed mb-10">
