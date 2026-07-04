@@ -9,7 +9,7 @@ import { AdaptiveSelect } from '@/components/adaptive';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar, Send, Loader2, Check } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar, Send, Loader2, Check, Crown, ArrowRightLeft, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
@@ -82,6 +82,10 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const [showRevokeAllConfirm, setShowRevokeAllConfirm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
+  const [transferRequests, setTransferRequests] = useState<any[]>([]);
+  const [transferTarget, setTransferTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [transferOutgoingRole, setTransferOutgoingRole] = useState<'carer' | 'family_viewer'>('family_viewer');
+  const [processingTransfer, setProcessingTransfer] = useState(false);
   const [roleChangeShiftTarget, setRoleChangeShiftTarget] = useState<{
     requestId: string;
     carerId: string;
@@ -163,6 +167,17 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
 
       if (requestsError) throw requestsError;
       setRoleChangeRequests(requestsData || []);
+
+      // Load pending admin transfer requests
+      const { data: transferData, error: transferError } = await supabase
+        .from('admin_transfer_requests')
+        .select('*')
+        .eq('family_id', familyId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (transferError) throw transferError;
+      setTransferRequests(transferData || []);
     } catch (error) {
       console.error('Error loading team data:', error);
       toast({
@@ -621,6 +636,120 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
 
   };
 
+  const requestAdminTransfer = async () => {
+    if (!transferTarget) return;
+    setProcessingTransfer(true);
+    try {
+      const { data, error } = await supabase.rpc('request_admin_transfer', {
+        _family_id: familyId,
+        _to_user_id: transferTarget.userId,
+        _outgoing_role: transferOutgoingRole,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not start transfer",
+          description: result?.error || "Failed to start admin transfer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Transfer requested",
+        description: `${transferTarget.name} must accept before they become Family Admin.`,
+      });
+      setTransferTarget(null);
+      loadTeamData();
+    } catch (error) {
+      console.error('Error requesting admin transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start admin transfer",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingTransfer(false);
+    }
+  };
+
+  const respondAdminTransfer = async (requestId: string, accept: boolean) => {
+    setProcessingTransfer(true);
+    try {
+      const { data, error } = await supabase.rpc('respond_admin_transfer', {
+        _request_id: requestId,
+        _accept: accept,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not respond",
+          description: result?.error || "Failed to respond to transfer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: accept ? "You are now Family Admin" : "Transfer declined",
+        description: accept
+          ? "The admin role has been transferred to you."
+          : "The admin transfer request was declined.",
+      });
+      loadTeamData();
+    } catch (error) {
+      console.error('Error responding to admin transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to respond to transfer",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingTransfer(false);
+    }
+  };
+
+  const cancelAdminTransfer = async (requestId: string) => {
+    setProcessingTransfer(true);
+    try {
+      const { data, error } = await supabase.rpc('cancel_admin_transfer', {
+        _request_id: requestId,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not cancel",
+          description: result?.error || "Failed to cancel transfer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Transfer cancelled",
+        description: "The pending admin transfer has been withdrawn.",
+      });
+      loadTeamData();
+    } catch (error) {
+      console.error('Error cancelling admin transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel transfer",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingTransfer(false);
+    }
+  };
+
+
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role as UserRole) {
       case 'disabled_person':
@@ -641,6 +770,16 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const unlinkedPlaceholders = placeholderCarers.filter(p => !p.is_linked);
   const linkedPlaceholders = placeholderCarers.filter(p => p.is_linked);
 
+  const isCurrentUserAdmin = members.some(
+    (m) => m.user_id === currentUserId && m.role === 'family_admin'
+  );
+  const incomingTransfer = transferRequests.find((t) => t.to_user_id === currentUserId);
+  const outgoingTransfer = transferRequests.find((t) => t.initiated_by === currentUserId);
+  const nameForUserId = (userId: string) =>
+    members.find((m) => m.user_id === userId)?.profiles?.full_name || 'a team member';
+
+
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -654,6 +793,66 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
               Add new team members and manage<br className="sm:hidden" /> existing ones
             </DialogDescription>
           </DialogHeader>
+
+          {/* Incoming admin transfer prompt (for the nominated user) */}
+          {incomingTransfer && (
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <Crown className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium">You've been asked to become Family Admin</p>
+                  <p className="text-muted-foreground">
+                    {nameForUserId(incomingTransfer.initiated_by)} wants to hand over admin of this care space to you.
+                    Accepting makes you the Family Admin.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => respondAdminTransfer(incomingTransfer.id, false)}
+                  disabled={processingTransfer}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Decline
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => respondAdminTransfer(incomingTransfer.id, true)}
+                  disabled={processingTransfer}
+                >
+                  {processingTransfer ? <Loader2 className="h-4 w-4 animate-spin" /> : (<><Crown className="h-4 w-4 mr-1" />Accept</>)}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Outgoing admin transfer (for the initiating admin) */}
+          {outgoingTransfer && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium">Admin transfer pending</p>
+                  <p className="text-muted-foreground">
+                    Waiting for {nameForUserId(outgoingTransfer.to_user_id)} to accept. When they do, you'll become{' '}
+                    {roleLabels[outgoingTransfer.outgoing_role] || outgoingTransfer.outgoing_role}.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => cancelAdminTransfer(outgoingTransfer.id)}
+                  disabled={processingTransfer}
+                >
+                  Cancel transfer
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Invite/Add Members Button at Top */}
           <div className="py-2">
@@ -733,6 +932,30 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                               />
                             </div>
                           )}
+
+                          {isCurrentUserAdmin &&
+                            member.user_id !== currentUserId &&
+                            member.role !== 'family_admin' &&
+                            !outgoingTransfer && (
+                              <div className="mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() =>
+                                    setTransferTarget({
+                                      userId: member.user_id,
+                                      name: member.profiles?.full_name || 'Unnamed User',
+                                    })
+                                  }
+                                >
+                                  <Crown className="h-4 w-4 mr-2" />
+                                  Make Family Admin (transfer)
+                                </Button>
+                              </div>
+                            )}
+
+
 
                         </div>
                       ))}
@@ -1248,6 +1471,45 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           onScheduleChange={onScheduleChange}
         />
       )}
+
+      <Dialog open={!!transferTarget} onOpenChange={(open) => { if (!open) setTransferTarget(null); }}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              Transfer Family Admin
+            </DialogTitle>
+            <DialogDescription>
+              {transferTarget?.name} will be asked to accept the Family Admin role. Nothing changes until they accept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label>Your role after the transfer</Label>
+            <AdaptiveSelect
+              value={transferOutgoingRole}
+              onValueChange={(value) => setTransferOutgoingRole(value as 'carer' | 'family_viewer')}
+              title="Your role after transfer"
+              options={[
+                { value: 'family_viewer', label: 'Family Viewer (read-only)' },
+                { value: 'carer', label: 'Carer' },
+              ]}
+            />
+            <p className="text-xs text-muted-foreground">
+              Once {transferTarget?.name} accepts, you'll lose admin access and hold this role instead. Your existing shifts stay as they are.
+            </p>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setTransferTarget(null)} disabled={processingTransfer}>
+              Cancel
+            </Button>
+            <Button onClick={requestAdminTransfer} disabled={processingTransfer}>
+              {processingTransfer ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send transfer request'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       <AlertDialog open={showRevokeAllConfirm} onOpenChange={setShowRevokeAllConfirm}>

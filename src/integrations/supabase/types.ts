@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_transfer_requests: {
+        Row: {
+          created_at: string
+          family_id: string
+          id: string
+          initiated_by: string
+          outgoing_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at: string | null
+          status: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          id?: string
+          initiated_by: string
+          outgoing_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          status?: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          id?: string
+          initiated_by?: string
+          outgoing_role?: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          status?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_transfer_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointment_date: string
@@ -2780,6 +2824,7 @@ export type Database = {
         Args: { _profile_id: string; _viewer_id: string }
         Returns: boolean
       }
+      cancel_admin_transfer: { Args: { _request_id: string }; Returns: Json }
       check_rate_limit: {
         Args: {
           _action_type: string
@@ -2979,12 +3024,24 @@ export type Database = {
         Returns: undefined
       }
       redeem_invite: { Args: { _code: string }; Returns: string }
+      request_admin_transfer: {
+        Args: {
+          _family_id: string
+          _outgoing_role: Database["public"]["Enums"]["app_role"]
+          _to_user_id: string
+        }
+        Returns: Json
+      }
       request_role_change: {
         Args: {
           _family_id: string
           _reason?: string
           _requested_role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: Json
+      }
+      respond_admin_transfer: {
+        Args: { _accept: boolean; _request_id: string }
         Returns: Json
       }
       revert_change_request: {
