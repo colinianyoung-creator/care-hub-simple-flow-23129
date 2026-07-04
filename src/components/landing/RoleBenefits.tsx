@@ -45,7 +45,7 @@ const RoleBenefits = () => {
         <div className="mb-12 max-w-2xl">
           <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-3">Built for every role</h2>
           <p className="text-lg text-muted-foreground">
-            Whether you're managing care, providing care, or staying informed — CareHub has the right tools for you.
+            Whether you're managing care, providing care, or staying informed — <span className="italic">my</span>CareHub has the right tools for you.
           </p>
         </div>
 

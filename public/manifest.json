@@ -1,7 +1,7 @@
 {
-  "name": "Your CareHub",
-  "short_name": "CareHub",
-  "description": "Your care coordination hub",
+  "name": "myCareHub",
+  "short_name": "myCareHub",
+  "description": "Manage your care, simply",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
