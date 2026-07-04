@@ -636,6 +636,121 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
 
   };
 
+  const requestAdminTransfer = async () => {
+    if (!transferTarget) return;
+    setProcessingTransfer(true);
+    try {
+      const { data, error } = await supabase.rpc('request_admin_transfer', {
+        _family_id: familyId,
+        _to_user_id: transferTarget.userId,
+        _outgoing_role: transferOutgoingRole,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not start transfer",
+          description: result?.error || "Failed to start admin transfer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Transfer requested",
+        description: `${transferTarget.name} must accept before they become Family Admin.`,
+      });
+      setTransferTarget(null);
+      loadTeamData();
+    } catch (error) {
+      console.error('Error requesting admin transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start admin transfer",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingTransfer(false);
+    }
+  };
+
+  const respondAdminTransfer = async (requestId: string, accept: boolean) => {
+    setProcessingTransfer(true);
+    try {
+      const { data, error } = await supabase.rpc('respond_admin_transfer', {
+        _request_id: requestId,
+        _accept: accept,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not respond",
+          description: result?.error || "Failed to respond to transfer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: accept ? "You are now Family Admin" : "Transfer declined",
+        description: accept
+          ? "The admin role has been transferred to you."
+          : "The admin transfer request was declined.",
+      });
+      loadTeamData();
+      onProfileUpdate?.();
+    } catch (error) {
+      console.error('Error responding to admin transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to respond to transfer",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingTransfer(false);
+    }
+  };
+
+  const cancelAdminTransfer = async (requestId: string) => {
+    setProcessingTransfer(true);
+    try {
+      const { data, error } = await supabase.rpc('cancel_admin_transfer', {
+        _request_id: requestId,
+      });
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        toast({
+          title: "Could not cancel",
+          description: result?.error || "Failed to cancel transfer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Transfer cancelled",
+        description: "The pending admin transfer has been withdrawn.",
+      });
+      loadTeamData();
+    } catch (error) {
+      console.error('Error cancelling admin transfer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel transfer",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingTransfer(false);
+    }
+  };
+
+
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role as UserRole) {
       case 'disabled_person':
