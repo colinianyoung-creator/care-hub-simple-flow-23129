@@ -1,35 +1,64 @@
 ## Goal
 
-Make everything load again after the security hardening migration, without weakening the new security posture.
+Give the current **Family Admin** a safe way to hand over the admin role. Today this is impossible — the rules enforce "one Family Admin per family" and "can't remove the last admin," which deadlock any manual attempt. This adds a dedicated, atomic transfer that requires the successor to accept.
 
-## Full audit result
+## Decisions (from you)
 
-I checked every path the migration could have broken:
+- Only the **current Family Admin** can start a transfer.
+- The outgoing admin **chooses** what role they become (Carer or Family Viewer).
+- The new admin **must accept** before anything changes.
+- Existing shifts are **left untouched**.
 
-1. **All 17 database functions the app calls** (`get_profile_safe`, `generate_invite`, `review_role_change_request`, `mark_dose`, `redeem_invite`, `admin_change_member_role`, shift/MAR/change-request functions, etc.) — confirmed **all still executable by signed-in users**. The revoke of `PUBLIC`/`anon` execute did not strip `authenticated`, because these keep explicit `authenticated` grants. Nothing to fix here.
-
-2. **Every profile lookup in the app** — all already use the safe paths (`profiles_limited` view or `get_profile_safe`) except one. `profiles_limited` exposes only `id`, `full_name`, `profile_picture_url`, which are all still readable. Preference reads/writes only touch allowed columns. Confirmed working.
-
-3. **The one broken query** — `ManageCareTeamDialog.loadTeamData()` requests `email` and `contact_email` from the `profiles` table via the members join. The migration made those columns unreadable for signed-in users (verified directly: `email`, `phone`, `contact_email`, `contact_phone` all denied; `id`, `full_name`, `profile_picture_url` allowed). The rejected column read fails the whole query, so the dialog shows "Failed to load team data" and members, invites, placeholder carers, and pending role-change requests all vanish.
-
-The member list UI only ever displays `full_name` — the blocked columns were fetched but never shown.
-
-## Fix
-
-Frontend-only, one query change in `src/components/dialogs/ManageCareTeamDialog.tsx` (`loadTeamData`): drop the blocked contact columns from the members join, keeping the displayed/permitted fields.
+## How it works
 
 ```text
-profiles!user_memberships_user_id_fkey ( id, full_name, email, contact_email )
-  ->
-profiles!user_memberships_user_id_fkey ( id, full_name )
+1. Family Admin opens Manage Care Team → picks a member → "Make Family Admin (transfer)"
+2. Chooses their own new role (Carer / Family Viewer) → confirms
+3. A pending transfer request is created (nothing changes yet)
+4. The chosen member sees a banner/request: "You've been asked to become Family Admin"
+5. They Accept  → roles swap atomically (new person = Family Admin, old admin = chosen role)
+   They Decline → request closed, no change
 ```
+
+Because the swap happens inside one database function, it never hits the "already has an admin" / "last admin" blocks — both role changes commit together or not at all.
+
+## What gets built
+
+### 1. Database (new migration)
+
+**New table `admin_transfer_requests`** — tracks a pending handover:
+- family, the initiating admin, the nominated new admin, the role the outgoing admin will take, and status (pending / accepted / declined / cancelled).
+- Full GRANTs + RLS: only members of the family can see their family's transfer requests; only the nominee or initiator act on them (enforced in the functions below).
+
+**`request_admin_transfer(_family_id, _to_user_id, _outgoing_role)`** (security definer):
+- Caller must be the family's current `family_admin`.
+- Target must be an existing member of the family and not already the admin.
+- `_outgoing_role` limited to `carer` or `family_viewer`.
+- Rejects if a pending transfer already exists for the family.
+- Inserts a pending row. No role changes yet.
+
+**`respond_admin_transfer(_request_id, _accept)`** (security definer):
+- Caller must be the nominated `to_user_id`.
+- On accept, atomically: set the nominee's membership to `family_admin` and the outgoing admin's membership to the chosen role.
+- On decline, mark declined. Marks status + reviewer/time either way.
+
+**`cancel_admin_transfer(_request_id)`** (security definer): lets the initiating admin withdraw a still-pending request.
+
+### 2. Frontend — `ManageCareTeamDialog.tsx`
+
+- On each member row (visible only to the current Family Admin), add a **"Transfer admin"** action. It opens a small confirm dialog that asks which role the current admin will drop to (Carer / Family Viewer) and warns the change needs the other person's acceptance.
+- Show any **outgoing pending transfer** the admin started, with a **Cancel** button.
+- For the **nominated user**, surface an **incoming transfer** prompt (a banner at the top of the dialog, plus an entry in the existing Requests tab) with **Accept** / **Decline**.
+- Reload team data after any action; keep existing shift-handling untouched.
 
 ## What this does NOT change
 
-- No database migration, no RLS change, no grant change — the new column-level security stays exactly as hardened.
-- Placeholder-carer emails in the dialog come from the separate `placeholder_carers` table and are unaffected.
-- If admins should later see registered members' contact details, that is added through the existing authorized `get_profile_safe(profile_id)` function (owner/same-family gated) — out of scope now since the UI does not display it.
+- No changes to the existing member-initiated `role_change_requests` flow or the carer shift dialog.
+- Shifts, invites, and placeholder carers are unaffected.
+- The "one admin per family" rule stays intact for every other path — only the atomic transfer function is allowed to swap both roles at once.
 
 ## Verify after
 
-Open Manage Care Team and confirm members, invites, placeholder carers, and pending role-change requests all load with no error toast. Spot-check the dashboard and scheduling still load normally.
+- As Family Admin, start a transfer to another member, confirm nothing changes until they accept.
+- As the nominee, accept → confirm you become Family Admin and the previous admin holds the role they chose.
+- Confirm decline and cancel both leave roles unchanged, and that non-admins never see the transfer action.
