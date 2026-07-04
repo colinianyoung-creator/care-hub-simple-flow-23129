@@ -149,17 +149,11 @@ const handler = async (req: Request): Promise<Response> => {
   const resend = new Resend(RESEND_API_KEY);
 
   try {
-    const { email, userName, userRole }: WelcomeEmailRequest = await req.json();
+    const { userName, userRole }: WelcomeEmailRequest = await req.json();
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      console.error("Invalid email format:", email);
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid email format" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    // Force the recipient to the authenticated user's own email address.
+    // The request body cannot specify an arbitrary target.
+    const email = authedEmail;
 
     // Validate userName length
     if (userName && userName.length > 100) {
