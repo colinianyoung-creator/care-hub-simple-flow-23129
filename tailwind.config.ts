@@ -86,6 +86,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			fontFamily: {
+				sans: ['Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				body: ['Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				heading: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',

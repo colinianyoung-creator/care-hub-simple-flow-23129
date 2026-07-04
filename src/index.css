@@ -59,7 +59,7 @@ html.font-extra-large {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 20% 99%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -74,7 +74,7 @@ html.font-extra-large {
     --secondary: 142 76% 36%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 14% 96%;
+    --muted: 214 27% 93%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
     --accent: 178 78% 57%;
@@ -197,8 +197,12 @@ html.font-extra-large {
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
   }
 
   /* Global left text alignment */

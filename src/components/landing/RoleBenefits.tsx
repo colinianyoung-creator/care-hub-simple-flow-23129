@@ -40,11 +40,11 @@ const roles = {
 
 const RoleBenefits = () => {
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="py-16 bg-muted/40">
       <div className="container mx-auto px-2 sm:px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Built for Every Role</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="mb-12 max-w-2xl">
+          <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-3">Built for every role</h2>
+          <p className="text-lg text-muted-foreground">
             Whether you're managing care, providing care, or staying informed — CareHub has the right tools for you.
           </p>
         </div>
