@@ -1,10 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
 import { Calendar, Pill, FileText, Users, Download, Sparkles, Shield, ArrowRight } from 'lucide-react';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/landing/HeroSection';
-import FeatureCard from '@/components/landing/FeatureCard';
+import BentoTile from '@/components/landing/BentoTile';
 import ScheduleDemo from '@/components/landing/ScheduleDemo';
 import MARDemo from '@/components/landing/MARDemo';
 import BodyMapDemo from '@/components/landing/BodyMapDemo';
@@ -19,7 +18,7 @@ const Landing = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
         <nav className="container mx-auto px-2 sm:px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">CareHub</h1>
+          <h1 className="text-2xl font-heading font-extrabold text-primary tracking-tight">CareHub</h1>
           <div className="flex items-center gap-3">
             <Link to="/auth">
               <Button variant="ghost" size="sm">Sign In</Button>
@@ -34,107 +33,117 @@ const Landing = () => {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Features Showcase Grid */}
+      {/* Features Bento Grid */}
       <section className="py-16 lg:py-24">
         <div className="container mx-auto px-2 sm:px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Everything You Need for Home Care</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Powerful features designed specifically for home care management — scheduling, medications, documentation, and more.
+          <div className="mb-10 max-w-2xl">
+            <span className="text-sm font-heading font-bold uppercase tracking-widest text-primary">Browse the features</span>
+            <h2 className="mt-3 font-heading text-3xl sm:text-4xl font-bold tracking-tight">
+              Everything you need, one tap away
+            </h2>
+            <p className="mt-3 text-lg text-muted-foreground">
+              Scheduling, medications, documentation and more — pick a tile and see it in action.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <FeatureCard
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:auto-rows-[minmax(210px,auto)]">
+            <BentoTile
               icon={Calendar}
               title="Shift Scheduling"
-              description="Create recurring shifts, manage cover, track leave and sickness with color-coded calendars."
+              description="Recurring shifts, cover, leave and sickness on color-coded calendars."
+              className="md:col-span-2 md:row-span-2"
+              style={{ animationDelay: '0ms' }}
             >
               <ScheduleDemo />
-            </FeatureCard>
+            </BentoTile>
 
-            <FeatureCard
+            <BentoTile
               icon={Pill}
-              title="Medication Administration"
-              description="Track doses, record refusals, and maintain a complete audit trail with the MAR system."
+              title="Medication (MAR)"
+              description="Track doses, record refusals, and keep a complete audit trail."
+              className="md:col-span-2"
+              style={{ animationDelay: '80ms' }}
             >
               <MARDemo />
-            </FeatureCard>
+            </BentoTile>
 
-            <FeatureCard
+            <BentoTile
               icon={Users}
-              title="Body Map Tracking"
-              description="Log and visualize injuries on an interactive body map with severity tracking."
-            >
-              <BodyMapDemo />
-            </FeatureCard>
+              title="Body Map"
+              description="Log and visualize injuries with severity tracking."
+              className="md:col-span-1"
+              style={{ animationDelay: '160ms' }}
+            />
 
-            <FeatureCard
-              icon={FileText}
-              title="Notes & Tasks"
-              description="Record daily care notes, create tasks, and track completion with recurring reminders."
-            >
-              <NotesDemo />
-            </FeatureCard>
-
-            <FeatureCard
-              icon={Download}
-              title="Timesheet Export"
-              description="Generate PDF/Excel timesheets with categorized hours for payroll and records."
-            >
-              <ExportDemo />
-            </FeatureCard>
-
-            <FeatureCard
+            <BentoTile
               icon={Sparkles}
               title="AI Care Reports"
-              description="Generate professional care summaries from your logs using AI in seconds."
+              description="Professional care summaries generated in seconds."
+              accent
+              className="md:col-span-1"
+              style={{ animationDelay: '240ms' }}
+            />
+
+            <BentoTile
+              icon={FileText}
+              title="Notes & Tasks"
+              description="Daily care notes and tasks with recurring reminders."
+              className="md:col-span-2"
+              style={{ animationDelay: '320ms' }}
             >
-              <AIReportDemo />
-            </FeatureCard>
+              <NotesDemo />
+            </BentoTile>
+
+            <BentoTile
+              icon={Download}
+              title="Timesheet Export"
+              description="Generate PDF/Excel timesheets with categorized hours."
+              className="md:col-span-2"
+              style={{ animationDelay: '400ms' }}
+            >
+              <ExportDemo />
+            </BentoTile>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-muted/40">
         <div className="container mx-auto px-2 sm:px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Get Started in Minutes</h2>
+          <div className="mb-12 max-w-2xl">
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-3">Get started in minutes</h2>
             <p className="text-lg text-muted-foreground">
-              Three simple steps to streamline your care management
+              Three simple steps to streamline your care management.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                step: '1',
-                title: 'Create Your Family Network',
-                description: 'Set up your care circle with roles for admins, carers, and family viewers.',
+                step: '01',
+                title: 'Create your care circle',
+                description: 'Set up roles for admins, carers, and family viewers.',
               },
               {
-                step: '2',
-                title: 'Add Shifts & Care Data',
-                description: 'Schedule recurring shifts, add medications, and start logging daily care notes.',
+                step: '02',
+                title: 'Add shifts & care data',
+                description: 'Schedule shifts, add medications, and log daily notes.',
               },
               {
-                step: '3',
-                title: 'Export & Report',
-                description: 'Generate timesheets, AI summaries, and share updates with your care team.',
+                step: '03',
+                title: 'Export & report',
+                description: 'Generate timesheets, AI summaries, and share updates.',
               },
-            ].map((item, index) => (
-              <div key={index} className="text-center group">
-                <div className="relative inline-flex mb-4">
-                  <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform">
-                    {item.step}
-                  </div>
-                  {index < 2 && (
-                    <ArrowRight className="hidden md:block absolute -right-12 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground" />
-                  )}
+            ].map((item) => (
+              <div
+                key={item.step}
+                className="group rounded-[2rem] bg-card border border-border p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              >
+                <div className="font-heading text-5xl font-extrabold text-primary/20 group-hover:text-primary/40 transition-colors">
+                  {item.step}
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                <p className="text-muted-foreground">{item.description}</p>
+                <h3 className="mt-4 font-heading text-xl font-bold">{item.title}</h3>
+                <p className="mt-2 text-muted-foreground">{item.description}</p>
               </div>
             ))}
           </div>
@@ -147,44 +156,51 @@ const Landing = () => {
       {/* Security & Privacy */}
       <section className="py-16">
         <div className="container mx-auto px-2 sm:px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex p-4 rounded-2xl bg-primary/10 mb-6">
-              <Shield className="h-12 w-12 text-primary" />
-            </div>
-            <h2 className="text-3xl font-bold mb-4">Secure & Private by Design</h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Your care data is encrypted, stored securely, and protected with role-based access controls. 
-              We're fully GDPR compliant and take privacy seriously.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              {['End-to-end encryption', 'GDPR Compliant', 'Role-based access', 'UK data hosting'].map((item) => (
-                <span key={item} className="px-4 py-2 rounded-full bg-muted text-sm font-medium">
-                  {item}
-                </span>
-              ))}
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-muted border border-background/60 p-10 sm:p-16">
+            <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+            <div className="relative z-10 max-w-3xl">
+              <div className="inline-flex p-4 rounded-2xl bg-background mb-6 shadow-sm">
+                <Shield className="h-10 w-10 text-primary" />
+              </div>
+              <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+                Secure & private by design
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Your care data is encrypted, stored securely, and protected with role-based access.
+                We're fully GDPR compliant and take privacy seriously.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {['End-to-end encryption', 'GDPR Compliant', 'Role-based access', 'UK data hosting'].map((item) => (
+                  <span key={item} className="rounded-full bg-background px-4 py-2 text-sm font-medium border border-border">
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-        <div className="container mx-auto px-2 sm:px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Simplify Your Care Management?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join families and carers who trust CareHub for their home care scheduling and documentation.
-          </p>
-          <Link to="/auth">
-            <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-shadow">
-              Start Using CareHub Today
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Free to get started • No credit card required
-          </p>
+      <section className="pb-20">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-primary p-10 sm:p-16 text-center text-primary-foreground shadow-2xl shadow-primary/20">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold tracking-tight mb-4">
+              Ready to simplify your care management?
+            </h2>
+            <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
+              Join families and carers who trust CareHub for their home care scheduling and documentation.
+            </p>
+            <Link to="/auth">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-6 rounded-2xl font-heading font-bold">
+                Start Using CareHub Today
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <p className="mt-4 text-sm text-primary-foreground/70">
+              Free to get started • No credit card required
+            </p>
+          </div>
         </div>
       </section>
 
