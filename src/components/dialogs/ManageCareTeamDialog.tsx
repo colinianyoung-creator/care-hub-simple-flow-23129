@@ -933,6 +933,30 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
                             </div>
                           )}
 
+                          {isCurrentUserAdmin &&
+                            member.user_id !== currentUserId &&
+                            member.role !== 'family_admin' &&
+                            !outgoingTransfer && (
+                              <div className="mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() =>
+                                    setTransferTarget({
+                                      userId: member.user_id,
+                                      name: member.profiles?.full_name || 'Unnamed User',
+                                    })
+                                  }
+                                >
+                                  <Crown className="h-4 w-4 mr-2" />
+                                  Make Family Admin (transfer)
+                                </Button>
+                              </div>
+                            )}
+
+
+
                         </div>
                       ))}
                       
