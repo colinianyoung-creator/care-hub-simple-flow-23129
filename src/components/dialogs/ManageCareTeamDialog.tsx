@@ -167,6 +167,17 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
 
       if (requestsError) throw requestsError;
       setRoleChangeRequests(requestsData || []);
+
+      // Load pending admin transfer requests
+      const { data: transferData, error: transferError } = await supabase
+        .from('admin_transfer_requests')
+        .select('*')
+        .eq('family_id', familyId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (transferError) throw transferError;
+      setTransferRequests(transferData || []);
     } catch (error) {
       console.error('Error loading team data:', error);
       toast({
