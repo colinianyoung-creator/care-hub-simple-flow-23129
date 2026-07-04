@@ -701,7 +701,6 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
           : "The admin transfer request was declined.",
       });
       loadTeamData();
-      onProfileUpdate?.();
     } catch (error) {
       console.error('Error responding to admin transfer:', error);
       toast({
