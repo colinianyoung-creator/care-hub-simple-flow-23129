@@ -190,7 +190,7 @@ const Landing = () => {
               Ready to simplify your care management?
             </h2>
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-              Join families and carers who trust CareHub for their home care scheduling and documentation.
+              Join families and carers who trust CareHub for their care scheduling and documentation.
             </p>
             <Link to="/auth">
               <Button size="lg" variant="secondary" className="text-lg px-8 py-6 rounded-2xl font-heading font-bold">
