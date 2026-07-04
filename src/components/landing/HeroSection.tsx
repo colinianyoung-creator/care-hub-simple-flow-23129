@@ -20,7 +20,7 @@ const HeroSection = () => {
               Live
             </span>
             <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground font-heading">
-              Home care, streamlined
+              Manage your care, simple
             </span>
           </div>
 
@@ -32,7 +32,7 @@ const HeroSection = () => {
 
           <p className="text-lg sm:text-xl text-muted-foreground max-w-lg leading-relaxed mb-10">
             Scheduling, medication tracking, care notes and timesheets — all in one
-            beautifully simple place. Built for disabled people, families, and carers.
+            beautifully simple place. Built for families and carers supporting disabled children, disabled adults, or elderly loved ones.
           </p>
 
           <div className="flex flex-wrap gap-4">
