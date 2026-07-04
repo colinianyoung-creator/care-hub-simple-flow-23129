@@ -97,14 +97,36 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  // IP-based rate limiting for unauthenticated requests
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                   req.headers.get('x-real-ip') || 
-                   'unknown';
-  
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  // Require an authenticated caller. Only signed-in users may trigger
+  // branded welcome emails, and the email is forced to their own account
+  // address so the endpoint cannot be abused to spam arbitrary victims.
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Authentication required" }),
+      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: authData, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError || !authData.user?.email) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Authentication required" }),
+      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+  const authedEmail = authData.user.email;
+
+  // Rate limiting keyed to the authenticated user
+  const clientIp = authData.user.id;
+
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   // Rate limiting: max 5 welcome emails per hour per IP
