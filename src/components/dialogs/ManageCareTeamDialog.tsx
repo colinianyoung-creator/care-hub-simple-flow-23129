@@ -794,6 +794,66 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
             </DialogDescription>
           </DialogHeader>
 
+          {/* Incoming admin transfer prompt (for the nominated user) */}
+          {incomingTransfer && (
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <Crown className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium">You've been asked to become Family Admin</p>
+                  <p className="text-muted-foreground">
+                    {nameForUserId(incomingTransfer.initiated_by)} wants to hand over admin of this care space to you.
+                    Accepting makes you the Family Admin.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => respondAdminTransfer(incomingTransfer.id, false)}
+                  disabled={processingTransfer}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Decline
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => respondAdminTransfer(incomingTransfer.id, true)}
+                  disabled={processingTransfer}
+                >
+                  {processingTransfer ? <Loader2 className="h-4 w-4 animate-spin" /> : (<><Crown className="h-4 w-4 mr-1" />Accept</>)}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Outgoing admin transfer (for the initiating admin) */}
+          {outgoingTransfer && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium">Admin transfer pending</p>
+                  <p className="text-muted-foreground">
+                    Waiting for {nameForUserId(outgoingTransfer.to_user_id)} to accept. When they do, you'll become{' '}
+                    {roleLabels[outgoingTransfer.outgoing_role] || outgoingTransfer.outgoing_role}.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => cancelAdminTransfer(outgoingTransfer.id)}
+                  disabled={processingTransfer}
+                >
+                  Cancel transfer
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Invite/Add Members Button at Top */}
           <div className="py-2">
             <InviteMembersButton familyId={familyId} className="w-full" />
