@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Calendar, Pill, FileText, Users, Download, Sparkles, Shield, ArrowRight } from 'lucide-react';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/landing/HeroSection';
