@@ -82,6 +82,10 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
   const [showRevokeAllConfirm, setShowRevokeAllConfirm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
+  const [transferRequests, setTransferRequests] = useState<any[]>([]);
+  const [transferTarget, setTransferTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [transferOutgoingRole, setTransferOutgoingRole] = useState<'carer' | 'family_viewer'>('family_viewer');
+  const [processingTransfer, setProcessingTransfer] = useState(false);
   const [roleChangeShiftTarget, setRoleChangeShiftTarget] = useState<{
     requestId: string;
     carerId: string;
