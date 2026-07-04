@@ -9,7 +9,7 @@ import { AdaptiveSelect } from '@/components/adaptive';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar, Send, Loader2, Check } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Link, Ghost, Mail, Phone, Calendar, Send, Loader2, Check, Crown, ArrowRightLeft, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddPlaceholderCarerDialog } from './AddPlaceholderCarerDialog';
