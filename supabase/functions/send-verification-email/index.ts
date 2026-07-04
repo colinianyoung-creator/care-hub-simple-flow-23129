@@ -136,6 +136,34 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Anti-abuse: only send a verification email to an address that actually
+    // belongs to a registered account. A profile row is created for every
+    // sign-up, so this blocks anonymous callers from mass-emailing arbitrary
+    // victims with branded CareHub messages while still covering the sign-up
+    // flow (which runs before a session exists).
+    const { data: existingProfile, error: profileLookupError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (profileLookupError) {
+      console.error("Profile lookup failed:", profileLookupError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Unable to process request" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!existingProfile) {
+      // Do not reveal whether the account exists.
+      console.warn("Verification email requested for non-registered address");
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     if (!verificationUrl) {
       console.error("Missing verification URL");
       return new Response(
@@ -144,12 +172,24 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Basic URL validation - must be a valid URL and not point to suspicious domains
+    // URL validation - must be HTTPS and point to an allowlisted CareHub host
+    // so the endpoint cannot be used to send branded phishing links.
+    const allowedHosts = [
+      "mycarehub.uk",
+      "www.mycarehub.uk",
+    ];
     try {
       const parsedUrl = new URL(verificationUrl);
-      // Only allow HTTPS URLs
       if (parsedUrl.protocol !== 'https:') {
         throw new Error("Only HTTPS URLs allowed");
+      }
+      const host = parsedUrl.hostname.toLowerCase();
+      const isAllowed =
+        allowedHosts.includes(host) ||
+        host.endsWith(".lovable.app") ||
+        host.endsWith(".lovable.dev");
+      if (!isAllowed) {
+        throw new Error("Host not allowed");
       }
     } catch (urlError) {
       console.error("Invalid verification URL:", urlError);
