@@ -1472,6 +1472,45 @@ export const ManageCareTeamDialog = ({ isOpen, onClose, familyId, onScheduleChan
         />
       )}
 
+      <Dialog open={!!transferTarget} onOpenChange={(open) => { if (!open) setTransferTarget(null); }}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              Transfer Family Admin
+            </DialogTitle>
+            <DialogDescription>
+              {transferTarget?.name} will be asked to accept the Family Admin role. Nothing changes until they accept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label>Your role after the transfer</Label>
+            <AdaptiveSelect
+              value={transferOutgoingRole}
+              onValueChange={(value) => setTransferOutgoingRole(value as 'carer' | 'family_viewer')}
+              title="Your role after transfer"
+              options={[
+                { value: 'family_viewer', label: 'Family Viewer (read-only)' },
+                { value: 'carer', label: 'Carer' },
+              ]}
+            />
+            <p className="text-xs text-muted-foreground">
+              Once {transferTarget?.name} accepts, you'll lose admin access and hold this role instead. Your existing shifts stay as they are.
+            </p>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setTransferTarget(null)} disabled={processingTransfer}>
+              Cancel
+            </Button>
+            <Button onClick={requestAdminTransfer} disabled={processingTransfer}>
+              {processingTransfer ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send transfer request'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
 
       <AlertDialog open={showRevokeAllConfirm} onOpenChange={setShowRevokeAllConfirm}>
         <AlertDialogContent>
